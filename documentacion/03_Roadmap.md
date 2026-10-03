@@ -42,7 +42,7 @@ Yo sólo paso una tarea a `- [x]` **después de que vos me digas que está aprob
 
 | Fase | Nombre | Tareas | Qué queda funcionando al cerrarla |
 |---|---|---|---|
-| **0** | Puesta en marcha y producción | 12 | URL pública con el estilo, instalable en el celular, API respondiendo |
+| **0** | Puesta en marcha y producción | 12 | URL pública con el estilo, instalable en el celular, API respondiendo sobre un proyecto Supabase con dos esquemas |
 | **1** | Sistema de estilo y esqueleto visual | 14 | Las 7 pantallas navegables con datos de ejemplo, claro/oscuro, mobile-first |
 | **2** | Autenticación | 10 | Login real, sesión, protección de la API, cierre de sesión |
 | **3** | Meses y categorías | 13 | Navegación de meses real y categorías administrables |
@@ -90,20 +90,20 @@ Yo sólo paso una tarea a `- [x]` **después de que vos me digas que está aprob
 
 ### Tema 0.2 — Supabase
 
-- [ ] **F00-T04 · Crear los proyectos de Supabase**
-  **Tipo:** Infra · **Ref:** Técnico §11, §16.2
-  **Hacer:** dos proyectos, `epic-wallet-prod` y `epic-wallet-dev`, en región São Paulo; anotar de cada uno la URL, la clave anónima, la clave de servicio y el secreto de JWT; verificar la cadena de conexión del **pooler** (puerto 6543).
-  **Aceptación:** · ambos proyectos activos · las credenciales guardadas donde vos las tengas a mano · conexión al pooler probada con `psql` o desde un script.
+- [~] **F00-T04 · Configurar el proyecto de Supabase y sus dos esquemas**
+  **Tipo:** Infra · **Ref:** Técnico §4.1.1, §11, §16.2
+  **Hacer:** un único proyecto de Supabase en región **São Paulo (`sa-east-1`)**, que es la más cercana a Argentina y **no se puede cambiar después de crear el proyecto** (§20.1); crear dentro los esquemas `public` (producción) y `dev` (desarrollo y previews); anotar la URL, la clave anónima, la clave de servicio y el secreto de JWT; armar el `.env` local con `DB_SCHEMA=dev`; verificar la cadena del **pooler** (puerto 6543) con `python scripts/check_db.py`.
+  **Aceptación:** · el proyecto está activo y el host del pooler dice `sa-east-1` · los esquemas `public` y `dev` existen · `scripts/check_db.py` responde TODO EN ORDEN · el script falla si se apunta desarrollo a `public`, lo que confirma la protección de los datos reales.
 
-- [ ] **F00-T05 · Configurar Alembic**
-  **Tipo:** Infra · **Ref:** Técnico §16.4
-  **Hacer:** `alembic init migrations`; `env.py` leyendo `DATABASE_URL` del entorno; migración inicial vacía; probar `upgrade head` y `downgrade base` contra el proyecto de desarrollo.
-  **Aceptación:** · `alembic upgrade head` corre sin error · `downgrade` vuelve atrás · la tabla `alembic_version` existe en desarrollo.
+- [ ] **F00-T05 · Configurar Alembic con esquema explícito**
+  **Tipo:** Infra · **Ref:** Técnico §16.4, §4.1.1
+  **Hacer:** `alembic init migrations`; `env.py` leyendo `DATABASE_URL` y **`DB_SCHEMA` del entorno, sin valor por defecto**, con `version_table_schema` e `include_schemas=True` para que una migración no pueda caer en el esquema equivocado; migración inicial vacía; probar `upgrade head` y `downgrade base` contra el esquema `dev`.
+  **Aceptación:** · `DB_SCHEMA=dev alembic upgrade head` corre sin error · `downgrade` vuelve atrás · la tabla `alembic_version` existe **dentro de `dev`** y no en `public` · sin `DB_SCHEMA` definido, Alembic aborta con un mensaje claro en lugar de asumir un esquema.
 
-- [ ] **F00-T06 · Crear el usuario de prueba**
-  **Tipo:** Infra · **Ref:** Técnico §8.5
-  **Hacer:** crear tu usuario en Supabase Auth de desarrollo y de producción con email y contraseña; anotar el `user_id` (uuid) de cada uno.
-  **Aceptación:** · podés iniciar sesión desde el panel de Supabase · tenés los dos uuid anotados.
+- [ ] **F00-T06 · Crear el usuario**
+  **Tipo:** Infra · **Ref:** Técnico §8.5, §4.1.1
+  **Hacer:** crear tu usuario en Supabase Auth con email y contraseña; anotar el `user_id` (uuid). Al haber un solo proyecto, **la autenticación es compartida por los dos esquemas**: el mismo usuario sirve en desarrollo y en producción.
+  **Aceptación:** · podés iniciar sesión desde el panel de Supabase · tenés el uuid anotado · queda claro que ese uuid es el mismo que usarán las filas de `profiles` de ambos esquemas.
 
 ### Tema 0.3 — API mínima en producción
 
@@ -114,13 +114,13 @@ Yo sólo paso una tarea a `- [x]` **después de que vos me digas que está aprob
 
 - [ ] **F00-T08 · Configurar Vercel y desplegar**
   **Tipo:** Infra · **Ref:** Técnico §16.1
-  **Hacer:** proyecto en Vercel vinculado al repositorio; `vercel.json` completo de la sección 16.1 con rewrites, runtime de Python y cabeceras de seguridad; variables de entorno cargadas en producción, preview y desarrollo; primer despliegue.
-  **Aceptación:** · `https://<dominio>/api/health` responde desde internet · las cabeceras de seguridad llegan (verificable con las herramientas del navegador) · los secretos **no** están en el repositorio.
+  **Hacer:** proyecto en Vercel vinculado al repositorio; `vercel.json` completo de la sección 16.1 con rewrites, runtime de Python, cabeceras de seguridad y **`regions: ["gru1"]` (São Paulo) para que la función corra junto a la base de datos** (§20.1); variables de entorno cargadas en los tres entornos, con **`DB_SCHEMA=public` sólo en producción** y `DB_SCHEMA=dev` en preview y development; primer despliegue.
+  **Aceptación:** · `https://<dominio>/api/health` responde desde internet · las cabeceras de seguridad llegan (verificable con las herramientas del navegador) · los secretos **no** están en el repositorio · la función reporta una latencia a la base por debajo de 50 ms, lo que confirma que está en la misma región.
 
 - [ ] **F00-T09 · Previews por rama**
   **Tipo:** Infra · **Ref:** Técnico §16.2, §16.3
-  **Hacer:** verificar que una rama cualquiera genera URL de preview; que preview usa el Supabase de desarrollo y producción el de producción; documentar el flujo de la sección 16.3 en el README.
-  **Aceptación:** · una rama de prueba genera su URL · preview y producción apuntan a bases distintas, comprobado por `/api/health` · abriste la preview desde el celular.
+  **Hacer:** verificar que una rama cualquiera genera URL de preview; que preview usa el esquema `dev` y producción el `public`; exponer el esquema activo en `/api/health` para poder comprobarlo de un vistazo; documentar el flujo de la sección 16.3 en el README.
+  **Aceptación:** · una rama de prueba genera su URL · `/api/health` de preview informa esquema `dev` y el de producción `public` · abriste la preview desde el celular.
 
 ### Tema 0.4 — Primera pantalla visible
 
@@ -136,7 +136,7 @@ Yo sólo paso una tarea a `- [x]` **después de que vos me digas que está aprob
 
 - [ ] **F00-T12 · Documentación de la Fase 0**
   **Tipo:** Doc
-  **Hacer:** `docs/FASE_00_PUESTA_EN_MARCHA.md`: qué quedó montado y por qué, cuadro de entornos con sus URLs y bases, el flujo de trabajo por tarea explicado con un ejemplo concreto, cómo levantar el proyecto en una máquina nueva paso a paso, y dónde vive cada secreto (sin los valores).
+  **Hacer:** `docs/FASE_00_PUESTA_EN_MARCHA.md`: qué quedó montado y por qué, cuadro de entornos con sus URLs y esquemas, **por qué un solo proyecto de Supabase con dos esquemas y qué implica** (autenticación compartida, aislación lógica y no física, pausa por inactividad), el flujo de trabajo por tarea explicado con un ejemplo concreto, cómo levantar el proyecto en una máquina nueva paso a paso, y dónde vive cada secreto (sin los valores).
   **Aceptación:** · alguien que nunca vio el proyecto lo levanta siguiendo el documento · el cuadro de entornos coincide con la realidad.
 
 ---
@@ -493,8 +493,8 @@ Yo sólo paso una tarea a `- [x]` **después de que vos me digas que está aprob
 
 - [ ] **F05-T06 · Rendimiento del dashboard**
   **Tipo:** Backend · **Ref:** Técnico §20
-  **Hacer:** medir la respuesta con un mes cargado de 50 movimientos; revisar el plan de consultas y agregar los índices que falten; verificar que no haya consultas en bucle.
-  **Aceptación:** · por debajo de 400 ms en el percentil 95 contra Supabase · sin consultas N+1 · las mediciones quedan anotadas en la documentación de la fase.
+  **Hacer:** medir la respuesta con un mes cargado de 50 movimientos; revisar el plan de consultas y agregar los índices que falten; verificar que no haya consultas en bucle. Medir **desde la función desplegada**, no desde la máquina local: en local se pagan ~35 ms por consulta contra São Paulo (§20.1).
+  **Aceptación:** · por debajo de 400 ms en el percentil 95 medido desde la función · sin consultas N+1 · las mediciones quedan anotadas en la documentación de la fase, con la aclaración de local contra desplegado.
 
 ### Tema 5.3 — Frontend
 
@@ -1309,7 +1309,7 @@ Yo sólo paso una tarea a `- [x]` **después de que vos me digas que está aprob
 
 | Fase | Tareas | Aprobadas | Estado |
 |---|---|---|---|
-| 0 · Puesta en marcha y producción | 12 | 3 | **En curso** · próxima: F00-T04 |
+| 0 · Puesta en marcha y producción | 12 | 3 | **En curso** · F00-T04 esperando prueba |
 | 1 · Sistema de estilo y esqueleto | 14 | 0 | Pendiente |
 | 2 · Autenticación | 10 | 0 | Pendiente |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |

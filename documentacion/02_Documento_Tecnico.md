@@ -65,9 +65,9 @@ Regla de precedencia: si este documento contradice al general en una decisión f
 |---|---|
 | Hosting del frontend | **Vercel** (estático con CDN) |
 | Hosting de la API | **Vercel Python Serverless Functions** (`/api`), mismo proyecto y dominio |
-| Base de datos | **Supabase Postgres** |
-| Autenticación | **Supabase Auth** |
-| Base de datos local de desarrollo | **SQLite** (opcional) o un segundo proyecto Supabase de desarrollo |
+| Base de datos | **Supabase Postgres** — un solo proyecto, dos esquemas (`public` y `dev`) |
+| Autenticación | **Supabase Auth** (compartida entre esquemas) |
+| Base de datos local de desarrollo | El esquema `dev` del mismo proyecto. **SQLite** sólo para los tests |
 | Repositorio y CI | **GitHub** + integración de Vercel (preview por rama, producción en `main`) |
 | Backups | Supabase (automáticos) + exportación manual desde la app |
 
@@ -85,9 +85,29 @@ Qué se conserva:
 
 - El **modelo de datos** de las secciones 31 a 43 del documento general se respeta tabla por tabla y campo por campo.
 - **SQLAlchemy** abstrae el motor, así que el mismo código corre contra SQLite y Postgres.
-- SQLite queda disponible para desarrollo local sin red (`DATABASE_URL=sqlite+pysqlite:///./dev.db`).
+- SQLite queda disponible para correr los tests rápido (`DATABASE_URL=sqlite+pysqlite:///./test.db`).
 
-Riesgo conocido y cómo se mitiga: SQLite y Postgres no se comportan igual en tipos, `ON CONFLICT`, ordenamiento de texto y zonas horarias. Para evitar bugs que sólo aparecen en producción, **el desarrollo normal usa un proyecto Supabase de desarrollo**, y SQLite se usa sólo para correr los tests rápido. Los tests de integración corren contra Postgres.
+Riesgo conocido y cómo se mitiga: SQLite y Postgres no se comportan igual en tipos, `ON CONFLICT`, ordenamiento de texto y zonas horarias. Para evitar bugs que sólo aparecen en producción, **el desarrollo normal usa Postgres**, y SQLite se usa sólo para los tests unitarios. Los tests de integración corren contra Postgres.
+
+### 4.1.1 Un solo proyecto de Supabase, dos esquemas
+
+La cuenta de Supabase disponible admite **un único proyecto**, así que producción y desarrollo comparten instancia. La separación se hace con **esquemas de Postgres**, no con proyectos:
+
+| Esquema | Para qué | Quién lo usa |
+|---|---|---|
+| `public` | Producción: los datos financieros reales | la rama `main` desplegada |
+| `dev` | Desarrollo y previews: datos de prueba | la máquina local y las ramas de tarea |
+
+Una sola variable, `DB_SCHEMA`, decide cuál se usa. Ventajas sobre usar SQLite en desarrollo: **mismo motor, misma versión, mismas extensiones y mismo comportamiento de RLS**, así que lo que funciona en desarrollo funciona en producción.
+
+Qué implica, dicho sin vueltas:
+
+- **Supabase Auth es única por proyecto**, así que los usuarios se comparten entre ambos esquemas. Con un solo usuario es irrelevante: el mismo login sirve para los dos.
+- **La aislación es lógica, no física.** Un `DROP SCHEMA` mal dado o una migración apuntada al esquema equivocado sí puede tocar producción. Por eso `scripts/check_db.py` falla si `APP_ENV=development` apunta a `public`, y las migraciones exigen que el esquema esté declarado explícitamente.
+- **Si el proyecto se pausa** por inactividad (el plan gratuito pausa a los 7 días sin uso), se pausan los dos entornos a la vez.
+- El respaldo automático de Supabase cubre toda la instancia, los dos esquemas incluidos.
+
+Cuando el proyecto justifique un segundo entorno aislado de verdad, migrar es crear un proyecto nuevo y correr las migraciones con `DB_SCHEMA=public`: no hay nada en el código atado a esta decisión más que esa variable.
 
 ### 4.2 Sin plantillas de servidor
 
@@ -172,6 +192,7 @@ Implementa las secciones 31 a 43 del documento general. DDL para Postgres (Supab
 - Timestamps `timestamptz`, con `default now()`. La aplicación muestra en `America/Argentina/Buenos_Aires`.
 - Todas las tablas de datos del usuario llevan `user_id uuid not null` para que RLS funcione.
 - Nombres de tablas y columnas en inglés y `snake_case`; los textos visibles van en español en el frontend.
+- Todas las tablas viven en el esquema que indica `DB_SCHEMA` (`public` en producción, `dev` en desarrollo). El DDL de abajo se aplica dentro de ese esquema; `auth.users` es siempre el de Supabase, compartido.
 
 ### 6.2 DDL
 
@@ -821,8 +842,10 @@ epic-wallet/
 # .env.example
 # --- Base de datos ---
 DATABASE_URL=postgresql+psycopg://postgres.xxxx:PASS@aws-0-sa-east-1.pooler.supabase.com:6543/postgres
-# desarrollo sin red (sólo tests):
-# DATABASE_URL=sqlite+pysqlite:///./dev.db
+DB_SCHEMA=dev                            # dev | public — ver §4.1.1
+# sólo para los tests:
+# DATABASE_URL=sqlite+pysqlite:///./test.db
+# DB_SCHEMA=main
 
 # --- Supabase ---
 SUPABASE_URL=https://xxxx.supabase.co
@@ -844,6 +867,7 @@ Reglas no negociables:
 - `SUPABASE_SERVICE_ROLE_KEY` y `SUPABASE_JWT_SECRET` **nunca** llegan al navegador ni se escriben en el repositorio.
 - El frontend sólo conoce `SUPABASE_URL` y `SUPABASE_ANON_KEY`, inyectadas en el build.
 - Se usa el **pooler** de Supabase (puerto 6543, modo transaction) porque las funciones serverless abren y cierran conexiones constantemente y agotarían el límite de conexiones directas.
+- `DB_SCHEMA` **nunca** es `public` cuando `APP_ENV=development`: sería trabajar contra los datos reales. `scripts/check_db.py` lo verifica y falla si ocurre.
 
 ---
 
@@ -1208,6 +1232,7 @@ El `theme_color` del manifest y el `<meta name="theme-color">` se actualizan al 
 {
   "buildCommand": "npm run build",
   "outputDirectory": "web",
+  "regions": ["gru1"],
   "functions": { "api/index.py": { "runtime": "python3.12", "maxDuration": 30 } },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index" }
@@ -1236,13 +1261,17 @@ from app.main import app        # Vercel detecta el ASGI y lo sirve
 
 Frontend y API comparten dominio, así que **no hay CORS** en producción. Sólo se configura para desarrollo local.
 
+`"regions": ["gru1"]` fija la función Python en São Paulo, **la misma región donde vive la base de datos y la más cercana a Buenos Aires**. No es un detalle menor: ver §20.1.
+
 ### 16.2 Entornos
 
 | Entorno | Rama | URL | Base de datos |
 |---|---|---|---|
-| Producción | `main` | `epic-wallet.vercel.app` | Supabase producción |
-| Preview | cualquier otra rama o PR | URL automática por rama | Supabase desarrollo |
-| Local | — | `localhost:3000` + `localhost:8000` | Supabase desarrollo o SQLite |
+| Producción | `main` | `epic-wallet.vercel.app` | Supabase · esquema `public` |
+| Preview | cualquier otra rama o PR | URL automática por rama | Supabase · esquema `dev` |
+| Local | — | `localhost:3000` + `localhost:8000` | Supabase · esquema `dev` |
+
+Los tres entornos apuntan al **mismo proyecto de Supabase** y se diferencian por `DB_SCHEMA` (§4.1.1). En Vercel eso significa cargar `DB_SCHEMA=public` sólo en el entorno de producción, y `DB_SCHEMA=dev` en preview y development.
 
 **Esto es lo que te permite probar en el celular en el momento:** cada push genera una URL de preview; cuando una tarea se aprueba, se integra a `main` y queda en la URL de producción. Nunca hay que esperar al final de una fase para ver algo funcionando.
 
@@ -1267,11 +1296,17 @@ rama feat/F04-T03-alta-movimiento
 Las migraciones **no** corren automáticamente en el despliegue: una migración fallida en una función serverless dejaría la base a medio camino. Se ejecutan a mano desde local contra el entorno correspondiente, antes de integrar el código que las necesita.
 
 ```bash
-alembic revision --autogenerate -m "F03 meses y categorias"
-alembic upgrade head          # primero en desarrollo
-# verificar, y sólo entonces:
-APP_ENV=production alembic upgrade head
+# 1 · generar la migración mirando el esquema de desarrollo
+DB_SCHEMA=dev alembic revision --autogenerate -m "F03 meses y categorias"
+
+# 2 · aplicarla en desarrollo y verificar
+DB_SCHEMA=dev alembic upgrade head
+
+# 3 · recién entonces, producción
+DB_SCHEMA=public APP_ENV=production alembic upgrade head
 ```
+
+`DB_SCHEMA` es obligatorio y explícito en cada comando de Alembic: no tiene valor por defecto que pueda hacer que una migración caiga en el esquema equivocado. La tabla `alembic_version` vive dentro de cada esquema, así que los dos entornos llevan su propio control de versiones.
 
 Toda migración tiene su `downgrade` probado. Ninguna borra datos sin una copia previa.
 
@@ -1280,7 +1315,7 @@ Toda migración tiene su `downgrade` probado. Ninguna borra datos sin una copia 
 Lo que hay que tener antes de la primera línea de lógica de negocio (es la Fase 0 del roadmap):
 
 1. Repositorio en GitHub con la estructura de la sección 10.
-2. Proyecto Supabase de producción y otro de desarrollo; anotar URL, claves y secreto de JWT.
+2. Un proyecto Supabase con los esquemas `public` y `dev` creados; anotar URL, claves y secreto de JWT.
 3. Proyecto en Vercel vinculado al repositorio, con las variables de entorno cargadas en los tres entornos.
 4. `/api/health` respondiendo en la URL de producción.
 5. `index.html` mínimo con el estilo aplicado, instalable como PWA en el celular.
@@ -1366,10 +1401,47 @@ Pruebas obligatorias que no pueden faltar:
 | JavaScript (comprimido) | < 150 KB |
 | CSS (comprimido) | < 50 KB |
 | Primera pintura útil en 4G | < 1,5 s |
-| Respuesta de `/api/dashboard` | < 400 ms en el percentil 95 |
+| Respuesta de `/api/dashboard` | < 400 ms en el percentil 95, medido desde la función |
 | Lighthouse móvil (rendimiento y accesibilidad) | ≥ 90 |
 
 Cómo se consigue: una sola llamada para todo el dashboard; caché por mes en memoria; `font-display: swap` con precarga; fondo con `background-attachment: fixed` y una única capa de ruido en SVG embebido en lugar de imágenes; `content-visibility: auto` en los paneles que están fuera de pantalla; estáticos con cache inmutable; pooler de conexiones en Supabase.
+
+### 20.1 Región: todo en São Paulo
+
+La base vive en **`sa-east-1` (São Paulo)**, la región de AWS más cercana a Buenos Aires, y la función de Vercel se fija en **`gru1`** (São Paulo también). Los tres puntos del recorrido —teléfono, función y base— quedan en Sudamérica.
+
+Esto no salió gratis: el proyecto se creó primero en `us-west-2` (Oregón), que es la región por defecto de Supabase, y **la región de un proyecto no se puede cambiar**. Se detectó en la verificación de F00-T04, con la base todavía vacía, y se recreó en São Paulo. Las mediciones, desde Buenos Aires:
+
+| Medición | Oregón (`us-west-2`) | São Paulo (`sa-east-1`) | Mejora |
+|---|---|---|---|
+| Conexión TCP al pooler | 236 ms | **47 ms** | 5,0× |
+| Consulta sobre conexión abierta | 223 ms | **35 ms** | 6,4× |
+| Abrir conexión nueva | 665–2.049 ms | **105 ms** | 6–20× |
+
+**Por qué importa tanto:** el costo no es el viaje, es el viaje **multiplicado por consulta**. Con el dashboard haciendo seis consultas, Oregón costaba ~1,3 s sólo de red; São Paulo cuesta ~210 ms. Es la diferencia entre cumplir el objetivo de 400 ms y no acercarse.
+
+**Por qué la función va en `gru1` y no donde esté el usuario:** porque la latencia que se multiplica es la de función → base, no la de usuario → función. El usuario paga un único viaje de ida y vuelta por petición HTTP; la función paga uno por consulta SQL. Poniéndola junto a la base, cada consulta cuesta ~5 ms en lugar de ~35 ms:
+
+```text
+Función en gru1, junto a la base (lo elegido):
+  teléfono → función   ~40 ms   (una sola vez por petición)
+  función  → base      ~5 ms × 6 consultas = 30 ms
+  total                ~70 ms   y casi no crece al agregar consultas
+
+Función en otra región (por ejemplo Virginia):
+  teléfono → función   ~120 ms
+  función  → base      ~130 ms × 6 consultas = 780 ms
+  total                ~900 ms  y empeora con cada consulta
+```
+
+Los **estáticos no dependen de esto**: el CDN de Vercel los sirve desde el nodo más cercano a Buenos Aires sin importar dónde corra la función.
+
+Qué queda como regla:
+
+1. **`regions: ["gru1"]`** en `vercel.json` (F00-T08). Si alguna vez la base se mueve, esta variable se mueve con ella.
+2. **Mantener la respuesta única del dashboard** (§9.2): con cualquier latencia, una llamada es mejor que seis.
+3. **Medir el percentil 95 desde la función desplegada**, no desde la máquina de desarrollo.
+4. En desarrollo local hay que contar ~35 ms por consulta: es el viaje a São Paulo, no un problema de código.
 
 ---
 
@@ -1403,7 +1475,7 @@ Al cerrar cada fase se escribe `docs/FASE_XX_<nombre>.md` con qué se hizo en le
 | Tema | Decisión | Dónde se amplía |
 |---|---|---|
 | Framework backend | FastAPI sobre Vercel Python Functions | 3, 16.1 |
-| Base de datos | Supabase Postgres; SQLite sólo para tests | 4.1, 6 |
+| Base de datos | Supabase Postgres, un proyecto y dos esquemas; SQLite sólo para tests | 4.1, 4.1.1, 6 |
 | ORM | SQLAlchemy 2.0 + Alembic | 3, 16.4 |
 | Autenticación | Supabase Auth + verificación de JWT propia | 8 |
 | Aislamiento de datos | `user_id` en consultas + RLS | 6.5 |
