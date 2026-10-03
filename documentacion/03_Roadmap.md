@@ -83,7 +83,7 @@ Yo sólo paso una tarea a `- [x]` **después de que vos me digas que está aprob
   **Hacer:** `pyproject.toml` con dependencias (fastapi, pydantic, pydantic-settings, sqlalchemy, psycopg[binary], alembic, pyjwt, httpx, pytest, pytest-asyncio, ruff, mypy); configuración de `ruff` y `mypy`; entorno virtual; `requirements.txt` generado para Vercel.
   **Aceptación:** · `pip install -e .` funciona · `ruff check .` pasa · `pytest` corre sin tests y no falla.
 
-- [~] **F00-T03 · Configurar Tailwind y el paso de build**
+- [x] **F00-T03 · Configurar Tailwind y el paso de build**
   **Tipo:** Infra · **Ref:** Técnico §3, §13.2
   **Hacer:** `package.json` con `tailwindcss` v4; scripts `build` (compila a `web/public/app.css` minificado) y `dev` (modo watch); `web/src/app.css` importando Tailwind.
   **Aceptación:** · `npm run build` genera el CSS · `npm run dev` recompila al guardar.
@@ -1309,7 +1309,7 @@ Yo sólo paso una tarea a `- [x]` **después de que vos me digas que está aprob
 
 | Fase | Tareas | Aprobadas | Estado |
 |---|---|---|---|
-| 0 · Puesta en marcha y producción | 12 | 2 | **En curso** · F00-T03 esperando prueba |
+| 0 · Puesta en marcha y producción | 12 | 3 | **En curso** · próxima: F00-T04 |
 | 1 · Sistema de estilo y esqueleto | 14 | 0 | Pendiente |
 | 2 · Autenticación | 10 | 0 | Pendiente |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
