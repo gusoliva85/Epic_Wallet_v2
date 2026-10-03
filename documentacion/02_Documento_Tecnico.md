@@ -532,15 +532,135 @@ Vender  $1.200.000: cartera −1.200.000        ·   ahorro +1.200.000  ·   pat
 Implementación: la operación genera un movimiento con `source = 'system'` y una categoría de tipo transferencia marcada como **excluida del gasto de consumo**, de modo que no aparezca en el desglose de egresos ni infle el gráfico de gastos. El endpoint es uno solo y hace las dos puntas en una transacción, para que el usuario no tenga que cargar nada dos veces y no se descuente el importe por duplicado (sección 23 del general).
 ---
 
-## 8. Autenticación y sesión
+## 8. Cuentas de usuario, autenticación y sesión
 
 ### 8.1 Decisión
 
-Se usa **Supabase Auth** con email y contraseña. El backend **no almacena contraseñas ni hashes**: los gestiona Supabase (bcrypt). Esto cumple la Regla 12 del documento general de la forma más segura posible y nos ahorra implementar recuperación de contraseña, rotación de tokens y bloqueo por intentos.
+Se usa **Supabase Auth** con email y contraseña. El backend **no almacena contraseñas ni hashes**: los gestiona Supabase (bcrypt). Esto cumple la Regla 12 del documento general de la forma más segura posible y nos da hecho el registro, la confirmación de email, la recuperación de contraseña y la rotación de tokens, que de otro modo habría que construir y mantener.
 
-Alternativa descartada: autenticación propia con `passlib[argon2]` y sesión en cookie firmada. Más control, pero más superficie de ataque propia y más código que mantener para un beneficio nulo en este proyecto. **Si en algún momento se quiere migrar a auth propia**, el cambio queda contenido en `core/security.py` y en la tabla `profiles`.
+Alternativa descartada: autenticación propia con `passlib[argon2]`, sesión en cookie firmada y envío de mails propio. Más control, pero mucha más superficie de ataque propia y bastante código para un beneficio nulo en este proyecto. **Si en algún momento se quiere migrar a auth propia**, el cambio queda contenido en `core/security.py`, la tabla `profiles` y los tres módulos de frontend de la sección 8.7.
 
-### 8.2 Flujo
+### 8.2 La aplicación es multiusuario
+
+El documento general plantea "1 usuario, con posibilidad de ampliar a pocos usuarios autenticados". Esa posibilidad **se construye desde el MVP**, no se deja para después:
+
+- **Cualquiera puede registrarse** desde la pantalla de registro.
+- **Cada cuenta es un mundo aparte**: sus meses, categorías, movimientos, inversiones, historial laboral, alertas y preferencias. Nadie ve los datos de nadie.
+- El aislamiento no depende de que los endpoints filtren bien: **Row Level Security** lo garantiza a nivel de base (§6.5). Aunque un endpoint tuviera un bug, Postgres no devolvería filas de otro usuario.
+
+Esto no agrega complejidad al modelo de datos porque **ya estaba previsto**: todas las tablas llevan `user_id` desde el primer día (§6.1). Lo que se agrega es el ciclo de vida de la cuenta: registro, confirmación, recuperación y cambio de contraseña.
+
+### 8.3 Ciclo de vida de una cuenta
+
+```text
+REGISTRO
+  pantalla de registro (email + contraseña + repetir)
+     ↓  supabase.auth.signUp()
+  Supabase crea la fila en auth.users con email_confirmed_at = null
+     ↓  envía mail de confirmación
+  el usuario abre el enlace del mail
+     ↓  vuelve a la app con la sesión iniciada
+  el trigger de Postgres ya creó su profile y sus 21 categorías
+     ↓
+  dashboard de su mes actual, vacío y listo para cargar
+
+INICIO DE SESIÓN
+  email + contraseña  →  signInWithPassword()  →  access_token + refresh_token
+
+RECUPERACIÓN DE CONTRASEÑA
+  pantalla "olvidé mi contraseña" (email)
+     ↓  supabase.auth.resetPasswordForEmail(email, { redirectTo })
+  Supabase envía el mail con un enlace de un solo uso
+     ↓  el usuario abre el enlace → vuelve a /#/nueva-clave con una sesión temporal
+  pantalla de contraseña nueva (contraseña + repetir)
+     ↓  supabase.auth.updateUser({ password })
+  sesión completa, al dashboard
+
+CAMBIO DE CONTRASEÑA ESTANDO ADENTRO
+  configuración → contraseña actual + nueva  →  updateUser({ password })
+```
+
+### 8.4 Creación automática del perfil y las categorías
+
+Cuando nace una cuenta hay que darle su fila en `profiles` y sus 21 categorías iniciales (las del documento general §7.1 y §7.2). Se hace con un **trigger en Postgres sobre `auth.users`**, no desde el backend.
+
+Por qué el trigger y no el backend: el registro ocurre contra Supabase directamente, sin pasar por nuestra API. Si el perfil se creara en el primer acceso a `/api/...`, una cuenta podría existir sin perfil en el medio, y habría que manejar ese estado en todos los endpoints. El trigger lo vuelve imposible.
+
+```sql
+-- Se aplica en el esquema que corresponda (dev o public).
+create or replace function crear_perfil_y_categorias()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  nuevas_categorias text[][] := array[
+    -- ingresos
+    array['Sueldo','income'], array['Aguinaldo','income'], array['Otros','income'],
+    -- egresos
+    array['Alquiler','expense'], array['Expensas','expense'], array['Cochera','expense'],
+    array['ABL','expense'], array['Gas','expense'], array['Luz','expense'],
+    array['Internet','expense'], array['Da Vinci','expense'], array['Tarjeta','expense'],
+    array['Tuenti','expense'], array['Nafta','expense'], array['Subte','expense'],
+    array['Mercadería','expense'], array['Verdulería','expense'],
+    array['Carnicería / Pollería','expense'], array['Delivery / Salida','expense'],
+    array['Comida Trabajo','expense'], array['Otros','expense']
+  ];
+  fila text[];
+  orden int := 0;
+begin
+  insert into dev.profiles (id, username, display_name)
+  values (
+    new.id,
+    split_part(new.email, '@', 1),
+    coalesce(new.raw_user_meta_data->>'display_name', split_part(new.email, '@', 1))
+  );
+
+  foreach fila slice 1 in array nuevas_categorias loop
+    orden := orden + 1;
+    insert into dev.categories (user_id, name, type, sort_order)
+    values (new.id, fila[1], fila[2], orden);
+  end loop;
+
+  return new;
+end $$;
+
+create trigger al_crear_usuario
+  after insert on auth.users
+  for each row execute function crear_perfil_y_categorias();
+```
+
+Tres detalles que importan: `security definer` para que el trigger pueda escribir saltando RLS; `set search_path = ''` para que no sea vulnerable a una tabla intrusa en otro esquema; y `username` derivado del email, con `display_name` editable después. El trigger es **idempotente en la práctica** porque `auth.users` sólo dispara un `insert` por cuenta.
+
+### 8.5 Envío de mails: hace falta un SMTP propio
+
+**Esto es un requisito, no una mejora.** El servicio de mail que Supabase trae de fábrica está pensado sólo para pruebas: limita a unos pocos mails por hora y los manda desde un dominio compartido que suele caer en spam. Con eso, la recuperación de contraseña **no funciona en la práctica**.
+
+Hay que configurar un **SMTP propio** en Supabase (Project Settings → Authentication → SMTP Settings). Opciones gratuitas suficientes para este proyecto:
+
+| Proveedor | Plan gratuito | Nota |
+|---|---|---|
+| **Resend** | 3.000 mails/mes, 100/día | El más simple de configurar; requiere verificar un dominio o usar su subdominio de pruebas |
+| Brevo | 300 mails/día | No pide dominio propio |
+| Mailgun | 100 mails/día | Pide tarjeta |
+
+Para un proyecto de un puñado de usuarios, cualquiera alcanza de sobra. **Mientras no esté configurado**, el registro y la recuperación funcionan pero los mails pueden no llegar: la interfaz tiene que decirlo con claridad en lugar de quedarse esperando.
+
+También hay que personalizar las **plantillas de mail** (Authentication → Email Templates) para que digan "Epic Wallet" y estén en español: por defecto llegan en inglés y con el nombre del proyecto de Supabase.
+
+### 8.6 URLs de redirección
+
+Los enlaces de confirmación y de recuperación vuelven a la aplicación, así que Supabase necesita saber a dónde puede redirigir (Authentication → URL Configuration):
+
+| Campo | Valor |
+|---|---|
+| Site URL | `https://<dominio-de-produccion>` |
+| Redirect URLs | `https://<dominio-de-produccion>/**`, `https://*.vercel.app/**` (para las previews), `http://localhost:3000/**` |
+
+Sin esas URLs declaradas, el enlace del mail falla con *"requested path is invalid"*. Es el error más común de esta parte.
+
+### 8.7 Flujo técnico de la sesión
 
 ```text
 1. El usuario carga index.html (estático, desde el CDN).
@@ -553,7 +673,9 @@ Alternativa descartada: autenticación propia con `passlib[argon2]` y sesión en
 8. El backend abre la conexión a Postgres propagando ese token, así RLS filtra por auth.uid().
 ```
 
-### 8.3 Verificación en el backend
+El frontend suma tres módulos a los de la sección 10: `auth.js` (sesión), y las vistas `registro`, `recuperar` y `nueva-clave`.
+
+### 8.8 Verificación del JWT en el backend
 
 ```python
 # api/app/core/security.py
@@ -585,13 +707,29 @@ async def current_user_id(
 
 Todas las rutas bajo `/api` dependen de `current_user_id`. **No existe endpoint de datos sin autenticación.** Lo único público es `/api/health`.
 
-### 8.4 Dónde se guarda la sesión en el cliente
+Nota sobre el algoritmo: los proyectos nuevos de Supabase pueden venir con **claves asimétricas** (ECC o RSA con un endpoint JWKS) en lugar del secreto compartido HS256. Si el proyecto no expone un *Legacy JWT Secret*, la verificación cambia a buscar la clave pública en el JWKS y validar con `RS256`/`ES256`. La decisión se toma en F02-T01 mirando el proyecto real; el resto del código no se entera.
+
+### 8.9 Reglas de contraseña
+
+Supabase valida el mínimo del lado del servidor; la interfaz lo refuerza para dar una respuesta inmediata:
+
+- Mínimo **8 caracteres** (se configura en Authentication → Policies).
+- Se muestra un medidor de fortaleza orientativo, nunca bloqueante más allá del mínimo.
+- El campo tiene **botón de mostrar y ocultar**: escribir una contraseña a ciegas en un teléfono es la principal causa de errores de tipeo.
+- En el registro se pide **repetir** la contraseña; en el login, no.
+- Nunca se dice si un email existe o no: ante un email desconocido, la recuperación responde lo mismo que ante uno válido ("si la dirección existe, te llega un mail"). Evita que se pueda averiguar quién tiene cuenta.
+
+### 8.10 Protección contra abuso
+
+Al haber registro abierto, hay que acotar el abuso:
+
+- Supabase ya limita los intentos de login y los envíos de mail por dirección IP.
+- `scripts/` incluye una consulta para revisar cuentas creadas y sin confirmar, por si hiciera falta limpiar.
+- Si en algún momento se quiere **cerrar el registro**, se desactiva en Authentication → Providers → Email → *Allow new users to sign up*, y el frontend oculta el enlace. Es un interruptor, no un cambio de código.
+
+### 8.11 Dónde se guarda la sesión en el cliente
 
 `localStorage` gestionado por `supabase-js`. Se evalúa la alternativa de cookie `HttpOnly` (más resistente a XSS) y se descarta para el MVP porque requiere un endpoint proxy de login en el backend. Como compensación se aplican las mitigaciones de XSS de la sección 17: Content Security Policy estricta y cero `innerHTML` con datos sin escapar.
-
-### 8.5 Un usuario, preparado para pocos más
-
-El esquema ya es multiusuario (`user_id` en todas las tablas + RLS). No se construye alta de usuarios en la interfaz: el usuario se crea desde el panel de Supabase. Habilitar registro más adelante es agregar una pantalla, no migrar datos.
 
 ---
 
@@ -603,9 +741,10 @@ Base: `/api`. JSON en todo. Fechas en ISO 8601 (`2026-10-03`). Importes como **s
 
 | Método | Ruta | Qué hace |
 |---|---|---|
-| `GET` | `/api/health` | Estado del servicio y conectividad con la base. Público. |
+| `GET` | `/api/health` | Estado del servicio, esquema activo y conectividad con la base. Público. |
 | `GET` | `/api/me` | Perfil, saldo inicial, preferencias. |
-| `PATCH` | `/api/me` | Actualizar perfil y saldo inicial. |
+| `PATCH` | `/api/me` | Actualizar nombre visible y saldo inicial. |
+| `POST` | `/api/me/bootstrap` | Red de seguridad: crea el perfil y las 21 categorías si el trigger no corrió. Idempotente. |
 | `GET` | `/api/dashboard?year&month` | **Respuesta única del dashboard** (ver 9.2). |
 | `GET` | `/api/months` | Lista de meses con sus totales y saldo acumulado. |
 | `GET` | `/api/months/{id}` | Detalle de un mes con totales por categoría. |
@@ -700,6 +839,8 @@ Una sola llamada alimenta todo el dashboard. Evita seis peticiones en el arranqu
 ```
 
 `daily.saving_cumulative` es la serie que dibuja **la línea de ahorro sobre el gráfico de barras**, el cambio que pediste sobre el mockup.
+
+Lo que **no** es un endpoint nuestro: registro, confirmación de email, recuperación y cambio de contraseña los atiende **Supabase Auth directamente desde el navegador** (§8.3). No hay un `POST /api/register` ni un `POST /api/forgot-password`: pasar esas operaciones por nuestra API sólo agregaría un intermediario sin aportar nada, y nos obligaría a manejar los mails.
 
 ### 9.3 Formato de errores
 
@@ -816,7 +957,9 @@ epic-wallet/
 │   │       ├── format.js             # fmt, fmtK, pct, fechas
 │   │       ├── charts/               # daily, six, categories, line, stack
 │   │       ├── components/
-│   │       └── views/
+│   │       └── views/               # login, registro, recuperar, nueva-clave,
+│   │                                # inicio, movimientos, historial,
+│   │                                # inversiones, patrimonio, analisis, config
 │   └── public/                       # CSS compilado y assets
 ├── migrations/                       # Alembic
 ├── scripts/
@@ -853,6 +996,11 @@ SUPABASE_ANON_KEY=eyJ...                 # pública, va al frontend
 SUPABASE_SERVICE_ROLE_KEY=eyJ...         # SECRETA, sólo backend
 SUPABASE_JWT_SECRET=...                  # SECRETA, verifica firmas
 
+# --- Autenticación ---
+# URL pública de la app, para armar los enlaces de los mails de
+# confirmación y de recuperación de contraseña (§8.6).
+PUBLIC_APP_URL=https://epic-wallet.vercel.app
+
 # --- Aplicación ---
 APP_ENV=production                       # development | preview | production
 APP_TIMEZONE=America/Argentina/Buenos_Aires
@@ -879,8 +1027,11 @@ Igual que el mockup: un solo `index.html` con siete `<section class="view">`, de
 
 ```javascript
 // web/src/js/router.js
-const routes = ['inicio','movimientos','historial','inversiones',
-                'patrimonio','analisis','config'];
+// Rutas públicas (sin sesión) y privadas (con sesión).
+const PUBLICAS = ['login','registro','recuperar','nueva-clave'];
+const PRIVADAS = ['inicio','movimientos','historial','inversiones',
+                  'patrimonio','analisis','config'];
+const routes = [...PUBLICAS, ...PRIVADAS];
 
 export function navigate(id, { replace = false } = {}) {
   if (!routes.includes(id)) id = 'inicio';
@@ -1332,6 +1483,9 @@ Implementa la sección 57 del documento general.
 |---|---|
 | HTTPS en producción | Vercel lo fuerza, más HSTS por cabecera |
 | Contraseñas nunca en texto plano | No las almacenamos: Supabase Auth (bcrypt) |
+| Recuperación de contraseña segura | Enlace de un solo uso con vencimiento, enviado por Supabase; nunca se revela si un email tiene cuenta |
+| Registro sin enumerar usuarios | El alta y la recuperación responden igual con un email existente o no |
+| Aislamiento entre cuentas | `user_id` en toda consulta **y** RLS como segunda barrera; se verifica con un segundo usuario de prueba |
 | Sesiones seguras | JWT de vida corta (1 h) con refresh automático |
 | Protección CSRF | No aplica con token en cabecera `Authorization` en lugar de cookie de sesión |
 | Validación en servidor | Pydantic en toda entrada, más `CHECK` en la base |
@@ -1389,6 +1543,8 @@ Pruebas obligatorias que no pueden faltar:
 - Alta de movimiento recalcula el mes y **todos los saldos posteriores**.
 - Tasa de ahorro con ingresos en 0 devuelve `null`, no un error.
 - Un usuario no puede leer ni escribir datos de otro, ni aunque pase un `id` ajeno.
+- Una cuenta recién creada nace con su perfil y sus 21 categorías, sin pasar por nuestra API.
+- Dos cuentas distintas no ven nada la una de la otra: meses, movimientos, inversiones ni alertas.
 - Comprar una inversión no cambia el patrimonio neto.
 - El importe negativo o cero es rechazado por la API, no sólo por el formulario.
 
@@ -1478,6 +1634,9 @@ Al cerrar cada fase se escribe `docs/FASE_XX_<nombre>.md` con qué se hizo en le
 | Base de datos | Supabase Postgres, un proyecto y dos esquemas; SQLite sólo para tests | 4.1, 4.1.1, 6 |
 | ORM | SQLAlchemy 2.0 + Alembic | 3, 16.4 |
 | Autenticación | Supabase Auth + verificación de JWT propia | 8 |
+| Cuentas | Registro abierto, multiusuario desde el MVP, con confirmación por email | 8.2, 8.3 |
+| Perfil y categorías iniciales | Trigger de Postgres sobre `auth.users`, no el backend | 8.4 |
+| Envío de mails | SMTP propio obligatorio; el de Supabase sólo sirve para pruebas | 8.5 |
 | Aislamiento de datos | `user_id` en consultas + RLS | 6.5 |
 | Frontend | Estático, una página, siete vistas, hash routing | 12.1 |
 | Estilos | Tailwind v4 con los tokens del mockup | 13 |
@@ -1494,6 +1653,8 @@ Al cerrar cada fase se escribe `docs/FASE_XX_<nombre>.md` con qué se hizo en le
 
 Confirmado con la sección 4.2 del documento general. La arquitectura lo deja preparado, pero no se construye:
 
-Presupuestos · gestión detallada de tarjetas · múltiples cuentas bancarias · conciliación bancaria · historial de operaciones de inversión · dólar y multimoneda · deudas, cuotas y préstamos · contabilidad formal · facturación · importación del Excel histórico · integración con Mercado Pago · escritura offline · alta de usuarios desde la interfaz · restauración de respaldo desde la app.
+Presupuestos · gestión detallada de tarjetas · múltiples cuentas bancarias · conciliación bancaria · historial de operaciones de inversión · dólar y multimoneda · deudas, cuotas y préstamos · contabilidad formal · facturación · importación del Excel histórico · integración con Mercado Pago · escritura offline · restauración de respaldo desde la app · inicio de sesión con Google u otros proveedores · verificación en dos pasos · roles y permisos · cuentas compartidas entre usuarios.
+
+**El alta de usuarios sí entra en el MVP** (§8.2): registro abierto, confirmación por email y recuperación de contraseña. Era un punto diferido en la primera versión de este documento y se incorporó por pedido expreso.
 
 Qué queda preparado para que incorporarlos no obligue a rehacer nada: la tabla `liabilities` existe y ya se resta en el cálculo de patrimonio; `transactions` tiene `source` y `external_id` para la anti-duplicación de importaciones; el proveedor de cotizaciones es una interfaz con varias implementaciones; `app_settings` guarda preferencias arbitrarias en JSON; y el esquema es multiusuario desde el primer día.

@@ -17,7 +17,8 @@ description: Sistema de diseño "Vidrio Grafito" de Epic Wallet 2.0 — tokens, 
 5. **Todo dato del servidor pasa por `esc()`** antes de entrar en una plantilla.
 6. **`prefers-reduced-motion` anula todas las animaciones.** Obligatorio.
 7. **Sin framework de UI** y sin librería de gráficos: HTML, CSS (Tailwind + tokens) y JavaScript nativo.
-8. El usuario se llama **Gustavo**. Los textos de interfaz van en **español rioplatense** ("cargá", "tocá", "seguís").
+8. Los textos de interfaz van en **español rioplatense** ("cargá", "tocá", "seguís").
+9. **La aplicación es multiusuario.** Nunca se escribe un nombre de usuario en el código ni en una plantilla: siempre sale del perfil de la sesión. El saludo del dashboard usa el nombre visible de la cuenta.
 
 ## Identidad
 
@@ -244,6 +245,38 @@ Rejilla `34px 1fr auto`: marca, contenido, valor. Hover `translateX(3px)`.
 
 Ingreso en verde con `+`, egreso en rojo con `−`. **El color nunca es el único portador de información**: siempre lleva signo e icono de flecha.
 
+### Pantallas de cuenta
+
+Cuatro pantallas sin sesión, todas con la misma tarjeta de vidrio centrada (`.lock-card.shell`, máximo 372 px) sobre el fondo de lavados:
+
+| Ruta | Pantalla | Campos |
+|---|---|---|
+| `#/login` | Iniciar sesión | correo, contraseña, enlaces a registro y recuperación |
+| `#/registro` | Crear cuenta | correo, contraseña, repetir |
+| `#/recuperar` | Olvidé mi contraseña | correo |
+| `#/nueva-clave` | Contraseña nueva | contraseña, repetir |
+
+Reglas de los campos de contraseña:
+
+- **Botón de mostrar y ocultar siempre**, con `aria-label` que cambie entre "Mostrar contraseña" y "Ocultar contraseña". Escribir una contraseña a ciegas en un teléfono es la principal causa de errores de tipeo.
+- `autocomplete` correcto para que el gestor del teléfono funcione: `current-password` en login, `new-password` en registro y en contraseña nueva.
+- En registro y contraseña nueva se pide **repetir**, con validación en vivo de que coincidan.
+- Medidor de fortaleza orientativo, nunca bloqueante más allá del mínimo de 8 caracteres.
+- **Los mensajes de error nunca revelan si un correo tiene cuenta.** Ante un correo desconocido, la recuperación responde lo mismo que ante uno válido.
+
+```javascript
+// el patrón del campo con ojito
+`<div class="field">
+  <label for="${id}">${esc(label)}</label>
+  <div class="pw-wrap">
+    <input class="inp" id="${id}" type="password" autocomplete="${autocomplete}">
+    <button class="pw-eye" type="button" aria-label="Mostrar contraseña">
+      <svg viewBox="0 0 24 24">${ICO.eye}</svg>
+    </button>
+  </div>
+</div>`
+```
+
 ### Otros
 
 - **`.pill`** en cinco variantes: `ok`, `warn`, `pend`, `crit`, `neutral`.
@@ -320,6 +353,9 @@ Cada vista implementa los cuatro. **Nunca una pantalla en blanco.**
 | Cargando | Esqueletos con la forma del contenido final (mismas alturas, sin salto de layout) |
 | Error | Tarjeta con el mensaje y botón "Reintentar" |
 | Vacío | Texto explicativo útil, no ceros secos |
+| Cuenta nueva | El dashboard de una cuenta recién creada está vacío a propósito: invita a cargar el primer movimiento, no muestra ceros secos |
+| Esperando confirmación | Tras registrarse: "revisá tu correo", con la dirección a la que se envió y un botón de reenviar |
+| Enlace vencido | En `#/nueva-clave`, si el enlace ya se usó o venció: explica el problema y ofrece pedir otro |
 | Mes consolidado | Texto específico: "Información histórica consolidada" |
 | Sin conexión | Banda superior y lectura desde el caché |
 
