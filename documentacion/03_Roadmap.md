@@ -73,7 +73,7 @@ Yo sólo paso una tarea a `- [x]` **después de que vos me digas que está aprob
 
 ### Tema 0.1 — Repositorio y estructura
 
-- [ ] **F00-T01 · Crear el repositorio y la estructura de carpetas**
+- [x] **F00-T01 · Crear el repositorio y la estructura de carpetas**
   **Tipo:** Infra · **Ref:** Técnico §10
   **Hacer:** repositorio `epic-wallet` en GitHub, rama `main`; estructura completa de la sección 10 del documento técnico con carpetas vacías y un `.gitkeep` en cada una; `.gitignore` para Python, Node, `.env`, `.vercel`, `__pycache__`, `dev.db`; `README.md` con cómo levantar el proyecto.
   **Aceptación:** · el repositorio clona y la estructura coincide con la del documento técnico · `.env` está ignorado · el README explica los pasos de arranque.
@@ -1309,7 +1309,7 @@ Yo sólo paso una tarea a `- [x]` **después de que vos me digas que está aprob
 
 | Fase | Tareas | Aprobadas | Estado |
 |---|---|---|---|
-| 0 · Puesta en marcha y producción | 12 | 0 | Pendiente |
+| 0 · Puesta en marcha y producción | 12 | 1 | **En curso** · próxima: F00-T02 |
 | 1 · Sistema de estilo y esqueleto | 14 | 0 | Pendiente |
 | 2 · Autenticación | 10 | 0 | Pendiente |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
