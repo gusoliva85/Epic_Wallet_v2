@@ -1,0 +1,130 @@
+[project]
+name = "epic-wallet"
+version = "0.1.0"
+description = "Epic Wallet 2.0 — aplicación personal de gestión financiera"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Proprietary" }
+authors = [{ name = "Gustavo Oliva", email = "gusoliva85@gmail.com" }]
+
+dependencies = [
+    # --- API ---
+    "fastapi>=0.115,<1.0",
+    "pydantic>=2.9,<3.0",
+    "pydantic-settings>=2.5,<3.0",
+    # --- base de datos ---
+    "SQLAlchemy>=2.0.35,<3.0",
+    "psycopg[binary]>=3.2,<4.0",
+    "alembic>=1.13,<2.0",
+    # --- autenticación ---
+    "PyJWT>=2.9,<3.0",
+    # --- cliente HTTP (proveedores de cotizaciones) ---
+    "httpx>=0.27,<1.0",
+]
+
+[project.optional-dependencies]
+# Sólo para desarrollo y pruebas. Vercel instala únicamente `dependencies`.
+dev = [
+    "uvicorn[standard]>=0.30,<1.0",
+    "pytest>=8.3,<9.0",
+    "pytest-asyncio>=0.24,<1.0",
+    "pytest-cov>=5.0,<7.0",
+    "ruff>=0.7,<1.0",
+    "mypy>=1.11,<2.0",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# El backend vive en api/app; no es un paquete publicable.
+packages = ["app"]
+package-dir = { app = "api/app" }
+
+# ============================================================
+#  RUFF — lint y formato (reemplaza black, isort y flake8)
+# ============================================================
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["api", "tests", "scripts"]
+exclude = [".venv", "migrations/versions", "web", "documentacion", "docs"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle
+    "W",    # warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "B",    # bugbear
+    "C4",   # comprehensions
+    "SIM",  # simplify
+    "RUF",  # reglas propias de ruff
+    "ASYNC",# errores de async
+    "S",    # bandit (seguridad)
+    "DTZ",  # datetime sin zona horaria
+    "T20",  # print olvidado
+]
+ignore = [
+    "E501",    # el formateador ya corta las líneas
+    "B008",    # Depends() en el valor por defecto es el idioma de FastAPI
+    "S101",    # assert: permitido, y en tests es obligatorio
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "T20"]        # en tests se permiten asserts y prints
+"scripts/**" = ["T20"]           # los scripts informan por consola
+"api/app/core/config.py" = ["N805"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+# ============================================================
+#  MYPY — tipado, modo básico (02_Documento_Tecnico §3)
+# ============================================================
+[tool.mypy]
+python_version = "3.12"
+files = ["api/app"]
+exclude = "migrations/versions"
+ignore_missing_imports = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+check_untyped_defs = true
+# Los servicios llevan tipos obligatorios: ahí sí somos estrictos.
+[[tool.mypy.overrides]]
+module = ["app.services.*", "app.repos.*"]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+# ============================================================
+#  PYTEST
+# ============================================================
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["api"]
+asyncio_mode = "auto"
+addopts = "-q --strict-markers --strict-config"
+markers = [
+    "unit: lógica pura, sin base de datos ni HTTP",
+    "api: endpoints con base de datos",
+    "slow: pruebas que tardan",
+]
+filterwarnings = ["error::DeprecationWarning"]
+
+[tool.coverage.run]
+source = ["api/app"]
+omit = ["*/migrations/*", "*/tests/*"]
+
+[tool.coverage.report]
+# El documento técnico exige 90% en services.
+exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:", "raise NotImplementedError"]
