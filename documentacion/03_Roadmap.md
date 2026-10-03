@@ -78,7 +78,7 @@ Yo sólo paso una tarea a `- [x]` **después de que vos me digas que está aprob
   **Hacer:** repositorio `epic-wallet` en GitHub, rama `main`; estructura completa de la sección 10 del documento técnico con carpetas vacías y un `.gitkeep` en cada una; `.gitignore` para Python, Node, `.env`, `.vercel`, `__pycache__`, `dev.db`; `README.md` con cómo levantar el proyecto.
   **Aceptación:** · el repositorio clona y la estructura coincide con la del documento técnico · `.env` está ignorado · el README explica los pasos de arranque.
 
-- [ ] **F00-T02 · Configurar las herramientas de Python**
+- [x] **F00-T02 · Configurar las herramientas de Python**
   **Tipo:** Infra · **Ref:** Técnico §3, §21
   **Hacer:** `pyproject.toml` con dependencias (fastapi, pydantic, pydantic-settings, sqlalchemy, psycopg[binary], alembic, pyjwt, httpx, pytest, pytest-asyncio, ruff, mypy); configuración de `ruff` y `mypy`; entorno virtual; `requirements.txt` generado para Vercel.
   **Aceptación:** · `pip install -e .` funciona · `ruff check .` pasa · `pytest` corre sin tests y no falla.
@@ -1309,7 +1309,7 @@ Yo sólo paso una tarea a `- [x]` **después de que vos me digas que está aprob
 
 | Fase | Tareas | Aprobadas | Estado |
 |---|---|---|---|
-| 0 · Puesta en marcha y producción | 12 | 1 | **En curso** · próxima: F00-T02 |
+| 0 · Puesta en marcha y producción | 12 | 2 | **En curso** · próxima: F00-T03 |
 | 1 · Sistema de estilo y esqueleto | 14 | 0 | Pendiente |
 | 2 · Autenticación | 10 | 0 | Pendiente |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
