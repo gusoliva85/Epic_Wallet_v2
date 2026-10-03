@@ -34,7 +34,7 @@ Yo sólo paso una tarea a `- [x]` **después de que vos me digas que está aprob
 
 ### Ampliaciones sobre el documento general
 
-El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos usuarios autenticados". Por pedido expreso, **esa ampliación entra en el MVP**: la Fase 2 incluye registro abierto con confirmación por mail, recuperación de contraseña y aislamiento entre cuentas. El detalle técnico está en la sección 8 del documento técnico, y la Fase 2 pasó de 10 a 18 tareas.
+El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos usuarios autenticados". Por pedido expreso, **esa ampliación entra en el MVP**: la Fase 2 incluye registro abierto con confirmación por mail, recuperación de contraseña y aislamiento entre cuentas. El detalle técnico está en la sección 8 del documento técnico. La Fase 2 pasó de 10 a 15 tareas, y **la recuperación de contraseña por correo y la configuración del SMTP se diferieron a la Fase 16** (tema 16.4): mientras tanto la confirmación por correo queda desactivada y el registro entra directo.
 
 ### Tipo de tarea
 
@@ -48,7 +48,7 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
 |---|---|---|---|
 | **0** | Puesta en marcha y producción | 12 | URL pública con el estilo, instalable en el celular, API respondiendo sobre un proyecto Supabase con dos esquemas |
 | **1** | Sistema de estilo y esqueleto visual | 14 | Las 7 pantallas navegables con datos de ejemplo, claro/oscuro, mobile-first |
-| **2** | Cuentas de usuario y autenticación | 18 | Registro propio con confirmación por mail, login, recuperación y cambio de contraseña, multiusuario aislado |
+| **2** | Cuentas de usuario y autenticación | 15 | Registro propio, login, cambio de contraseña y multiusuario aislado. El correo se activa en la fase 16 |
 | **3** | Meses y categorías | 13 | Navegación de meses real y categorías administrables |
 | **4** | Movimientos | 15 | Alta, edición, baja y listado filtrable con recálculo del mes |
 | **5** | Cálculos y dashboard de indicadores | 12 | Los 6 indicadores obligatorios con datos reales |
@@ -62,7 +62,7 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
 | **13** | Alertas | 10 | Las 5 alertas analíticas del documento general |
 | **14** | Configuración y respaldo | 11 | Preferencias, datos laborales y exportación |
 | **15** | PWA completa | 9 | Instalable, offline de lectura, atajos |
-| **16** | Seguridad, rendimiento y cierre | 13 | Los 24 criterios de aceptación del MVP verificados |
+| **16** | Seguridad, cierre y recuperación de contraseña | 16 | Los 24 criterios de aceptación del MVP verificados, más el ciclo de correo completo |
 | **17** | Preparación de integraciones futuras | 7 | Base lista para Excel y Mercado Pago, sin construirlos |
 
 **Total: 213 tareas.** Las 18 tareas de documentación de cierre de fase están incluidas en esos números.
@@ -104,10 +104,10 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **Hacer:** `alembic init migrations`; `env.py` leyendo `DATABASE_URL` y **`DB_SCHEMA` del entorno, sin valor por defecto**, con `version_table_schema` e `include_schemas=True` para que una migración no pueda caer en el esquema equivocado; migración inicial vacía; probar `upgrade head` y `downgrade base` contra el esquema `dev`.
   **Aceptación:** · `DB_SCHEMA=dev alembic upgrade head` corre sin error · `downgrade` vuelve atrás · la tabla `alembic_version` existe **dentro de `dev`** y no en `public` · sin `DB_SCHEMA` definido, Alembic aborta con un mensaje claro en lugar de asumir un esquema.
 
-- [ ] **F00-T06 · Crear la primera cuenta**
+- [~] **F00-T06 · Crear la primera cuenta**
   **Tipo:** Infra · **Ref:** Técnico §8.2, §4.1.1
   **Hacer:** crear tu cuenta en Supabase Auth con email y contraseña desde el panel (Authentication → Users → Add user), con *Auto Confirm User* activado para no depender todavía del mail; anotar el `user_id` (uuid).
-  **Nota:** esta es **la misma cuenta con la que vas a entrar a la aplicación**. Se crea desde el panel porque todavía no existe la pantalla de registro; a partir de **F02-T11** vas a poder crear cuentas desde la aplicación, con confirmación por mail y recuperación de contraseña. Al haber un solo proyecto de Supabase, la autenticación es compartida por los dos esquemas: la misma cuenta sirve en desarrollo y en producción.
+  **Nota:** esta es **la misma cuenta con la que vas a entrar a la aplicación**. Se crea desde el panel porque todavía no existe la pantalla de registro; a partir de **F02-T10** vas a poder crear cuentas desde la aplicación, con confirmación por mail y recuperación de contraseña. Al haber un solo proyecto de Supabase, la autenticación es compartida por los dos esquemas: la misma cuenta sirve en desarrollo y en producción.
   **Aceptación:** · podés iniciar sesión desde el panel de Supabase · tenés el uuid anotado · queda claro que ese uuid es el que usarán las filas de `profiles` de ambos esquemas.
 
 ### Tema 0.3 — API mínima en producción
@@ -234,7 +234,9 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
 
 **Objetivo:** el ciclo de vida completo de una cuenta. Registro propio, confirmación por mail, inicio de sesión, recuperación de contraseña y cambio de contraseña. Cada cuenta con sus datos y sin ver los de nadie.
 
-**Al cerrar esta fase:** te registrás desde el celular, confirmás el mail, entrás, y si te olvidás la contraseña la recuperás por mail y ponés una nueva. Una segunda cuenta de prueba no ve ni un dato de la primera.
+**Al cerrar esta fase:** te registrás desde el celular, entrás, y cambiás tu contraseña desde la aplicación. Una segunda cuenta de prueba no ve ni un dato de la primera.
+
+> **Lo que depende del correo quedó para el final.** La recuperación de contraseña por mail y la configuración del SMTP se movieron a la **Fase 16** (tema 16.4), por decisión de Gustavo. Consecuencia concreta: en esta fase **la confirmación de cuenta por correo queda desactivada** en Supabase (Authentication → Providers → Email → *Confirm email* en off), así el registro funciona de inmediato sin depender de que lleguen mails. El cambio de contraseña **estando dentro** de la aplicación (F02-T11) sí entra en esta fase: no necesita correo.
 
 **Referencia técnica:** §8 completa del documento técnico.
 
@@ -242,101 +244,86 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
 
 - [ ] **F02-T01 · Verificación del JWT**
   **Tipo:** Lógica → Backend · **Ref:** Técnico §8.8
-  **Hacer:** mirar primero qué tipo de clave usa el proyecto (secreto compartido `HS256` o claves asimétricas con JWKS, §8.8) y elegir la verificación acorde; `core/security.py` con la dependencia `current_user_id`; verificación de firma, expiración y audiencia; errores 401 diferenciados entre sesión ausente, vencida e inválida; tests unitarios con tokens fabricados (válido, vencido, firma incorrecta, audiencia incorrecta, sin el claim `sub`).
-  **Aceptación:** · queda registrado en la documentación qué tipo de clave usa el proyecto · los cinco casos de test pasan · un token manipulado se rechaza · el mensaje de error no filtra detalles internos.
+  **Hacer:** `core/security.py` con la dependencia `current_user_id`, verificando con la **clave pública del endpoint JWKS y algoritmo ES256** (ya comprobado en F00-T06: el proyecto no usa secreto compartido); `PyJWKClient` con caché y vencimiento para no buscar las claves en cada petición; verificación de firma, expiración y audiencia `authenticated`; errores 401 diferenciados entre sesión ausente, vencida e inválida; tests unitarios con tokens fabricados (válido, vencido, firma incorrecta, audiencia incorrecta, sin el claim `sub`).
+  **Aceptación:** · los cinco casos de test pasan · un token manipulado se rechaza con `InvalidSignatureError` · el mensaje de error no filtra detalles internos · las claves del JWKS se buscan una sola vez por proceso.
 
-- [ ] **F02-T02 · Configurar un SMTP propio y las plantillas de mail**
-  **Tipo:** Infra · **Ref:** Técnico §8.5
-  **Hacer:** crear cuenta en Resend (o Brevo) y configurar el SMTP en Supabase → Authentication → SMTP Settings; personalizar las plantillas de **confirmación de cuenta** y **recuperación de contraseña** para que estén en español y digan Epic Wallet; probar que ambos mails llegan a una dirección real y no caen en spam.
-  **Aceptación:** · el mail de confirmación llega en menos de un minuto · el de recuperación también · ambos en español y con el nombre correcto · el remitente no es el dominio compartido de Supabase. **Sin esta tarea la recuperación de contraseña no funciona en la práctica**: el servicio de mail de fábrica de Supabase limita a unos pocos envíos por hora.
-
-- [ ] **F02-T03 · URLs de redirección y política de contraseñas**
+- [ ] **F02-T02 · URLs de redirección y política de contraseñas**
   **Tipo:** Infra · **Ref:** Técnico §8.6, §8.9
-  **Hacer:** en Authentication → URL Configuration cargar la Site URL y las Redirect URLs de producción, previews (`https://*.vercel.app/**`) y local (`http://localhost:3000/**`); en Authentication → Policies fijar el mínimo de 8 caracteres; dejar el registro habilitado y anotar dónde se desactiva si alguna vez hace falta.
-  **Aceptación:** · el enlace del mail de confirmación abre la aplicación y no da *"requested path is invalid"* · el de recuperación también · una contraseña de 7 caracteres se rechaza del lado del servidor.
+  **Hacer:** en Authentication → URL Configuration cargar la Site URL y las Redirect URLs de producción, previews (`https://*.vercel.app/**`) y local (`http://localhost:3000/**`), que ya quedan listas para cuando se active el correo; en Authentication → Policies fijar el mínimo de 8 caracteres; **desactivar la confirmación por correo** (Providers → Email → *Confirm email* en off) para que el registro funcione sin depender de mails; dejar el registro habilitado y anotar dónde se desactiva si alguna vez hace falta.
+  **Aceptación:** · una contraseña de 7 caracteres se rechaza del lado del servidor · una cuenta nueva queda confirmada al instante y puede iniciar sesión · las Redirect URLs están cargadas aunque todavía no se usen.
 
 ### Tema 2.2 — Backend de cuentas
 
-- [ ] **F02-T04 · Tabla `profiles` y migración**
+- [ ] **F02-T03 · Tabla `profiles` y migración**
   **Tipo:** Backend · **Ref:** Técnico §6.2
   **Hacer:** modelo SQLAlchemy y migración para `profiles` con `opening_balance`, `timezone` y la referencia a `auth.users`; RLS activo con la política `own_profile`; trigger de `updated_at`.
   **Aceptación:** · migración aplicada en `dev` · `downgrade` probado · con RLS activo, una consulta con el token de otro usuario no devuelve filas.
 
-- [ ] **F02-T05 · Trigger de creación de perfil y categorías iniciales**
+- [ ] **F02-T04 · Trigger de creación de perfil y categorías iniciales**
   **Tipo:** Backend · **Ref:** Técnico §8.4 · General §7.1, §7.2
   **Hacer:** migración con la función `crear_perfil_y_categorias()` y su trigger sobre `auth.users`, con `security definer` y `search_path` vacío; inserta la fila de `profiles` y las **21 categorías iniciales** del documento general en su orden; `username` derivado del email.
   **Aceptación:** · al crear una cuenta nueva aparecen solos su perfil y sus 21 categorías, **sin pasar por nuestra API** · los nombres coinciden exactamente con los del documento general · la cuenta arranca con saldo inicial en cero · `downgrade` elimina función y trigger.
 
-- [ ] **F02-T06 · Propagación del token a Postgres**
+- [ ] **F02-T05 · Propagación del token a Postgres**
   **Tipo:** Backend · **Ref:** Técnico §6.5, §8.7
   **Hacer:** en `core/db.py`, abrir la sesión fijando el token del usuario para que `auth.uid()` funcione y RLS filtre; verificar que el pooler en modo transacción no arrastre el estado entre peticiones.
   **Aceptación:** · una consulta sin filtro explícito de `user_id` devuelve sólo las filas del usuario del token · dos peticiones consecutivas de usuarios distintos no se contaminan.
 
-- [ ] **F02-T07 · `GET /api/me`, `PATCH /api/me` y `POST /api/me/bootstrap`**
+- [ ] **F02-T06 · `GET /api/me`, `PATCH /api/me` y `POST /api/me/bootstrap`**
   **Tipo:** Backend · **Ref:** Técnico §9.1
   **Hacer:** esquemas Pydantic de entrada y salida; lectura del perfil; actualización de nombre visible y saldo inicial; y `bootstrap` como red de seguridad que crea perfil y categorías si el trigger no corrió (idempotente, por si una cuenta se creó desde el panel antes de que existiera el trigger).
   **Aceptación:** · sin token devuelve 401 · con token devuelve tu perfil · el saldo inicial se guarda y se lee · `bootstrap` dos veces seguidas no duplica nada · un texto en el saldo inicial devuelve 422.
 
-- [ ] **F02-T08 · Proteger toda la API**
+- [ ] **F02-T07 · Proteger toda la API**
   **Tipo:** Backend · **Ref:** Técnico §8.8
   **Hacer:** aplicar la dependencia de autenticación a nivel de enrutador para que ninguna ruta nueva pueda nacer desprotegida por olvido; dejar `/api/health` como única excepción; test que recorre todas las rutas registradas y verifica que responden 401 sin token.
   **Aceptación:** · el test de barrido pasa · agregar una ruta nueva sin tocar nada queda protegida por defecto.
 
 ### Tema 2.3 — Entrar y registrarse
 
-- [ ] **F02-T09 · Integrar Supabase Auth en el cliente**
+- [ ] **F02-T08 · Integrar Supabase Auth en el cliente**
   **Tipo:** Frontend · **Ref:** Técnico §8.7, §8.11
   **Hacer:** `auth.js` con `supabase-js` (sólo el módulo de autenticación): `signUp`, `signInWithPassword`, `signOut`, `resetPasswordForEmail`, `updateUser`, lectura del token y renovación automática antes del vencimiento; inyección de `SUPABASE_URL` y la clave anónima en el build.
   **Aceptación:** · la sesión persiste al recargar y al cerrar la aplicación instalada · el token se renueva solo sin que el usuario note nada · la clave de servicio **no** aparece en el paquete del navegador.
 
-- [ ] **F02-T10 · Pantalla de inicio de sesión**
+- [ ] **F02-T09 · Pantalla de inicio de sesión**
   **Tipo:** Frontend · **Ref:** General §48.1 · Técnico §8.9 · Mockup
-  **Hacer:** pantalla con la estética del mockup; campos de email y contraseña; **botón de mostrar y ocultar la contraseña** con su `aria-label`; enlaces a *Crear cuenta* y *Olvidé mi contraseña*; estado de carga en el botón; mensajes de error claros que **no revelen si el email existe**; Enter envía; `autocomplete` correcto para que el gestor de contraseñas del teléfono funcione.
-  **Aceptación:** · credenciales incorrectas muestran un mensaje entendible y genérico · el ojito muestra y oculta la contraseña · el botón no permite envíos dobles · se ve bien con el teclado del celular abierto · si la cuenta no confirmó el mail, lo dice y ofrece reenviar.
+  **Hacer:** pantalla con la estética del mockup; campos de email y contraseña; **botón de mostrar y ocultar la contraseña** con su `aria-label`; enlace a *Crear cuenta* (el de *Olvidé mi contraseña* se agrega en F16-T13, cuando el correo esté configurado); estado de carga en el botón; mensajes de error claros que **no revelen si el email existe**; Enter envía; `autocomplete` correcto para que el gestor de contraseñas del teléfono funcione.
+  **Aceptación:** · credenciales incorrectas muestran un mensaje entendible y genérico · el ojito muestra y oculta la contraseña · el botón no permite envíos dobles · se ve bien con el teclado del celular abierto · el `autocomplete` deja que el gestor de contraseñas del teléfono complete los campos.
 
-- [ ] **F02-T11 · Pantalla de registro**
+- [ ] **F02-T10 · Pantalla de registro**
   **Tipo:** Frontend · **Ref:** Técnico §8.2, §8.3
-  **Hacer:** pantalla con email, contraseña y repetir contraseña, ambos con mostrar y ocultar; medidor de fortaleza orientativo; validación en vivo de que las contraseñas coincidan y del mínimo de 8 caracteres; al enviar, pantalla de "revisá tu correo" con la dirección a la que se envió y un botón de reenviar; manejo del caso de email ya registrado sin confirmar si existe.
-  **Aceptación:** · se puede crear una cuenta nueva de punta a punta desde el celular · el mail de confirmación llega y su enlace abre la aplicación con la sesión iniciada · la cuenta nueva entra directo a su dashboard vacío, con sus 21 categorías listas · contraseñas que no coinciden no permiten enviar.
+  **Hacer:** pantalla con email, contraseña y repetir contraseña, ambos con mostrar y ocultar; medidor de fortaleza orientativo; validación en vivo de que las contraseñas coincidan y del mínimo de 8 caracteres; al enviar, **entrada directa al dashboard** (la confirmación por correo está desactivada, ver la nota de la fase); manejo del caso de email ya registrado sin revelar si existe. Dejar preparada la pantalla de "revisá tu correo" para cuando se active el correo en F16-T12, pero sin usarla todavía.
+  **Aceptación:** · se puede crear una cuenta nueva de punta a punta desde el celular y entra directo · la cuenta nueva aparece en su dashboard vacío, con sus 21 categorías listas · contraseñas que no coinciden no permiten enviar · un email ya registrado no revela que existe.
 
 ### Tema 2.4 — Recuperar y cambiar la contraseña
 
-- [ ] **F02-T12 · Pantalla de recuperación de contraseña**
-  **Tipo:** Frontend · **Ref:** Técnico §8.3, §8.9
-  **Hacer:** pantalla con un solo campo de email; al enviar, mensaje de confirmación **idéntico exista o no la cuenta** ("si la dirección existe, te llega un mail"); botón de reenviar con una espera mínima para no permitir ráfagas; enlace para volver al login.
-  **Aceptación:** · el mail llega con el enlace de recuperación · el mensaje es el mismo con un email registrado y con uno inventado · no se puede reenviar en ráfaga.
-
-- [ ] **F02-T13 · Pantalla de contraseña nueva**
-  **Tipo:** Frontend · **Ref:** Técnico §8.3, §8.6
-  **Hacer:** ruta `#/nueva-clave` que recibe la sesión temporal del enlace del mail; campos de contraseña nueva y repetir, con mostrar y ocultar; validación del mínimo y de que coincidan; al guardar, `updateUser({ password })`, aviso de éxito y entrada directa al dashboard; manejo del enlace vencido o ya usado con un mensaje que explique qué hacer.
-  **Aceptación:** · el enlace del mail lleva a esta pantalla · la contraseña nueva queda guardada y sirve para entrar · el enlace no se puede reutilizar · un enlace vencido explica el problema y ofrece pedir otro · entrar con la contraseña vieja ya no funciona.
-
-- [ ] **F02-T14 · Cambio de contraseña desde la aplicación**
+- [ ] **F02-T11 · Cambio de contraseña desde la aplicación**
   **Tipo:** Frontend · **Ref:** Técnico §8.3 · General §48.9
   **Hacer:** en configuración, sección de cuenta con el email (sólo lectura), nombre visible editable y cambio de contraseña pidiendo la actual y la nueva dos veces; verificación de la actual antes de cambiarla; aviso de éxito.
   **Aceptación:** · el cambio funciona de punta a punta y la contraseña nueva sirve para entrar · con la contraseña actual equivocada no se cambia nada · el email no es editable.
 
 ### Tema 2.5 — Guardias, aislamiento y cierre
 
-- [ ] **F02-T15 · Guardia de rutas y cierre de sesión**
+- [ ] **F02-T12 · Guardia de rutas y cierre de sesión**
   **Tipo:** Frontend · **Ref:** Técnico §12.1
   **Hacer:** separar rutas públicas (login, registro, recuperar, nueva-clave) de privadas; sin sesión, una ruta privada redirige al login; con sesión, una ruta pública redirige al dashboard; botón de cerrar sesión en configuración con confirmación; limpieza del estado y del caché al salir.
   **Aceptación:** · abrir `#/inversiones` sin sesión lleva al login · abrir `#/login` con sesión lleva al dashboard · al cerrar sesión no queda nada del usuario anterior en memoria ni en `localStorage` · volver atrás después de cerrar sesión no muestra datos.
 
-- [ ] **F02-T16 · Cliente de API con manejo de 401**
+- [ ] **F02-T13 · Cliente de API con manejo de 401**
   **Tipo:** Frontend · **Ref:** Técnico §9.3, §12.3
   **Hacer:** `api.js` con el token en la cabecera; ante 401 renueva la sesión y reintenta **una sola vez**; si el reintento falla, cierra sesión y avisa; traducción de los códigos de error al texto del toast; clase `ApiError`.
   **Aceptación:** · con un token vencido a mano, la petición se recupera sola · dos 401 seguidos cierran sesión sin bucle infinito · cada código de error muestra un mensaje distinto y en español.
 
-- [ ] **F02-T17 · Aislamiento entre cuentas**
+- [ ] **F02-T14 · Aislamiento entre cuentas**
   **Tipo:** QA · **Ref:** Técnico §8.2, §6.5, §19
   **Hacer:** crear una segunda cuenta de prueba; cargar datos distintos en cada una (meses, movimientos, una inversión); verificar desde la interfaz que ninguna ve nada de la otra; y con el token de la segunda intentar leer y escribir por identificador directo los recursos de la primera en **todos** los endpoints existentes.
   **Aceptación:** · ningún recurso de la otra cuenta es accesible, ni pasando su `id` a mano · RLS bloquea incluso si se saltea el filtro del endpoint · la prueba queda automatizada · las categorías de una cuenta no aparecen en la otra.
 
-- [ ] **F02-T18 · Documentación de la Fase 2**
+- [ ] **F02-T15 · Documentación de la Fase 2**
   **Tipo:** Doc
-  **Hacer:** `docs/FASE_02_CUENTAS_Y_AUTENTICACION.md`: el diagrama del ciclo de vida de una cuenta (registro, confirmación, login, recuperación, cambio); por qué se usa Supabase Auth y no hashes propios; cómo se verifica el JWT, con el código real; el trigger de perfil y categorías explicado y por qué va en la base y no en el backend; la configuración del SMTP paso a paso con capturas; cómo RLS actúa de segunda barrera, con el ejemplo del intento de acceso cruzado rechazado; capturas de las cinco pantallas (login, registro, revisá tu correo, recuperar, nueva contraseña); y qué hacer para cerrar el registro si alguna vez se quiere.
-  **Aceptación:** · incluye el diagrama del ciclo de vida · incluye el ejemplo de acceso cruzado rechazado · explica el trigger · documenta la configuración del SMTP de forma reproducible.
+  **Hacer:** `docs/FASE_02_CUENTAS_Y_AUTENTICACION.md`: el diagrama del ciclo de vida de una cuenta (registro, confirmación, login, recuperación, cambio); por qué se usa Supabase Auth y no hashes propios; cómo se verifica el JWT, con el código real; el trigger de perfil y categorías explicado y por qué va en la base y no en el backend; por qué la confirmación por correo quedó desactivada y qué hay que hacer para activarla; cómo RLS actúa de segunda barrera, con el ejemplo del intento de acceso cruzado rechazado; capturas de las pantallas de login y registro; y qué hacer para cerrar el registro si alguna vez se quiere.
+  **Aceptación:** · incluye el diagrama del ciclo de vida · incluye el ejemplo de acceso cruzado rechazado · explica el trigger · deja anotado qué falta para activar el correo.
 
 ---
 
@@ -1306,12 +1293,31 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **Hacer:** comprobar el recorrido exacto de la sección 64: iniciar sesión y ver el mes con los seis indicadores, luego el gráfico diario, luego los seis meses, luego los gastos por categoría, luego los últimos movimientos, y el botón `+` para registrar rápido.
   **Aceptación:** · el orden del dashboard es el del documento general y el del mockup aprobado · el flujo completo se cumple sin desvíos.
 
-- [ ] **F16-T12 · Revisión final de código**
+### Tema 16.4 — Recuperación de contraseña por correo
+
+Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confirmación por correo está desactivada y el registro entra directo. Acá se cierra el ciclo completo de la cuenta.
+
+- [ ] **F16-T12 · Configurar un SMTP propio, las plantillas y activar la confirmación**
+  **Tipo:** Infra · **Ref:** Técnico §8.5
+  **Hacer:** crear cuenta en Resend (o Brevo) y configurar el SMTP en Supabase → Authentication → SMTP Settings; personalizar las plantillas de **confirmación de cuenta** y **recuperación de contraseña** para que estén en español y digan Epic Wallet; volver a activar *Confirm email* en Providers → Email; probar que ambos mails llegan a una dirección real y no caen en spam.
+  **Aceptación:** · el mail de confirmación llega en menos de un minuto · el de recuperación también · ambos en español y con el nombre correcto · el remitente no es el dominio compartido de Supabase. **Sin esta tarea la recuperación de contraseña no funciona en la práctica**: el servicio de mail de fábrica de Supabase limita a unos pocos envíos por hora.
+
+- [ ] **F16-T13 · Pantalla de recuperación de contraseña**
+  **Tipo:** Frontend · **Ref:** Técnico §8.3, §8.9
+  **Hacer:** pantalla con un solo campo de email; al enviar, mensaje de confirmación **idéntico exista o no la cuenta** ("si la dirección existe, te llega un mail"); botón de reenviar con una espera mínima para no permitir ráfagas; enlace para volver al login.
+  **Aceptación:** · el mail llega con el enlace de recuperación · el mensaje es el mismo con un email registrado y con uno inventado · no se puede reenviar en ráfaga.
+
+- [ ] **F16-T14 · Pantalla de contraseña nueva**
+  **Tipo:** Frontend · **Ref:** Técnico §8.3, §8.6
+  **Hacer:** ruta `#/nueva-clave` que recibe la sesión temporal del enlace del mail; campos de contraseña nueva y repetir, con mostrar y ocultar; validación del mínimo y de que coincidan; al guardar, `updateUser({ password })`, aviso de éxito y entrada directa al dashboard; manejo del enlace vencido o ya usado con un mensaje que explique qué hacer.
+  **Aceptación:** · el enlace del mail lleva a esta pantalla · la contraseña nueva queda guardada y sirve para entrar · el enlace no se puede reutilizar · un enlace vencido explica el problema y ofrece pedir otro · entrar con la contraseña vieja ya no funciona.
+
+- [ ] **F16-T15 · Revisión final de código**
   **Tipo:** QA · **Ref:** Técnico §19, §21
   **Hacer:** lint y tipado sin advertencias; cobertura de servicios por encima del 90 %; eliminar código muerto, datos de ejemplo y marcadores de posición; revisar que no quede un solo `float` en cálculos de dinero.
   **Aceptación:** · lint y tipado limpios · cobertura cumplida · cero datos de ejemplo en producción · cero `float` en dinero.
 
-- [ ] **F16-T13 · Documentación de la Fase 16 y manual de uso**
+- [ ] **F16-T16 · Documentación de la Fase 16 y manual de uso**
   **Tipo:** Doc
   **Hacer:** `docs/FASE_16_CIERRE_MVP.md` con el cuadro de los 24 criterios y cómo se verificó cada uno, los resultados de rendimiento y accesibilidad, y las decisiones de seguridad aplicadas; más `docs/MANUAL_DE_USO.md` explicando en lenguaje natural cómo usar la aplicación en el día a día.
   **Aceptación:** · el cuadro de los 24 criterios está completo · el manual sirve para alguien que nunca vio la aplicación.
@@ -1363,9 +1369,9 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
 
 | Fase | Tareas | Aprobadas | Estado |
 |---|---|---|---|
-| 0 · Puesta en marcha y producción | 12 | 5 | **En curso** · próxima: F00-T06 |
+| 0 · Puesta en marcha y producción | 12 | 5 | **En curso** · F00-T06 esperando prueba |
 | 1 · Sistema de estilo y esqueleto | 14 | 0 | Pendiente |
-| 2 · Cuentas y autenticación | 18 | 0 | Pendiente |
+| 2 · Cuentas y autenticación | 15 | 0 | Pendiente |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
 | 4 · Movimientos | 15 | 0 | Pendiente |
 | 5 · Cálculos y dashboard | 12 | 0 | Pendiente |
@@ -1379,7 +1385,7 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
 | 13 · Alertas | 10 | 0 | Pendiente |
 | 14 · Configuración y respaldo | 11 | 0 | Pendiente |
 | 15 · PWA | 9 | 0 | Pendiente |
-| 16 · Seguridad y cierre del MVP | 13 | 0 | Pendiente |
+| 16 · Seguridad, cierre y correo | 16 | 0 | Pendiente |
 | 17 · Integraciones futuras | 7 | 0 | Pendiente |
 | **Total** | **213** | **5** | — |
 
@@ -1431,7 +1437,8 @@ Verificación de que **ninguna** funcionalidad del documento general quedó afue
 | §46 Responsive | Mobile-first | F01-T06, F01-T13 |
 | §47 Navegación | Siete secciones | F01-T07 |
 | §48 Pantallas principales | Las nueve, más registro, recuperación y contraseña nueva | Fases 1 a 14 |
-| Cuentas de usuario | Registro, confirmación por mail, recuperación y cambio de contraseña, aislamiento entre cuentas | F02-T02, T03, T05, T11, T12, T13, T14, T17 · **ampliación pedida sobre el documento general** |
+| Cuentas de usuario | Registro, cambio de contraseña y aislamiento entre cuentas | F02-T02, T04, T08, T11, T14 · **ampliación pedida sobre el documento general** |
+| Confirmación y recuperación por correo | SMTP, plantillas, recuperación y contraseña nueva | F16-T12, T13, T14 · **diferido al final por pedido de Gustavo** |
 | §49 API backend | Endpoints | Fases 2 a 14 |
 | §50 Reglas de negocio | Las doce | R1 F03-T03 · R2 F04-T05 · R3 F08-T03 · R4 F03-T02, F06-T12, F07-T06 · R5/R6 F05-T01 · R7 F10-T03, F10-T07 · R8 F09-T02 · R9 F10-T03 · R10 F10-T11 · R11 F04-T13 · R12 F02-T01 |
 | §51 Validaciones | Movimiento, inversión, categoría | F04-T01, F10-T01, F03-T06, F16-T06 |
