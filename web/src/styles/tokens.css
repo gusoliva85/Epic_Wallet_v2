@@ -1,0 +1,9 @@
+/* ============================================================
+   TOKENS · sistema Vidrio Grafito
+   Contenido completo en F01-T01. Acá sólo la estructura para que
+   el build funcione desde la Fase 0.
+
+   Toda variable declarada en :root debe tener su contraparte en
+   html[data-theme="dark"]. Ningún componente conoce el tema.
+   Referencia: .claude/skills/epic-wallet-ui/SKILL.md §1
+   ============================================================ */

@@ -101,8 +101,8 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -e .                 # requiere pyproject.toml (F00-T02)
 
 # 3 · Frontend: dependencias y compilación del CSS
-npm install                      # requiere package.json (F00-T03)
-npm run build                    # genera web/public/app.css
+npm install
+npm run build                    # genera web/public/app.css minificado
 
 # 4 · Variables de entorno
 cp .env.example .env             # y completar los valores (F00-T08)
@@ -112,8 +112,22 @@ alembic upgrade head             # requiere Alembic configurado (F00-T05)
 
 # 6 · Levantar
 uvicorn api.app.main:app --reload --port 8000    # API en :8000
-npm run dev                                      # Tailwind en modo watch
+npm run dev                                      # CSS en modo watch
 ```
+
+### Sobre el CSS
+
+| Script | Qué hace |
+|---|---|
+| `npm run build` | Compila `web/src/app.css` a `web/public/app.css` minificado. Es el que corre Vercel. |
+| `npm run dev` | Vigila `web/src` y recompila al guardar. |
+| `npm run size` | Mide el CSS contra el presupuesto de 50 KB comprimido del documento técnico. |
+| `npm run build:debug` | Igual que `build` pero sin minificar, para inspeccionar la salida. |
+| `npm run dev:tailwind` | El `--watch` nativo de Tailwind. Ver la nota de abajo. |
+
+`npm run dev` usa `scripts/dev-css.mjs` en lugar del `--watch` de Tailwind porque **el watcher nativo de Tailwind v4 no detecta cambios cuando la ruta del proyecto tiene espacios en Windows** (acá: `D:\_Mis Datos\...`). Se comprobó que no reacciona ni al archivo de entrada ni a los parciales importados, mientras que el build puntual funciona bien. El script propio usa `fs.watch` de Node, sin dependencias nuevas. Si alguna vez se trabaja desde una ruta sin espacios, `npm run dev:tailwind` es equivalente.
+
+El CSS compilado **no se versiona**: lo genera el build.
 
 Los pasos marcados con una tarea entre paréntesis todavía no están disponibles: se habilitan al completar esa tarea de la Fase 0.
 

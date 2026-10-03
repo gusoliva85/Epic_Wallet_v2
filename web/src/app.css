@@ -1,0 +1,26 @@
+/* ============================================================
+   EPIC WALLET 2.0 · hoja de entrada
+   Se compila con `npm run build` a web/public/app.css
+   El CSS generado no se versiona: lo produce el build.
+
+   Orden de capas, de abajo hacia arriba:
+     1. tailwindcss   preflight y utilidades
+     2. tokens.css    las variables del sistema Vidrio Grafito
+     3. base.css      fondo, ruido y escala tipográfica
+     4. components.css  vidrio, tarjetas, filas, hojas, gráficos
+
+   Los tokens se cargan DESPUÉS de Tailwind para que `@theme`
+   registre las variables como utilidades, y antes de los
+   componentes, que sólo consumen tokens y nunca valores sueltos.
+   ============================================================ */
+
+@import "tailwindcss";
+
+@import "./styles/tokens.css";
+@import "./styles/base.css";
+@import "./styles/components.css";
+
+/* Dónde buscar las clases en uso. Explícito a propósito: evita que
+   Tailwind escanee .venv, node_modules o documentacion/. */
+@source "../index.html";
+@source "../src/js/**/*.js";
