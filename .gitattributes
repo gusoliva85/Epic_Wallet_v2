@@ -1,0 +1,45 @@
+# Normalización de finales de línea.
+# El repositorio guarda siempre LF; en Windows el working copy usa CRLF.
+# Evita diffs espurios al trabajar entre sistemas distintos.
+* text=auto eol=lf
+
+# Archivos de texto del proyecto
+*.py      text eol=lf
+*.js      text eol=lf
+*.mjs     text eol=lf
+*.json    text eol=lf
+*.html    text eol=lf
+*.css     text eol=lf
+*.md      text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+*.toml    text eol=lf
+*.sql     text eol=lf
+*.csv     text eol=lf
+.env.example text eol=lf
+.gitignore   text eol=lf
+.gitkeep     text eol=lf
+
+# Scripts de shell: LF obligatorio o no se ejecutan
+*.sh      text eol=lf
+
+# Binarios: sin conversión
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.ico     binary
+*.webp    binary
+*.svg     text eol=lf
+*.woff    binary
+*.woff2   binary
+*.ttf     binary
+*.pdf     binary
+*.xlsx    binary
+*.db      binary
+*.sqlite3 binary
+*.zip     binary
+
+# No contar la documentación en las estadísticas de lenguaje del repositorio
+documentacion/** linguist-documentation
+docs/**          linguist-documentation

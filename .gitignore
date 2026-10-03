@@ -1,0 +1,82 @@
+# ─────────────────────────────── Secretos
+# Nunca se versionan. El archivo de ejemplo sí (se agrega en F00-T08).
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ─────────────────────────────── Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+build/
+dist/
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# ─────────────────────────────── Base de datos local
+# SQLite se usa sólo para correr los tests rápido (ver 02_Documento_Tecnico §4.1).
+*.db
+*.sqlite
+*.sqlite3
+dev.db
+test.db
+
+# ─────────────────────────────── Node y Tailwind
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# CSS compilado por Tailwind: se genera en el build, no se versiona.
+web/public/app.css
+web/public/app.css.map
+
+# ─────────────────────────────── Vercel
+.vercel/
+.now/
+
+# ─────────────────────────────── Pruebas de interfaz
+/playwright-report/
+/test-results/
+/blob-report/
+/playwright/.cache/
+
+# ─────────────────────────────── Sistema operativo
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# ─────────────────────────────── Editores
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.sample.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ─────────────────────────────── Temporales y respaldos
+*.log
+*.tmp
+*.bak
+/backups/
+/tmp/
