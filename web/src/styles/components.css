@@ -1,0 +1,9 @@
+/* ============================================================
+   COMPONENTES · las dos capas de vidrio y el catálogo
+   Contenido completo en F01-T03 y siguientes.
+
+   Recordatorio: .shell y .cg exigen su bloque
+   @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px)))
+   o el texto queda ilegible donde no hay soporte.
+   Referencia: .claude/skills/epic-wallet-ui/SKILL.md §3 y §7
+   ============================================================ */

@@ -1,0 +1,23 @@
+{
+  "name": "epic-wallet-web",
+  "version": "0.1.0",
+  "description": "Frontend de Epic Wallet 2.0 — Tailwind CSS v4 sobre los tokens del sistema Vidrio Grafito",
+  "private": true,
+  "type": "module",
+  "author": "Gustavo Oliva <gusoliva85@gmail.com>",
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "tailwindcss -i web/src/app.css -o web/public/app.css --minify",
+    "dev": "node scripts/dev-css.mjs",
+    "build:debug": "tailwindcss -i web/src/app.css -o web/public/app.css",
+    "size": "node scripts/css-size.mjs",
+    "dev:tailwind": "tailwindcss -i web/src/app.css -o web/public/app.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.0.0",
+    "tailwindcss": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
