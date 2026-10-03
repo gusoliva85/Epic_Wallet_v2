@@ -105,6 +105,16 @@ def revisar_database_url(url: str) -> None:
 
     if partes.hostname and "pooler.supabase.com" in partes.hostname:
         print(f"{OK}host {partes.hostname}")
+        region = partes.hostname.split(".")[0].replace("aws-0-", "").replace("aws-1-", "")
+        cercanas = {"sa-east-1": "São Paulo"}
+        if region in cercanas:
+            print(f"{OK}región {region} ({cercanas[region]}) · la más cercana a Argentina")
+        else:
+            print(f"{WARN}región {region} · lejos de Argentina, ver §20 del documento técnico")
+            avisos.append(
+                f"la base está en {region}: la función de Vercel tiene que correr en la misma "
+                f"región para que la latencia no se multiplique por consulta"
+            )
     else:
         avisos.append("el host no parece el pooler de Supabase")
         print(f"{WARN}host {partes.hostname}")
@@ -155,7 +165,11 @@ def probar_conexion(url: str, esquema: str = "") -> None:
         return
 
     try:
-        motor = create_engine(url, pool_pre_ping=True, connect_args={"connect_timeout": 10})
+        motor = create_engine(url, pool_pre_ping=True, connect_args={"connect_timeout": 15})
+        # Primera conexión: incluye resolución de DNS y handshake TLS, no es
+        # representativa. Se descarta y se mide la segunda.
+        with motor.connect() as calentamiento:
+            calentamiento.execute(text("select 1"))
         t0 = time.perf_counter()
         with motor.connect() as conexion:
             version = conexion.execute(text("select version()")).scalar_one()
@@ -183,7 +197,7 @@ def probar_conexion(url: str, esquema: str = "") -> None:
                     ).scalar_one()
         ms = (time.perf_counter() - t0) * 1000
         corto = version.split(" on ")[0] if " on " in version else version[:40]
-        print(f"{OK}conectado en {ms:.0f} ms")
+        print(f"{OK}conectado en {ms:.0f} ms (sin contar el arranque en frío)")
         print(f"{OK}{corto}")
         print(f"{OK}base '{base}' · usuario '{usuario}'")
         if esquemas == 2:
@@ -199,9 +213,9 @@ def probar_conexion(url: str, esquema: str = "") -> None:
                 print(f"{WARN}el esquema '{esquema}' no existe todavía")
                 print("        Lo crea la primera migración, o a mano:")
                 print(f'        create schema if not exists "{esquema}";')
-        if ms > 1500:
-            avisos.append(f"latencia alta: {ms:.0f} ms")
-            print(f"{WARN}latencia alta · ¿está el proyecto en São Paulo (sa-east-1)?")
+        if ms > 1200:
+            avisos.append(f"latencia alta: {ms:.0f} ms por conexión nueva")
+            print(f"{WARN}{ms:.0f} ms por conexión nueva · ver §20 del documento técnico")
         motor.dispose()
     except Exception as exc:  # cualquier fallo de conexión se reporta, no se propaga
         mensaje = str(exc).split("\n")[0][:220]
@@ -220,8 +234,16 @@ def main() -> int:
 
     print("\n--- credenciales de Supabase ---")
     url_supabase = env.get("SUPABASE_URL", "")
-    if url_supabase.startswith("https://") and ".supabase.co" in url_supabase:
+    forma_ok = url_supabase.startswith("https://") and ".supabase.co" in url_supabase
+    resto = url_supabase.split(".supabase.co", 1)[1].strip("/") if forma_ok else ""
+    if forma_ok and not resto:
         print(f"{OK}{'SUPABASE_URL':30} {url_supabase}")
+    elif forma_ok and resto:
+        problemas.append(
+            f"SUPABASE_URL trae la ruta '/{resto}' de más: tiene que terminar en .supabase.co"
+        )
+        print(f"{BAD}{'SUPABASE_URL':30} {url_supabase}")
+        print(f"        sacale el '/{resto}' del final")
     else:
         problemas.append("SUPABASE_URL no tiene la forma https://xxxx.supabase.co")
         print(f"{BAD}{'SUPABASE_URL':30} {url_supabase or 'vacía'}")

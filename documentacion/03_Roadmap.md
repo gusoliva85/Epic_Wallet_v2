@@ -114,8 +114,8 @@ Yo sólo paso una tarea a `- [x]` **después de que vos me digas que está aprob
 
 - [ ] **F00-T08 · Configurar Vercel y desplegar**
   **Tipo:** Infra · **Ref:** Técnico §16.1
-  **Hacer:** proyecto en Vercel vinculado al repositorio; `vercel.json` completo de la sección 16.1 con rewrites, runtime de Python y cabeceras de seguridad; variables de entorno cargadas en los tres entornos, con **`DB_SCHEMA=public` sólo en producción** y `DB_SCHEMA=dev` en preview y development; primer despliegue.
-  **Aceptación:** · `https://<dominio>/api/health` responde desde internet · las cabeceras de seguridad llegan (verificable con las herramientas del navegador) · los secretos **no** están en el repositorio.
+  **Hacer:** proyecto en Vercel vinculado al repositorio; `vercel.json` completo de la sección 16.1 con rewrites, runtime de Python, cabeceras de seguridad y **`regions: ["pdx1"]` para que la función corra junto a la base de datos** (§20.1); variables de entorno cargadas en los tres entornos, con **`DB_SCHEMA=public` sólo en producción** y `DB_SCHEMA=dev` en preview y development; primer despliegue.
+  **Aceptación:** · `https://<dominio>/api/health` responde desde internet · las cabeceras de seguridad llegan (verificable con las herramientas del navegador) · los secretos **no** están en el repositorio · la función reporta una latencia a la base por debajo de 50 ms, lo que confirma que está en la misma región.
 
 - [ ] **F00-T09 · Previews por rama**
   **Tipo:** Infra · **Ref:** Técnico §16.2, §16.3
@@ -493,8 +493,8 @@ Yo sólo paso una tarea a `- [x]` **después de que vos me digas que está aprob
 
 - [ ] **F05-T06 · Rendimiento del dashboard**
   **Tipo:** Backend · **Ref:** Técnico §20
-  **Hacer:** medir la respuesta con un mes cargado de 50 movimientos; revisar el plan de consultas y agregar los índices que falten; verificar que no haya consultas en bucle.
-  **Aceptación:** · por debajo de 400 ms en el percentil 95 contra Supabase · sin consultas N+1 · las mediciones quedan anotadas en la documentación de la fase.
+  **Hacer:** medir la respuesta con un mes cargado de 50 movimientos; revisar el plan de consultas y agregar los índices que falten; verificar que no haya consultas en bucle. Medir **desde la función desplegada**, no desde la máquina local: la base está en Oregón y en local se pagan ~223 ms por consulta (§20.1).
+  **Aceptación:** · por debajo de 400 ms en el percentil 95 medido desde la función · sin consultas N+1 · las mediciones quedan anotadas en la documentación de la fase, con la aclaración de local contra desplegado.
 
 ### Tema 5.3 — Frontend
 
