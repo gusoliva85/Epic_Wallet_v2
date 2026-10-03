@@ -7,6 +7,12 @@
 **Usuario principal:** 1 usuario, con posibilidad de ampliar a pocos
 usuarios autenticados
 
+> **Ampliación del 03/10/2026.** La posibilidad de ampliar a varios
+> usuarios se adelantó al MVP por pedido expreso: la aplicación incluye
+> registro propio con confirmación por correo, recuperación de contraseña
+> y aislamiento total entre cuentas. Ver sección 4.1 y el detalle técnico
+> en `02_Documento_Tecnico.md` §8.
+
 ------------------------------------------------------------------------
 
 ## 1. Resumen ejecutivo
@@ -173,6 +179,11 @@ Ejemplos:
 
 -   autenticación;
 -   usuario y contraseña;
+-   registro de cuentas nuevas desde la aplicación;
+-   confirmación de la cuenta por correo;
+-   recuperación de contraseña por correo;
+-   cambio de contraseña desde la aplicación;
+-   aislamiento total entre cuentas;
 -   dashboard del mes actual;
 -   ingresos;
 -   egresos;
@@ -1254,6 +1265,12 @@ active
 
 La contraseña nunca se almacena en texto plano.
 
+En la implementación, las credenciales las administra el proveedor de
+autenticación (`auth.users`) y esta tabla queda como perfil del usuario,
+con su saldo inicial y sus preferencias. Al crearse una cuenta nueva, un
+disparador de la base genera automáticamente su perfil y sus categorías
+iniciales. Ver `02_Documento_Tecnico.md` §8.4.
+
 ------------------------------------------------------------------------
 
 # 33. months
@@ -1628,10 +1645,46 @@ mockup existente.
 ## 48.1 Login
 
 ``` text
-Usuario
-Contraseña
+Correo
+Contraseña            [mostrar / ocultar]
 [Ingresar]
+
+Crear cuenta   ·   Olvidé mi contraseña
 ```
+
+## 48.1.1 Registro
+
+``` text
+Correo
+Contraseña            [mostrar / ocultar]
+Repetir contraseña
+[Crear cuenta]
+```
+
+Al enviarse, la aplicación indica que se envió un correo de
+confirmación y ofrece reenviarlo. La cuenta nueva nace con sus
+categorías iniciales y su mes en curso vacío.
+
+## 48.1.2 Recuperación de contraseña
+
+``` text
+Correo
+[Enviar enlace]
+```
+
+El mensaje de respuesta es el mismo exista o no la cuenta, para no
+revelar quién está registrado.
+
+## 48.1.3 Contraseña nueva
+
+``` text
+Contraseña nueva      [mostrar / ocultar]
+Repetir contraseña
+[Guardar]
+```
+
+Se llega por el enlace del correo de recuperación. El enlace es de un
+solo uso y vence.
 
 ## 48.2 Dashboard
 
@@ -1942,6 +1995,9 @@ Requisitos:
 -   HTTPS en producción;
 -   contraseña hasheada;
 -   sesiones seguras;
+-   aislamiento entre cuentas garantizado por la base de datos;
+-   recuperación de contraseña con enlace de un solo uso que vence;
+-   no revelar si una dirección de correo tiene cuenta;
 -   cookies HttpOnly;
 -   protección CSRF cuando corresponda;
 -   validación server-side;
@@ -2239,6 +2295,8 @@ El MVP se considerará funcional cuando:
 
 -   aplicación personal;
 -   login;
+-   registro de cuentas nuevas;
+-   recuperación de contraseña por correo;
 -   celular como prioridad;
 -   PC como segundo entorno;
 -   mes actual como dashboard;
