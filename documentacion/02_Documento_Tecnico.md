@@ -40,7 +40,7 @@ Regla de precedencia: si este documento contradice al general en una decisión f
 | Acceso a datos | **SQLAlchemy 2.0** (Core + ORM) | Permite el mismo código contra SQLite y Postgres. Consultas parametrizadas por defecto. |
 | Driver Postgres | **psycopg 3** (binary) | Driver recomendado para SQLAlchemy 2.0. |
 | Migraciones | **Alembic** | Versionado del esquema, reversible. |
-| Autenticación | **Supabase Auth** + verificación de JWT en el backend | No almacenamos hashes propios. Ver sección 8. |
+| Autenticación | **Supabase Auth** + verificación de JWT con JWKS (ES256) | No almacenamos hashes propios ni secretos de firma. Ver sección 8. |
 | HTTP cliente | **httpx** | Para el proveedor de cotizaciones (async). |
 | Fechas | **zoneinfo** (`America/Argentina/Buenos_Aires`) | Sin dependencias externas. |
 | Testing | **pytest** + **pytest-asyncio** + **httpx.AsyncClient** | Tests de lógica y de endpoints. |
@@ -677,14 +677,35 @@ El frontend suma tres módulos a los de la sección 10: `auth.js` (sesión), y l
 
 ### 8.8 Verificación del JWT en el backend
 
+**El proyecto firma con claves asimétricas.** Verificado contra el proyecto real en F00-T06: los tokens vienen con `alg: ES256` y la clave pública se publica en un endpoint JWKS. **No hay secreto compartido que sirva**: `SUPABASE_JWT_SECRET` queda como resto de la configuración y no se usa para verificar.
+
+| Dato | Valor comprobado |
+|---|---|
+| Algoritmo | `ES256` (ECDSA sobre la curva P-256) |
+| Endpoint JWKS | `{SUPABASE_URL}/auth/v1/.well-known/jwks.json` |
+| Claves publicadas | 1 · `kty: EC`, `crv: P-256`, `use: sig` |
+| Audiencia | `authenticated` |
+| Vigencia | 3600 s |
+
+Esto obliga a `PyJWT[crypto]`: sin el extra `crypto` (que trae `cryptography`), PyJWT falla con `MissingCryptographyError` al intentar ES256.
+
 ```python
 # api/app/core/security.py
-import jwt                                    # PyJWT
+import jwt
+from jwt import PyJWKClient
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from .config import settings
 
 bearer = HTTPBearer(auto_error=False)
+
+# Un solo cliente para todo el proceso: cachea las claves del JWKS y
+# evita ir a buscarlas en cada petición.
+_jwks = PyJWKClient(
+    f"{settings.SUPABASE_URL}/auth/v1/.well-known/jwks.json",
+    cache_keys=True,
+    lifespan=3600,
+)
 
 async def current_user_id(
     cred: HTTPAuthorizationCredentials | None = Depends(bearer),
@@ -692,10 +713,11 @@ async def current_user_id(
     if cred is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Sesión requerida")
     try:
+        clave = _jwks.get_signing_key_from_jwt(cred.credentials)
         payload = jwt.decode(
             cred.credentials,
-            settings.SUPABASE_JWT_SECRET,
-            algorithms=["HS256"],
+            clave.key,
+            algorithms=["ES256"],
             audience="authenticated",
         )
     except jwt.ExpiredSignatureError:
@@ -707,7 +729,12 @@ async def current_user_id(
 
 Todas las rutas bajo `/api` dependen de `current_user_id`. **No existe endpoint de datos sin autenticación.** Lo único público es `/api/health`.
 
-Nota sobre el algoritmo: los proyectos nuevos de Supabase pueden venir con **claves asimétricas** (ECC o RSA con un endpoint JWKS) en lugar del secreto compartido HS256. Si el proyecto no expone un *Legacy JWT Secret*, la verificación cambia a buscar la clave pública en el JWKS y validar con `RS256`/`ES256`. La decisión se toma en F02-T01 mirando el proyecto real; el resto del código no se entera.
+Dos consecuencias prácticas de usar JWKS:
+
+1. **El arranque en frío de la función tiene que buscar las claves.** Es una petición HTTPS contra Supabase la primera vez; después queda cacheada en el proceso. Si alguna vez molesta, las claves pueden precargarse al iniciar la aplicación.
+2. **Si Supabase rota la clave**, el cliente la vuelve a buscar por el `kid` del token. No hay que hacer nada, pero conviene que el caché tenga vencimiento (de ahí el `lifespan`).
+
+Ventaja sobre el secreto compartido: el backend sólo necesita la **clave pública**. Aunque se filtrara la configuración del servidor, nadie podría fabricar un token válido.
 
 ### 8.9 Reglas de contraseña
 
@@ -1633,7 +1660,7 @@ Al cerrar cada fase se escribe `docs/FASE_XX_<nombre>.md` con qué se hizo en le
 | Framework backend | FastAPI sobre Vercel Python Functions | 3, 16.1 |
 | Base de datos | Supabase Postgres, un proyecto y dos esquemas; SQLite sólo para tests | 4.1, 4.1.1, 6 |
 | ORM | SQLAlchemy 2.0 + Alembic | 3, 16.4 |
-| Autenticación | Supabase Auth + verificación de JWT propia | 8 |
+| Autenticación | Supabase Auth; el JWT se verifica con la clave pública del JWKS (ES256), no con secreto compartido | 8.8 |
 | Cuentas | Registro abierto, multiusuario desde el MVP, con confirmación por email | 8.2, 8.3 |
 | Perfil y categorías iniciales | Trigger de Postgres sobre `auth.users`, no el backend | 8.4 |
 | Envío de mails | SMTP propio obligatorio; el de Supabase sólo sirve para pruebas | 8.5 |
