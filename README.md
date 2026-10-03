@@ -86,7 +86,7 @@ Las cuatro capas del backend (router → service → repo → core) y la regla d
 - Python 3.12 o superior
 - Node.js 20 o superior
 - Git
-- Una cuenta de Supabase y una de Vercel
+- Una cuenta de Supabase (alcanza **un solo proyecto**) y una de Vercel
 
 ### Pasos
 
@@ -107,8 +107,8 @@ npm run build                    # genera web/public/app.css minificado
 # 4 · Variables de entorno
 cp .env.example .env             # y completar los valores (F00-T08)
 
-# 5 · Base de datos: aplicar migraciones
-alembic upgrade head             # requiere Alembic configurado (F00-T05)
+# 5 · Base de datos: migraciones sobre el esquema de desarrollo
+DB_SCHEMA=dev alembic upgrade head     # requiere Alembic configurado (F00-T05)
 
 # 6 · Levantar
 uvicorn api.app.main:app --reload --port 8000    # API en :8000
@@ -133,7 +133,7 @@ Los pasos marcados con una tarea entre paréntesis todavía no están disponible
 
 ### Variables de entorno
 
-Se copian de `.env.example` y se completan con los valores de tus proyectos de Supabase. La lista completa y qué significa cada una está en la sección 11 del documento técnico.
+Se copian de `.env.example` y se completan con los valores de tu proyecto de Supabase. Verificá con `python scripts/check_db.py`, que comprueba todo sin imprimir ningún secreto. La lista completa y qué significa cada una está en la sección 11 del documento técnico.
 
 **Reglas que no se negocian:**
 
@@ -147,9 +147,11 @@ Se copian de `.env.example` y se completan con los valores de tus proyectos de S
 
 | Entorno | Rama | URL | Base de datos |
 |---|---|---|---|
-| Producción | `main` | por definir | Supabase producción |
-| Preview | cualquier otra rama | URL automática de Vercel por rama | Supabase desarrollo |
-| Local | — | `localhost:8000` | Supabase desarrollo o SQLite |
+| Producción | `main` | por definir | Supabase · esquema `public` |
+| Preview | cualquier otra rama | URL automática de Vercel por rama | Supabase · esquema `dev` |
+| Local | — | `localhost:8000` | Supabase · esquema `dev` |
+
+Los tres apuntan al **mismo proyecto de Supabase** y se diferencian por la variable `DB_SCHEMA`: `public` guarda los datos reales y `dev` los de prueba. `scripts/check_db.py` falla si el entorno de desarrollo apunta a `public`, para que no se trabaje contra los datos reales por descuido. El detalle y sus implicancias están en la sección 4.1.1 del documento técnico.
 
 Cada push genera una URL de preview. Eso es lo que permite probar cada tarea en el celular en el momento, sin esperar a que termine una fase.
 

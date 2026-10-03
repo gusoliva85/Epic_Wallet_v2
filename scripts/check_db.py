@@ -5,8 +5,11 @@ Uso:  python scripts/check_db.py
 Lee .env del directorio del proyecto y comprueba:
   1. que estén todas las variables requeridas
   2. que DATABASE_URL apunte al pooler (6543) y use el driver psycopg
-  3. que la conexión funcione, con versión de Postgres y latencia
-  4. que las claves de Supabase tengan la forma esperada
+  3. que DB_SCHEMA sea coherente con APP_ENV (dev para desarrollo,
+     public para producción), porque con un solo proyecto de Supabase
+     los esquemas son lo que separa los datos de prueba de los reales
+  4. que la conexión funcione, con versión de Postgres y latencia
+  5. que las claves de Supabase tengan la forma esperada
 
 NUNCA imprime el valor de un secreto: sólo si está presente, su
 longitud y una huella corta. Es seguro pegar su salida en un chat.
@@ -111,7 +114,35 @@ def revisar_database_url(url: str) -> None:
         print(f"{BAD}sin contraseña en la cadena")
 
 
-def probar_conexion(url: str) -> None:
+def revisar_esquema(env: dict[str, str]) -> None:
+    """Con un solo proyecto, el esquema es la única separación real."""
+    print("\n--- esquema ---")
+    esquema = env.get("DB_SCHEMA", "")
+    entorno = env.get("APP_ENV", "")
+
+    if not esquema:
+        problemas.append("DB_SCHEMA sin definir")
+        print(f"{BAD}DB_SCHEMA sin definir · tiene que ser 'dev' o 'public'")
+        return
+
+    print(f"{OK}{'DB_SCHEMA':30} {esquema}")
+
+    if entorno == "development" and esquema == "public":
+        problemas.append(
+            "APP_ENV=development apuntando al esquema 'public': trabajarías contra los datos reales"
+        )
+        print(f"{BAD}desarrollo apuntando a 'public' · usá 'dev' para no tocar datos reales")
+    elif entorno == "production" and esquema != "public":
+        problemas.append(f"APP_ENV=production con DB_SCHEMA={esquema}: debería ser 'public'")
+        print(f"{BAD}producción debería usar el esquema 'public'")
+    elif esquema not in {"dev", "public", "main"}:
+        avisos.append(f"DB_SCHEMA={esquema} no es uno de los esperados")
+        print(f"{WARN}esquema inesperado · se esperaba 'dev' o 'public'")
+    else:
+        print(f"{OK}coherente con APP_ENV={entorno}")
+
+
+def probar_conexion(url: str, esquema: str = "") -> None:
     print("\n--- conexión ---")
     if not url or "PROYECTO" in url:
         print(f"{BAD}no se intenta: DATABASE_URL sin completar")
@@ -136,6 +167,20 @@ def probar_conexion(url: str) -> None:
                     "where schema_name in ('public','auth')"
                 )
             ).scalar_one()
+            existe_esquema = None
+            tablas = None
+            if esquema and esquema not in {"main"}:
+                existe_esquema = conexion.execute(
+                    text("select count(*) from information_schema.schemata where schema_name = :e"),
+                    {"e": esquema},
+                ).scalar_one()
+                if existe_esquema:
+                    tablas = conexion.execute(
+                        text(
+                            "select count(*) from information_schema.tables where table_schema = :e"
+                        ),
+                        {"e": esquema},
+                    ).scalar_one()
         ms = (time.perf_counter() - t0) * 1000
         corto = version.split(" on ")[0] if " on " in version else version[:40]
         print(f"{OK}conectado en {ms:.0f} ms")
@@ -146,6 +191,14 @@ def probar_conexion(url: str) -> None:
         else:
             avisos.append("no se encontraron los esquemas public y auth")
             print(f"{WARN}faltan esquemas: se esperaban public y auth")
+        if esquema and existe_esquema is not None:
+            if existe_esquema:
+                print(f"{OK}el esquema '{esquema}' existe · {tablas} tabla(s)")
+            else:
+                avisos.append(f"el esquema '{esquema}' todavía no existe")
+                print(f"{WARN}el esquema '{esquema}' no existe todavía")
+                print("        Lo crea la primera migración, o a mano:")
+                print(f'        create schema if not exists "{esquema}";')
         if ms > 1500:
             avisos.append(f"latencia alta: {ms:.0f} ms")
             print(f"{WARN}latencia alta · ¿está el proyecto en São Paulo (sa-east-1)?")
@@ -208,7 +261,8 @@ def main() -> int:
 
     url_db = env.get("DATABASE_URL", "")
     revisar_database_url(url_db)
-    probar_conexion(url_db)
+    revisar_esquema(env)
+    probar_conexion(url_db, env.get("DB_SCHEMA", ""))
 
     print("\n" + "=" * 62)
     if problemas:
