@@ -112,7 +112,7 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
 
 ### Tema 0.3 — API mínima en producción
 
-- [ ] **F00-T07 · FastAPI mínima con `/api/health`**
+- [~] **F00-T07 · FastAPI mínima con `/api/health`**
   **Tipo:** Backend · **Ref:** Técnico §5.1, §9.1
   **Hacer:** `api/app/core/config.py` con `Settings` (pydantic-settings); `api/app/core/db.py` con engine y sesión; `api/app/main.py` creando la app con los manejadores de error del formato de la sección 9.3; endpoint `GET /api/health` que devuelve versión, entorno y si la base responde; `api/index.py` exponiendo `app`.
   **Aceptación:** · `uvicorn` local responde `{"status":"ok","database":"connected"}` · si la base está caída devuelve `"database":"error"` sin romper · los errores salen en el formato uniforme.
@@ -1369,7 +1369,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 
 | Fase | Tareas | Aprobadas | Estado |
 |---|---|---|---|
-| 0 · Puesta en marcha y producción | 12 | 6 | **En curso** · próxima: F00-T07 |
+| 0 · Puesta en marcha y producción | 12 | 6 | **En curso** · F00-T07 esperando prueba |
 | 1 · Sistema de estilo y esqueleto | 14 | 0 | Pendiente |
 | 2 · Cuentas y autenticación | 15 | 0 | Pendiente |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
