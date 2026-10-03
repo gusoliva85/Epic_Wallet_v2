@@ -95,7 +95,7 @@ Yo sólo paso una tarea a `- [x]` **después de que vos me digas que está aprob
   **Hacer:** un único proyecto de Supabase en región **São Paulo (`sa-east-1`)**, que es la más cercana a Argentina y **no se puede cambiar después de crear el proyecto** (§20.1); crear dentro los esquemas `public` (producción) y `dev` (desarrollo y previews); anotar la URL, la clave anónima, la clave de servicio y el secreto de JWT; armar el `.env` local con `DB_SCHEMA=dev`; verificar la cadena del **pooler** (puerto 6543) con `python scripts/check_db.py`.
   **Aceptación:** · el proyecto está activo y el host del pooler dice `sa-east-1` · los esquemas `public` y `dev` existen · `scripts/check_db.py` responde TODO EN ORDEN · el script falla si se apunta desarrollo a `public`, lo que confirma la protección de los datos reales.
 
-- [~] **F00-T05 · Configurar Alembic con esquema explícito**
+- [x] **F00-T05 · Configurar Alembic con esquema explícito**
   **Tipo:** Infra · **Ref:** Técnico §16.4, §4.1.1
   **Hacer:** `alembic init migrations`; `env.py` leyendo `DATABASE_URL` y **`DB_SCHEMA` del entorno, sin valor por defecto**, con `version_table_schema` e `include_schemas=True` para que una migración no pueda caer en el esquema equivocado; migración inicial vacía; probar `upgrade head` y `downgrade base` contra el esquema `dev`.
   **Aceptación:** · `DB_SCHEMA=dev alembic upgrade head` corre sin error · `downgrade` vuelve atrás · la tabla `alembic_version` existe **dentro de `dev`** y no en `public` · sin `DB_SCHEMA` definido, Alembic aborta con un mensaje claro en lugar de asumir un esquema.
@@ -1309,7 +1309,7 @@ Yo sólo paso una tarea a `- [x]` **después de que vos me digas que está aprob
 
 | Fase | Tareas | Aprobadas | Estado |
 |---|---|---|---|
-| 0 · Puesta en marcha y producción | 12 | 4 | **En curso** · F00-T05 esperando prueba |
+| 0 · Puesta en marcha y producción | 12 | 5 | **En curso** · próxima: F00-T06 |
 | 1 · Sistema de estilo y esqueleto | 14 | 0 | Pendiente |
 | 2 · Autenticación | 10 | 0 | Pendiente |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
