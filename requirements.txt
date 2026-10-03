@@ -1,0 +1,23 @@
+# ============================================================
+#  Dependencias de PRODUCCIÓN — las instala Vercel
+#  para la función Python de api/index.py
+#
+#  Mantener en sincronía con [project.dependencies] de
+#  pyproject.toml. Para desarrollo: pip install -e ".[dev]"
+# ============================================================
+
+# --- API ---
+fastapi>=0.115,<1.0
+pydantic>=2.9,<3.0
+pydantic-settings>=2.5,<3.0
+
+# --- base de datos ---
+SQLAlchemy>=2.0.35,<3.0
+psycopg[binary]>=3.2,<4.0
+alembic>=1.13,<2.0
+
+# --- autenticación ---
+PyJWT>=2.9,<3.0
+
+# --- cliente HTTP (proveedores de cotizaciones) ---
+httpx>=0.27,<1.0
