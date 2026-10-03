@@ -104,7 +104,7 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **Hacer:** `alembic init migrations`; `env.py` leyendo `DATABASE_URL` y **`DB_SCHEMA` del entorno, sin valor por defecto**, con `version_table_schema` e `include_schemas=True` para que una migración no pueda caer en el esquema equivocado; migración inicial vacía; probar `upgrade head` y `downgrade base` contra el esquema `dev`.
   **Aceptación:** · `DB_SCHEMA=dev alembic upgrade head` corre sin error · `downgrade` vuelve atrás · la tabla `alembic_version` existe **dentro de `dev`** y no en `public` · sin `DB_SCHEMA` definido, Alembic aborta con un mensaje claro en lugar de asumir un esquema.
 
-- [~] **F00-T06 · Crear la primera cuenta**
+- [x] **F00-T06 · Crear la primera cuenta**
   **Tipo:** Infra · **Ref:** Técnico §8.2, §4.1.1
   **Hacer:** crear tu cuenta en Supabase Auth con email y contraseña desde el panel (Authentication → Users → Add user), con *Auto Confirm User* activado para no depender todavía del mail; anotar el `user_id` (uuid).
   **Nota:** esta es **la misma cuenta con la que vas a entrar a la aplicación**. Se crea desde el panel porque todavía no existe la pantalla de registro; a partir de **F02-T10** vas a poder crear cuentas desde la aplicación, con confirmación por mail y recuperación de contraseña. Al haber un solo proyecto de Supabase, la autenticación es compartida por los dos esquemas: la misma cuenta sirve en desarrollo y en producción.
@@ -1369,7 +1369,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 
 | Fase | Tareas | Aprobadas | Estado |
 |---|---|---|---|
-| 0 · Puesta en marcha y producción | 12 | 5 | **En curso** · F00-T06 esperando prueba |
+| 0 · Puesta en marcha y producción | 12 | 6 | **En curso** · próxima: F00-T07 |
 | 1 · Sistema de estilo y esqueleto | 14 | 0 | Pendiente |
 | 2 · Cuentas y autenticación | 15 | 0 | Pendiente |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
