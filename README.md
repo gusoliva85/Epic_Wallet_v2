@@ -129,6 +129,12 @@ npm run dev                                      # CSS en modo watch
 
 El CSS compilado **no se versiona**: lo genera el build.
 
+### Sobre las migraciones
+
+`DB_SCHEMA` es obligatorio en todo comando de Alembic y **no tiene valor por defecto**. Es deliberado: con un solo proyecto de Supabase, el esquema es lo único que separa los datos reales de los de prueba, y una migración en el esquema equivocado los tocaría. `migrations/env.py` aborta con código 1 si falta `DB_SCHEMA`, si falta `DATABASE_URL`, o si `APP_ENV=development` apunta a `public`. Los tres casos tienen test en `tests/unit/test_migraciones.py`.
+
+El esquema se crea solo en la primera migración si no existe, y `alembic_version` vive **dentro de cada esquema**, así que desarrollo y producción llevan su propio control de versiones.
+
 Los pasos marcados con una tarea entre paréntesis todavía no están disponibles: se habilitan al completar esa tarea de la Fase 0.
 
 ### Variables de entorno
@@ -215,10 +221,14 @@ Cobertura mínima exigida en `api/app/services/`: 90 %. Toda función de cálcul
 ## Comandos útiles
 
 ```bash
-# Migraciones
-alembic revision --autogenerate -m "F03 meses y categorias"
-alembic upgrade head
-alembic downgrade -1
+# Migraciones · DB_SCHEMA es OBLIGATORIO y no tiene valor por defecto
+DB_SCHEMA=dev alembic revision --autogenerate -m "F03 meses y categorias"
+DB_SCHEMA=dev alembic upgrade head
+DB_SCHEMA=dev alembic downgrade -1
+DB_SCHEMA=dev alembic current            # en qué revisión está
+
+# Producción: sólo después de verificar en dev
+DB_SCHEMA=public APP_ENV=production alembic upgrade head
 
 # Siembra de datos
 python scripts/seed_categories.py        # las 21 categorías iniciales
