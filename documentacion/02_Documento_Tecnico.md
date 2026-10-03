@@ -1232,7 +1232,7 @@ El `theme_color` del manifest y el `<meta name="theme-color">` se actualizan al 
 {
   "buildCommand": "npm run build",
   "outputDirectory": "web",
-  "regions": ["pdx1"],
+  "regions": ["gru1"],
   "functions": { "api/index.py": { "runtime": "python3.12", "maxDuration": 30 } },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index" }
@@ -1261,7 +1261,7 @@ from app.main import app        # Vercel detecta el ASGI y lo sirve
 
 Frontend y API comparten dominio, así que **no hay CORS** en producción. Sólo se configura para desarrollo local.
 
-`"regions": ["pdx1"]` fija la función Python en Portland (Oregón), **la misma región donde vive la base de datos**. No es un detalle menor: ver §20.1.
+`"regions": ["gru1"]` fija la función Python en São Paulo, **la misma región donde vive la base de datos y la más cercana a Buenos Aires**. No es un detalle menor: ver §20.1.
 
 ### 16.2 Entornos
 
@@ -1406,42 +1406,42 @@ Pruebas obligatorias que no pueden faltar:
 
 Cómo se consigue: una sola llamada para todo el dashboard; caché por mes en memoria; `font-display: swap` con precarga; fondo con `background-attachment: fixed` y una única capa de ruido en SVG embebido en lugar de imágenes; `content-visibility: auto` en los paneles que están fuera de pantalla; estáticos con cache inmutable; pooler de conexiones en Supabase.
 
-### 20.1 La base está en Oregón, no en São Paulo
+### 20.1 Región: todo en São Paulo
 
-El proyecto de Supabase disponible está en la región **`us-west-2` (Oregón)** y la región de un proyecto no se puede cambiar sin recrearlo. Medido desde Argentina:
+La base vive en **`sa-east-1` (São Paulo)**, la región de AWS más cercana a Buenos Aires, y la función de Vercel se fija en **`gru1`** (São Paulo también). Los tres puntos del recorrido —teléfono, función y base— quedan en Sudamérica.
 
-| Medición | Tiempo |
-|---|---|
-| Primera conexión (DNS + TLS en frío) | ~4.000 ms |
-| Abrir una conexión nueva | 650–2.000 ms |
-| Una consulta sobre una conexión ya abierta | **~223 ms** |
+Esto no salió gratis: el proyecto se creó primero en `us-west-2` (Oregón), que es la región por defecto de Supabase, y **la región de un proyecto no se puede cambiar**. Se detectó en la verificación de F00-T04, con la base todavía vacía, y se recreó en São Paulo. Las mediciones, desde Buenos Aires:
 
-Esos 223 ms son el viaje de ida y vuelta Argentina → Oregón. **El riesgo está en que se multipliquen**: si el dashboard hiciera sus seis consultas desde la máquina del usuario, serían 6 × 223 ms = 1,3 s sólo de red, y el objetivo de 400 ms sería imposible.
+| Medición | Oregón (`us-west-2`) | São Paulo (`sa-east-1`) | Mejora |
+|---|---|---|---|
+| Conexión TCP al pooler | 236 ms | **47 ms** | 5,0× |
+| Consulta sobre conexión abierta | 223 ms | **35 ms** | 6,4× |
+| Abrir conexión nueva | 665–2.049 ms | **105 ms** | 6–20× |
 
-**La solución es dónde corre la función, no dónde está el usuario.** Con `"regions": ["pdx1"]` la función Python vive en Portland, a pocos milisegundos de la base:
+**Por qué importa tanto:** el costo no es el viaje, es el viaje **multiplicado por consulta**. Con el dashboard haciendo seis consultas, Oregón costaba ~1,3 s sólo de red; São Paulo cuesta ~210 ms. Es la diferencia entre cumplir el objetivo de 400 ms y no acercarse.
+
+**Por qué la función va en `gru1` y no donde esté el usuario:** porque la latencia que se multiplica es la de función → base, no la de usuario → función. El usuario paga un único viaje de ida y vuelta por petición HTTP; la función paga uno por consulta SQL. Poniéndola junto a la base, cada consulta cuesta ~5 ms en lugar de ~35 ms:
 
 ```text
-Sin fijar la región (función en Virginia o donde caiga):
-  usuario → función  ~120 ms
-  función → base     ~70 ms × 6 consultas = 420 ms
-  total              ~540 ms  y crece con cada consulta
+Función en gru1, junto a la base (lo elegido):
+  teléfono → función   ~40 ms   (una sola vez por petición)
+  función  → base      ~5 ms × 6 consultas = 30 ms
+  total                ~70 ms   y casi no crece al agregar consultas
 
-Con la función en pdx1 (junto a la base):
-  usuario → función  ~180 ms   (una sola vez, es una sola petición HTTP)
-  función → base     ~5 ms × 6 consultas = 30 ms
-  total              ~210 ms   y casi no crece al agregar consultas
+Función en otra región (por ejemplo Virginia):
+  teléfono → función   ~120 ms
+  función  → base      ~130 ms × 6 consultas = 780 ms
+  total                ~900 ms  y empeora con cada consulta
 ```
 
-Los **estáticos no se ven afectados**: el CDN de Vercel los sirve desde el nodo más cercano a Buenos Aires, independientemente de dónde esté la función.
+Los **estáticos no dependen de esto**: el CDN de Vercel los sirve desde el nodo más cercano a Buenos Aires sin importar dónde corra la función.
 
-Qué hacer en consecuencia:
+Qué queda como regla:
 
-1. **Fijar `regions: ["pdx1"]`** en `vercel.json` (F00-T08). Es lo que vuelve el objetivo alcanzable.
-2. **Mantener la respuesta única del dashboard** (§9.2): con esta latencia, pasar de una llamada a seis se nota de verdad.
-3. **Medir el percentil 95 desde la función**, no desde la máquina de desarrollo, que siempre va a ver los ~200 ms del viaje a Oregón.
-4. En desarrollo local, esperar ~250 ms por consulta y no confundirlo con un problema de código.
-
-Si algún día el proyecto se recrea en `sa-east-1` (São Paulo), bastaría cambiar `pdx1` por `gru1` y la cadena de conexión.
+1. **`regions: ["gru1"]`** en `vercel.json` (F00-T08). Si alguna vez la base se mueve, esta variable se mueve con ella.
+2. **Mantener la respuesta única del dashboard** (§9.2): con cualquier latencia, una llamada es mejor que seis.
+3. **Medir el percentil 95 desde la función desplegada**, no desde la máquina de desarrollo.
+4. En desarrollo local hay que contar ~35 ms por consulta: es el viaje a São Paulo, no un problema de código.
 
 ---
 
