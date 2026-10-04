@@ -17,19 +17,31 @@ body {
 body {
   margin: 0;
   color: var(--color-ink);
-  font: 16.5px/1.55 var(--font-sans);
+  font: var(--text-base) / 1.55 var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: color 0.3s ease;
+}
 
-  /* Tres lavados radiales sobre un degradado vertical. `fixed` para que
-     no se desplacen con el scroll: el fondo es el ambiente, no contenido. */
+/* ---- el ambiente ----
+   Tres lavados radiales sobre un degradado vertical.
+
+   Va en una capa fija propia y no en `background-attachment: fixed`
+   del body: Safari en iOS ignora ese valor y lo trata como `scroll`,
+   con lo que el fondo se desplazaría con el contenido, y en algunos
+   Android provoca repintados al hacer scroll. Una capa `fixed` con
+   z-index negativo se comporta igual en todos lados. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background:
     radial-gradient(ellipse 52% 34% at 10% -6%, var(--color-wash-a), transparent 62%),
     radial-gradient(ellipse 42% 28% at 106% 6%, var(--color-wash-b), transparent 58%),
     radial-gradient(ellipse 38% 26% at 50% 104%, var(--color-wash-a), transparent 66%),
     linear-gradient(180deg, var(--color-bg-1), var(--color-bg-2));
-  background-attachment: fixed;
-  transition: color 0.3s ease;
 }
 
 /* Capa de ruido: una sola, en SVG embebido, nunca una imagen.
@@ -45,9 +57,14 @@ body::before {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
 }
 
-/* ---- tipografía ----
+/* ============================================================
+   TIPOGRAFÍA
+
    Outfit para cifras y títulos, Inter para todo lo demás.
-   La escala completa se aplica por componente (SKILL §4). */
+   Cada rol pide su tamaño por token, nunca un valor suelto: así la
+   escala se ajusta en un solo lugar.
+   ============================================================ */
+
 h1,
 h2,
 h3,
@@ -59,9 +76,10 @@ h4,
   font-weight: 700;
 }
 
-h1 { font-size: 26px; }
-h2 { font-size: 20px; }
-h3 { font-size: 19px; }
+h1 { font-size: var(--text-hero); }
+h2 { font-size: var(--text-panel); }
+h3 { font-size: var(--text-section); }
+h4 { font-size: var(--text-kv); }
 
 p {
   margin: 0;
@@ -74,9 +92,91 @@ textarea {
   font-family: inherit;
 }
 
-/* Las cifras llevan siempre ancho fijo: si no, "bailan" al actualizarse. */
+/* ---- roles de la escala ----
+   Se usan como clase cuando el componente no tiene un selector
+   propio. Los componentes del catálogo (F01-T09 en adelante) los
+   aplican desde su propia regla. */
+
+.t-hero {
+  font-family: var(--font-display);
+  font-size: var(--text-hero);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+
+.t-kpi {
+  font-family: var(--font-display);
+  font-size: var(--text-kpi);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.t-kpi-sm {
+  font-family: var(--font-display);
+  font-size: var(--text-kpi-sm);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.t-amount {
+  font-family: var(--font-display);
+  font-size: var(--text-amount);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.t-amount-row {
+  font-family: var(--font-display);
+  font-size: var(--text-amount-row);
+  font-weight: 700;
+}
+
+.t-row {
+  font-size: var(--text-row);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.t-sub {
+  font-size: var(--text-sub);
+  font-weight: 400;
+  color: var(--color-ink-3);
+}
+
+/* Etiqueta de indicador: mayúsculas con aire entre letras. */
+.t-label {
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+
+/* Separador de día y subcabeceras: igual, con más aire. */
+.t-caps {
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--color-ink-4);
+}
+
+.t-pill {
+  font-size: var(--text-pill);
+  font-weight: 700;
+}
+
+/* ---- cifras ----
+   Ancho fijo SIEMPRE. Sin esto, al actualizarse un importe las cifras
+   cambian de ancho y la fila entera se mueve: se nota muchísimo en una
+   lista que se recalcula al cargar un gasto. */
 .num,
-.tabular {
+.tabular,
+[class*="t-amount"],
+[class*="t-kpi"],
+.t-hero {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
 }

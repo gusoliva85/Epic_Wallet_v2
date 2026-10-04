@@ -160,7 +160,7 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **Hacer:** `web/src/styles/tokens.css` con el bloque `@theme` completo (fondo, 4 niveles de tinta, líneas, acento, semántica financiera `--color-inc`/`--color-egr`/`--color-sav`, severidades, radios, fuentes, curva de animación); bloque `html[data-theme="dark"]` redefiniendo todo.
   **Aceptación:** · los tokens se usan como utilidad (`text-ink-3`) y como variable (`var(--color-ink-3)`) · cambiar `data-theme` a mano en el inspector cambia toda la paleta · ningún valor de color queda escrito fuera de este archivo.
 
-- [ ] **F01-T02 · Base: fondo, ruido y tipografía**
+- [~] **F01-T02 · Base: fondo, ruido y tipografía**
   **Tipo:** Frontend · **Ref:** Técnico §13.1, §13.4
   **Hacer:** `base.css` con los lavados radiales, `background-attachment: fixed`, la capa de ruido SVG en `::before`, la escala tipográfica de la sección 13.4 con base 16,5 px, Outfit para cifras y títulos, `tabular-nums` en todo lo numérico.
   **Aceptación:** · la escala coincide con la tabla del documento técnico · las cifras no cambian de ancho al actualizarse · el fondo no se repite ni corta al hacer scroll.
@@ -1377,7 +1377,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 | Fase | Tareas | Aprobadas | Estado |
 |---|---|---|---|
 | 0 · Puesta en marcha y producción | 12 | **12** | ✅ **Cerrada** el 03/10/2026 |
-| 1 · Sistema de estilo y esqueleto | 14 | 1 | **En curso** · próxima: F01-T02 |
+| 1 · Sistema de estilo y esqueleto | 14 | 1 | **En curso** · F01-T02 esperando prueba |
 | 2 · Cuentas y autenticación | 15 | 0 | Pendiente |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
 | 4 · Movimientos | 15 | 0 | Pendiente |

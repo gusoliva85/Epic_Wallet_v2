@@ -54,6 +54,33 @@
   --font-display: Outfit, sans-serif;
   --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
 
+  /* ---- escala tipográfica ----
+     Un tamaño por ROL, no por medida: así un componente pide
+     "cifra de KPI" y no "27,5 px", y la escala se puede ajustar
+     en un solo lugar. Los valores salen de la tabla de la skill §4,
+     que a su vez sale del mockup aprobado. */
+  --text-hero: 35px;        /* ahorro del mes, patrimonio */
+  --text-amount: 33px;      /* el importe en el formulario de alta */
+  --text-kpi: 27.5px;       /* cifra de indicador */
+  --text-kpi-sm: 23px;      /* cifra de indicador secundario */
+  --text-sheet: 21.5px;     /* título de hoja */
+  --text-panel: 20px;       /* título de panel */
+  --text-section: 19px;     /* título de sección */
+  --text-kv: 16.5px;        /* cifra en ficha */
+  --text-base: 16.5px;      /* texto corriente */
+  --text-amount-row: 16px;  /* importe en una fila */
+  --text-row: 15.5px;       /* nombre en una fila */
+  --text-button: 15.5px;
+  --text-sub: 12px;         /* secundario de fila, subtítulo de indicador */
+  --text-pill: 11px;
+  --text-label: 10.5px;     /* etiqueta de indicador, separador de día */
+  --text-axis: 10px;        /* valores de los ejes */
+  --text-axis-sm: 9.5px;    /* días de los ejes */
+
+  /* ---- interletrado de las etiquetas en mayúsculas ---- */
+  --tracking-label: 0.05em;
+  --tracking-caps: 0.07em;
+
   /* ---- curva de animación ---- */
   --ease-glass: cubic-bezier(0.32, 0.72, 0, 1);
 }
