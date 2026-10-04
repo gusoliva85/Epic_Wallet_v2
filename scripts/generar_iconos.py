@@ -29,8 +29,8 @@ RAIZ = Path(__file__).resolve().parent.parent
 DESTINO = RAIZ / "web" / "icons"
 
 # Tokens del sistema. Si cambia --accent, se cambia acá y se regenera.
-ACENTO = (87, 118, 140)  # #57768c
-ACENTO_2 = (62, 90, 109)  # #3e5a6d
+ACENTO = (71, 121, 156)  # #47799c
+ACENTO_2 = (51, 92, 120)  # #335c78
 BLANCO = (255, 255, 255)
 
 # Se dibuja a 4x y se reduce al final: así los bordes quedan suaves

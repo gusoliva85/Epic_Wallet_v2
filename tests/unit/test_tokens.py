@@ -288,3 +288,36 @@ def test_el_vidrio_lleva_el_prefijo_de_safari() -> None:
     assert prefijadas >= normales, (
         f"hay {normales} backdrop-filter y sólo {prefijadas} con prefijo de Safari"
     )
+
+
+@pytest.mark.unit
+def test_la_skill_no_miente_sobre_los_colores() -> None:
+    """La skill es la referencia que se lee antes de escribir un componente.
+
+    Si sus valores quedan viejos, alguien copia un color que ya no
+    existe. Pasó: en F01-T03 se recalibró la tinta y la skill siguió
+    mostrando los valores anteriores durante dos tareas, porque usa los
+    nombres sin el prefijo `--color-` y el reemplazo no los encontró.
+    """
+    skill = (RAIZ / ".claude" / "skills" / "epic-wallet-ui" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+    css = _css()
+    i_dark_css = css.index('html[data-theme="dark"] {')
+    i_media_css = css.index("@media (prefers-color-scheme: dark)")
+    claros = dict(re.findall(r"--color-([\w-]+):\s*(#[0-9a-fA-F]{6})", css[:i_dark_css]))
+    oscuros = dict(
+        re.findall(r"--color-([\w-]+):\s*(#[0-9a-fA-F]{6})", css[i_dark_css:i_media_css])
+    )
+
+    i_dark_skill = skill.index('html[data-theme="dark"]{')
+    desfasados = []
+    for texto, mapa, tema in (
+        (skill[:i_dark_skill], claros, "claro"),
+        (skill[i_dark_skill:], oscuros, "oscuro"),
+    ):
+        for nombre, valor in re.findall(r"--([\w-]+):(#[0-9a-fA-F]{6})", texto):
+            real = mapa.get(nombre)
+            if real and real.lower() != valor.lower():
+                desfasados.append(f"--{nombre} ({tema}): la skill dice {valor} y es {real}")
+    assert not desfasados, "la skill tiene colores viejos:\n  " + "\n  ".join(desfasados)

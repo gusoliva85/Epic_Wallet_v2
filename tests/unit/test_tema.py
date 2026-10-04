@@ -101,9 +101,9 @@ def test_la_barra_de_estado_acompana() -> None:
     queda del color del tema anterior."""
     js = _js()
     assert 'name="theme-color"' in js
-    assert "#f1f2f3" in js and "#0c0d0e" in js, (
-        "los dos colores de la barra tienen que coincidir con --color-bg-1"
-    )
+    assert "BARRA" in js, "falta la tabla de colores de la barra"
+    # Los valores concretos los verifica la prueba de abajo contra los
+    # tokens: acá sólo importa que el mecanismo exista.
 
 
 @pytest.mark.unit

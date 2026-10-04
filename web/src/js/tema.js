@@ -23,7 +23,7 @@
 
   /* Los dos colores de la barra de estado de Android. Tienen que
      coincidir con --color-bg-1 de cada tema. */
-  var BARRA = { light: "#f1f2f3", dark: "#0c0d0e" };
+  var BARRA = { light: "#eff2f5", dark: "#0a0d10" };
 
   function guardado() {
     try {

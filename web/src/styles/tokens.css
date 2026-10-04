@@ -14,10 +14,10 @@
 
 @theme {
   /* ---- fondo y lavados ---- */
-  --color-bg-1: #f1f2f3;
-  --color-bg-2: #e9ebec;
-  --color-wash-a: #d6dee3;
-  --color-wash-b: #e6e2d8;
+  --color-bg-1: #eff2f5;
+  --color-bg-2: #e6ecef;
+  --color-wash-a: #d1dfe8;
+  --color-wash-b: #ebe4d3;
 
   /* ---- tinta: 4 niveles de jerarquía ---- */
   /* Los cuatro niveles están calibrados para dar 4,5:1 (de ink a ink-3)
@@ -30,24 +30,24 @@
   --color-ink-4: #8f9398;  /* deshabilitado y ejes */
 
   /* ---- acento: azul grafito ---- */
-  --color-navy: #15181b;
-  --color-accent: #57768c;
-  --color-accent-2: #3e5a6d;
-  --color-accent-soft: #e2e9ed;
+  --color-navy: #11181f;
+  --color-accent: #47799c;
+  --color-accent-2: #335c78;
+  --color-accent-soft: #dfeaf0;
   /* Contenido sobre una superficie de acento. Es blanco en los dos
      temas: el acento siempre es lo bastante oscuro. */
   --color-on-accent: #ffffff;
 
   /* ---- semántica financiera ---- */
-  --color-inc: #2e8067;  /* ingresos */
-  --color-egr: #b13c47;  /* egresos  */
-  --color-sav: #57768c;  /* ahorro   */
+  --color-inc: #26886a;  /* ingresos */
+  --color-egr: #bc313e;  /* egresos  */
+  --color-sav: #47799c;  /* ahorro   */
 
   /* ---- severidad de alertas ---- */
-  --color-ok: #2e8067;
-  --color-warn: #ba8c1f;
-  --color-pend: #bd6c2c;
-  --color-crit: #b13c47;
+  --color-ok: #26886a;
+  --color-warn: #c08e19;
+  --color-pend: #c56b24;
+  --color-crit: #bc313e;
 
   /* ---- radios ---- */
   --radius-sm: 12px;
@@ -112,7 +112,7 @@
      más inclinado y más corto que el del vidrio. */
   --solid-sheen: linear-gradient(125deg, rgba(255, 255, 255, 0.55), transparent 50%);
 
-  --accent-ring: rgba(87, 118, 140, 0.28);
+  --accent-ring: rgba(71, 121, 156, 0.28);
 
   /* color-mix contra estos dos es lo que hace que píldoras, iconos y
      marcas funcionen en ambos temas con una sola regla */
@@ -135,30 +135,30 @@
    Ningún componente conoce el tema: sólo usa tokens.
    ============================================================ */
 html[data-theme="dark"] {
-  --color-bg-1: #0c0d0e;
-  --color-bg-2: #0f1011;
-  --color-wash-a: #1c2529;
-  --color-wash-b: #221f18;
+  --color-bg-1: #0a0d10;
+  --color-bg-2: #0c1014;
+  --color-wash-a: #17272e;
+  --color-wash-b: #262114;
 
   --color-ink: #eef0f1;
   --color-ink-2: #bcc0c4;
   --color-ink-3: #868b91;
   --color-ink-4: #5c6166;
 
-  --color-navy: #050607;
-  --color-accent: #7ea3ba;
-  --color-accent-2: #9bc0d4;
-  --color-accent-soft: #151e23;
+  --color-navy: #040608;
+  --color-accent: #72a6c6;
+  --color-accent-2: #93c2dc;
+  --color-accent-soft: #111f27;
   --color-on-accent: #0c0d0e;
 
-  --color-inc: #49a383;
-  --color-egr: #cf6270;
-  --color-sav: #7ea3ba;
+  --color-inc: #3cb087;
+  --color-egr: #d8596a;
+  --color-sav: #72a6c6;
 
-  --color-ok: #49a383;
-  --color-warn: #d2a63a;
-  --color-pend: #d4874a;
-  --color-crit: #cf6270;
+  --color-ok: #3cb087;
+  --color-warn: #daa932;
+  --color-pend: #dc8642;
+  --color-crit: #d8596a;
 
   --line: rgba(238, 240, 241, 0.1);
   --line-2: rgba(238, 240, 241, 0.06);
@@ -173,7 +173,7 @@ html[data-theme="dark"] {
   --glass-sheen: linear-gradient(120deg, rgba(255, 255, 255, 0.07), transparent 45%);
   --solid-sheen: linear-gradient(125deg, rgba(255, 255, 255, 0.34), transparent 50%);
 
-  --accent-ring: rgba(126, 163, 186, 0.3);
+  --accent-ring: rgba(114, 166, 198, 0.3);
 
   --mix-tint: #181b1e;
   --mix-ink: #f2f4f5;
@@ -188,30 +188,30 @@ html[data-theme="dark"] {
    lo fija el botón de tema y se guarda en localStorage (F01-T04). */
 @media (prefers-color-scheme: dark) {
   html:not([data-theme="light"]) {
-    --color-bg-1: #0c0d0e;
-    --color-bg-2: #0f1011;
-    --color-wash-a: #1c2529;
-    --color-wash-b: #221f18;
+    --color-bg-1: #0a0d10;
+    --color-bg-2: #0c1014;
+    --color-wash-a: #17272e;
+    --color-wash-b: #262114;
 
     --color-ink: #eef0f1;
     --color-ink-2: #bcc0c4;
     --color-ink-3: #868b91;
     --color-ink-4: #5c6166;
 
-    --color-navy: #050607;
-    --color-accent: #7ea3ba;
-    --color-accent-2: #9bc0d4;
-    --color-accent-soft: #151e23;
+    --color-navy: #040608;
+    --color-accent: #72a6c6;
+    --color-accent-2: #93c2dc;
+    --color-accent-soft: #111f27;
     --color-on-accent: #0c0d0e;
 
-    --color-inc: #49a383;
-    --color-egr: #cf6270;
-    --color-sav: #7ea3ba;
+    --color-inc: #3cb087;
+    --color-egr: #d8596a;
+    --color-sav: #72a6c6;
 
-    --color-ok: #49a383;
-    --color-warn: #d2a63a;
-    --color-pend: #d4874a;
-    --color-crit: #cf6270;
+    --color-ok: #3cb087;
+    --color-warn: #daa932;
+    --color-pend: #dc8642;
+    --color-crit: #d8596a;
 
     --line: rgba(238, 240, 241, 0.1);
     --line-2: rgba(238, 240, 241, 0.06);
@@ -226,7 +226,7 @@ html[data-theme="dark"] {
     --glass-sheen: linear-gradient(120deg, rgba(255, 255, 255, 0.07), transparent 45%);
     --solid-sheen: linear-gradient(125deg, rgba(255, 255, 255, 0.34), transparent 50%);
 
-    --accent-ring: rgba(126, 163, 186, 0.3);
+    --accent-ring: rgba(114, 166, 198, 0.3);
 
     --mix-tint: #181b1e;
     --mix-ink: #f2f4f5;

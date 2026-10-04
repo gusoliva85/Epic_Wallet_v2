@@ -31,13 +31,13 @@ Van en `web/src/styles/tokens.css` y se registran en Tailwind con `@theme`.
 ```css
 :root{
   /* fondo y lavados */
-  --bg-1:#f1f2f3; --bg-2:#e9ebec; --wash-a:#d6dee3; --wash-b:#e6e2d8;
+  --bg-1:#eff2f5; --bg-2:#e6ecef; --wash-a:#d1dfe8; --wash-b:#ebe4d3;
 
   /* tinta: 4 niveles de jerarquía */
   --ink:#1c2024;    /* títulos y cifras */
   --ink-2:#4b5157;  /* texto normal */
-  --ink-3:#7c828a;  /* secundario y etiquetas */
-  --ink-4:#a8adb3;  /* deshabilitado y ejes */
+  --ink-3:#70757c;  /* secundario y etiquetas */
+  --ink-4:#8f9398;  /* deshabilitado y ejes */
 
   /* líneas */
   --line:rgba(28,32,36,.10); --line-2:rgba(28,32,36,.07); --line-strong:rgba(28,32,36,.16);
@@ -51,16 +51,16 @@ Van en `web/src/styles/tokens.css` y se registran en Tailwind con `@theme`.
   --glass-sheen:linear-gradient(120deg,rgba(255,255,255,.55),transparent 45%);
 
   /* acento: azul grafito */
-  --navy:#15181b;
-  --accent:#57768c; --accent-2:#3e5a6d; --accent-soft:#e2e9ed; --accent-ring:rgba(87,118,140,.28);
+  --navy:#11181f;
+  --accent:#47799c; --accent-2:#335c78; --accent-soft:#dfeaf0; --accent-ring:rgba(71,121,156,.28);
 
   /* semántica financiera */
-  --inc:#2e8067;  /* ingresos */
-  --egr:#b13c47;  /* egresos  */
-  --sav:#57768c;  /* ahorro   */
+  --inc:#26886a;  /* ingresos */
+  --egr:#bc313e;  /* egresos  */
+  --sav:#47799c;  /* ahorro   */
 
   /* severidad de alertas */
-  --ok:#2e8067; --warn:#ba8c1f; --pend:#bd6c2c; --crit:#b13c47;
+  --ok:#26886a; --warn:#c08e19; --pend:#c56b24; --crit:#bc313e;
 
   /* mezclas y sombras */
   --mix-tint:#fff; --mix-ink:#1c2024;
@@ -74,17 +74,17 @@ Van en `web/src/styles/tokens.css` y se registran en Tailwind con `@theme`.
   --ease:cubic-bezier(.32,.72,0,1);
 }
 html[data-theme="dark"]{
-  --bg-1:#0c0d0e; --bg-2:#0f1011; --wash-a:#1c2529; --wash-b:#221f18;
-  --ink:#eef0f1; --ink-2:#bcc0c4; --ink-3:#868b91; --ink-4:#54585d;
+  --bg-1:#0a0d10; --bg-2:#0c1014; --wash-a:#17272e; --wash-b:#262114;
+  --ink:#eef0f1; --ink-2:#bcc0c4; --ink-3:#868b91; --ink-4:#5c6166;
   --line:rgba(238,240,241,.10); --line-2:rgba(238,240,241,.06); --line-strong:rgba(238,240,241,.16);
   --glass-shell-bg:rgba(22,25,28,.5); --glass-shell-fallback:rgba(13,15,17,.94);
   --glass-content-bg:rgba(22,25,28,.72); --glass-content-fallback:rgba(13,15,17,.96);
   --glass-in:inset 0 1px 0 rgba(255,255,255,.07),inset 0 0 0 1px rgba(255,255,255,.05);
   --glass-sheen:linear-gradient(120deg,rgba(255,255,255,.07),transparent 45%);
-  --navy:#050607;
-  --accent:#7ea3ba; --accent-2:#9bc0d4; --accent-soft:#151e23; --accent-ring:rgba(126,163,186,.3);
-  --inc:#49a383; --egr:#cf6270; --sav:#7ea3ba;
-  --ok:#49a383; --warn:#d2a63a; --pend:#d4874a; --crit:#cf6270;
+  --navy:#040608;
+  --accent:#72a6c6; --accent-2:#93c2dc; --accent-soft:#111f27; --accent-ring:rgba(114,166,198,.3);
+  --inc:#3cb087; --egr:#d8596a; --sav:#72a6c6;
+  --ok:#3cb087; --warn:#daa932; --pend:#dc8642; --crit:#d8596a;
   --mix-tint:#181b1e; --mix-ink:#f2f4f5;
   --shadow-rgb:0,0,0;
   --sh-sm:0 1px 2px rgba(0,0,0,.4),0 4px 14px -4px rgba(0,0,0,.5);
