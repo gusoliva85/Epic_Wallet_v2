@@ -20,10 +20,14 @@
   --color-wash-b: #e6e2d8;
 
   /* ---- tinta: 4 niveles de jerarquía ---- */
+  /* Los cuatro niveles están calibrados para dar 4,5:1 (de ink a ink-3)
+     y 3:1 (ink-4, que sólo se usa en ejes y deshabilitados) SOBRE EL
+     FONDO OPACO DE RESPALDO DEL VIDRIO, que es el peor caso. Si se
+     tocan, tests/unit/test_contraste.py lo detecta. */
   --color-ink: #1c2024;    /* títulos y cifras */
   --color-ink-2: #4b5157;  /* texto normal */
-  --color-ink-3: #7c828a;  /* secundario y etiquetas */
-  --color-ink-4: #a8adb3;  /* deshabilitado y ejes */
+  --color-ink-3: #70757c;  /* secundario y etiquetas */
+  --color-ink-4: #8f9398;  /* deshabilitado y ejes */
 
   /* ---- acento: azul grafito ---- */
   --color-navy: #15181b;
@@ -139,7 +143,7 @@ html[data-theme="dark"] {
   --color-ink: #eef0f1;
   --color-ink-2: #bcc0c4;
   --color-ink-3: #868b91;
-  --color-ink-4: #54585d;
+  --color-ink-4: #5c6166;
 
   --color-navy: #050607;
   --color-accent: #7ea3ba;
@@ -192,7 +196,7 @@ html[data-theme="dark"] {
     --color-ink: #eef0f1;
     --color-ink-2: #bcc0c4;
     --color-ink-3: #868b91;
-    --color-ink-4: #54585d;
+    --color-ink-4: #5c6166;
 
     --color-navy: #050607;
     --color-accent: #7ea3ba;
