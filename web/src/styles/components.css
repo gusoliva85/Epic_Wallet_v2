@@ -188,3 +188,46 @@
   font-size: var(--text-pill);
   color: var(--color-accent-2);
 }
+
+/* ---- interruptor de tema ----
+   Provisorio en esta pantalla: cuando exista la barra superior
+   (F01-T05) se muda ahí. Cualquier elemento con [data-tema] funciona,
+   así que mudarlo no toca JavaScript. */
+.boton-tema {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 20px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  color: var(--color-ink-2);
+  cursor: pointer;
+  transition:
+    transform 0.2s var(--ease),
+    color 0.2s var(--ease);
+}
+
+.boton-tema:hover {
+  transform: translateY(-2px);
+  color: var(--color-accent-2);
+}
+
+.boton-tema:active {
+  transform: translateY(0) scale(0.94);
+}
+
+.boton-tema svg {
+  width: 19px;
+  height: 19px;
+}
+
+/* La transición entre temas: un fundido, no un barrido.
+   Un barrido en una pantalla llena de vidrio se ve sucio. */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.32s;
+    animation-timing-function: var(--ease);
+  }
+}
