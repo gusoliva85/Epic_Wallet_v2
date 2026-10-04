@@ -187,12 +187,12 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **Hacer:** `.botnav` de 5 posiciones (Inicio, Movimientos, Historial, Cartera, Más) visible por debajo de 960 px; botón `+` flotante; hoja de "Más" con Patrimonio, Análisis y Configuración; `env(safe-area-inset-bottom)` respetado.
   **Aceptación:** · se alcanza todo con una mano en un teléfono de 390 px · en pantallas con gestos no queda tapado por la barra del sistema · áreas táctiles de 44 px mínimo · desaparece en escritorio.
 
-- [~] **F01-T07 · Enrutador por hash y las siete vistas**
+- [x] **F01-T07 · Enrutador por hash y las siete vistas**
   **Tipo:** Frontend · **Ref:** Técnico §12.1
   **Hacer:** `router.js` con las siete rutas; `<section class="view">` para cada una; activación por hash; botón "atrás" del navegador funcionando; animación de entrada de vista; vuelta al inicio del scroll al cambiar.
   **Aceptación:** · recargar en `#/inversiones` abre inversiones · "atrás" vuelve a la vista previa · una ruta inválida cae en inicio · la navegación no recarga la página.
 
-- [ ] **F01-T08 · Barra de mes (sin lógica real)**
+- [~] **F01-T08 · Barra de mes (sin lógica real)**
   **Tipo:** Frontend · **Ref:** General §12.1
   **Hacer:** `.monthbar` con flechas de anterior y siguiente, título del mes, subtítulo de estado (abierto o consolidado) y botón "Hoy"; por ahora con valores fijos.
   **Aceptación:** · se ve como el mockup · los botones tienen estado deshabilitado visible · el título no se corta en pantallas angostas.
@@ -1377,7 +1377,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 | Fase | Tareas | Aprobadas | Estado |
 |---|---|---|---|
 | 0 · Puesta en marcha y producción | 12 | **12** | ✅ **Cerrada** el 03/10/2026 |
-| 1 · Sistema de estilo y esqueleto | 14 | 6 | **En curso** · próxima: F01-T07 |
+| 1 · Sistema de estilo y esqueleto | 14 | 7 | **En curso** · próxima: F01-T08 |
 | 2 · Cuentas y autenticación | 15 | 0 | Pendiente |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
 | 4 · Movimientos | 15 | 0 | Pendiente |

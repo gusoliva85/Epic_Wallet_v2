@@ -147,6 +147,46 @@
         </div>
       </header>
 
+      <!-- ======================= BARRA DE MES · F01-T08 =======================
+         El título y los estados los pone barra-mes.js. La navegación
+         entre meses de verdad es de la fase 3. -->
+      <section class="monthbar shell" aria-label="Mes en pantalla">
+        <div class="mb-nav">
+          <button
+            class="chip"
+            type="button"
+            id="mes-anterior"
+            aria-label="Mes anterior"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 6l-6 6 6 6" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- aria-live: al cambiar de mes, el lector tiene que anunciar el
+           mes nuevo. Sin esto, quien no ve la pantalla toca la flecha y
+           no se entera de nada. -->
+        <div class="mb-title" aria-live="polite">
+          <b id="mes-titulo">—</b>
+          <span id="mes-estado">—</span>
+        </div>
+
+        <div class="mb-nav">
+          <button class="chip" type="button" id="mes-hoy">Hoy</button>
+          <button
+            class="chip"
+            type="button"
+            id="mes-siguiente"
+            aria-label="Mes siguiente"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 6l6 6-6 6" />
+            </svg>
+          </button>
+        </div>
+      </section>
+
       <!-- ======================= LAS SIETE VISTAS · F01-T07 =======================
          Una sola está activa; las demás van con `hidden` para que no
          las lea el lector ni las recorra el tabulador. El enrutador
@@ -335,6 +375,7 @@
     <script type="module" src="/src/js/barra-superior.js"></script>
     <script type="module" src="/src/js/barra-inferior.js"></script>
     <script type="module" src="/src/js/boton-tema.js"></script>
+    <script type="module" src="/src/js/barra-mes.js"></script>
     <script type="module" src="/src/js/app.js"></script>
     <script type="module" src="/src/js/registrar-sw.js"></script>
   </body>

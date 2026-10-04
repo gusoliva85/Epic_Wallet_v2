@@ -70,14 +70,37 @@ async function montar(hash = "") {
   return { dom, router };
 }
 
-/** Espera a que jsdom despache los eventos pendientes de hashchange. */
-function latir(dom) {
-  return new Promise((listo) => dom.window.setTimeout(listo, 0));
-}
-
 function activa(dom) {
   const el = dom.window.document.querySelector(".view:not([hidden])");
   return el ? el.dataset.vista : null;
+}
+
+/** Espera a que quede activa la vista `id`.
+ *
+ * Un solo tick NO alcanza: el recorrido del historial de jsdom es
+ * asíncrono y tarda un número de ticks que no está garantizado. Con
+ * `setTimeout(0)` las pruebas de «atrás» pasaban casi siempre y
+ * fallaban una vez cada tres corridas. */
+function esperarVista(dom, id, ms = 2000) {
+  return new Promise((listo, falla) => {
+    const limite = Date.now() + ms;
+    const probar = () => {
+      if (activa(dom) === id) return listo();
+      if (Date.now() > limite) {
+        return falla(
+          new Error(`la vista nunca pasó a «${id}»; quedó en «${activa(dom)}»`),
+        );
+      }
+      dom.window.setTimeout(probar, 5);
+    };
+    probar();
+  });
+}
+
+/** Deja correr los eventos pendientes. Para cuando se verifica que algo
+    NO pasa y no hay condición que esperar. */
+function latir(dom, ms = 60) {
+  return new Promise((listo) => dom.window.setTimeout(listo, ms));
 }
 
 describe("enrutador", () => {
@@ -145,7 +168,7 @@ describe("enrutador", () => {
     const { dom, router } = await montar("#/inicio");
     const largo = dom.window.history.length;
     router.navegar("no-existe");
-    await latir(dom);
+    await esperarVista(dom, "inicio");
     assert.equal(activa(dom), "inicio");
     assert.equal(
       dom.window.history.length,
@@ -164,7 +187,7 @@ describe("enrutador", () => {
     );
     router.navegar("analisis");
     router.navegar("analisis");
-    await latir(dom);
+    await esperarVista(dom, "analisis");
     assert.deepEqual(
       vistos,
       [],
@@ -175,7 +198,7 @@ describe("enrutador", () => {
   test("solo una vista queda visible a la vez", async () => {
     const { dom, router } = await montar("#/inicio");
     router.navegar("analisis");
-    await latir(dom);
+    await esperarVista(dom, "analisis");
     const visibles = dom.window.document.querySelectorAll(
       ".view:not([hidden])",
     );
@@ -195,28 +218,26 @@ describe("enrutador", () => {
     // Criterio de aceptación: «atrás» vuelve a la vista previa.
     const { dom, router } = await montar("#/inicio");
     router.navegar("movimientos");
-    await latir(dom);
+    await esperarVista(dom, "movimientos");
     assert.equal(activa(dom), "movimientos");
 
     dom.window.history.back();
-    await latir(dom);
+    await esperarVista(dom, "inicio");
     assert.equal(activa(dom), "inicio", "«atrás» tenía que volver a inicio");
   });
 
   test("atras y adelante recorren tres vistas", async () => {
     const { dom, router } = await montar("#/inicio");
     router.navegar("movimientos");
-    await latir(dom);
+    await esperarVista(dom, "movimientos");
     router.navegar("config");
-    await latir(dom);
+    await esperarVista(dom, "config");
 
     dom.window.history.back();
-    await latir(dom);
-    assert.equal(activa(dom), "movimientos");
+    await esperarVista(dom, "movimientos");
 
     dom.window.history.forward();
-    await latir(dom);
-    assert.equal(activa(dom), "config");
+    await esperarVista(dom, "config");
   });
 
   test("navegar a la ruta actual no agrega entradas al historial", async () => {
@@ -233,7 +254,7 @@ describe("enrutador", () => {
   test("navegar a una ruta que no existe cae en inicio", async () => {
     const { dom, router } = await montar("#/config");
     router.navegar("cualquier-cosa");
-    await latir(dom);
+    await esperarVista(dom, "inicio");
     assert.equal(activa(dom), "inicio");
   });
 
@@ -247,7 +268,7 @@ describe("enrutador", () => {
       vistos.push(ev.detail.id),
     );
     router.navegar("patrimonio");
-    await latir(dom);
+    await esperarVista(dom, "patrimonio");
     assert.deepEqual(vistos, ["patrimonio"]);
   });
 
@@ -258,7 +279,7 @@ describe("enrutador", () => {
       recibido = ev.detail.id;
     });
     router.navegar("analisis");
-    await latir(dom);
+    await esperarVista(dom, "analisis");
     assert.equal(recibido, "analisis");
   });
 
@@ -271,7 +292,7 @@ describe("enrutador", () => {
   test("el titulo de la pagina acompana a la vista", async () => {
     const { dom, router } = await montar("#/inicio");
     router.navegar("inversiones");
-    await latir(dom);
+    await esperarVista(dom, "inversiones");
     assert.match(dom.window.document.title, /Cartera/);
   });
 
@@ -284,7 +305,7 @@ describe("enrutador", () => {
       pedido = arg;
     };
     router.navegar("historial");
-    await latir(dom);
+    await esperarVista(dom, "historial");
     assert.equal(pedido?.top, 0);
     assert.equal(
       pedido?.behavior,
@@ -302,7 +323,7 @@ describe("enrutador", () => {
       recargo = true;
     });
     router.navegar("movimientos");
-    await latir(dom);
+    await esperarVista(dom, "movimientos");
     assert.equal(recargo, false);
   });
 

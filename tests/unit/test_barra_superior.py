@@ -17,6 +17,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.unit.ayudas_html import botones_mudos
+
 RAIZ = Path(__file__).resolve().parents[2]
 WEB = RAIZ / "web"
 INDEX = WEB / "index.html"
@@ -121,13 +123,13 @@ def test_los_margenes_respetan_la_zona_segura() -> None:
 @pytest.mark.unit
 def test_todo_boton_de_solo_icono_se_anuncia() -> None:
     """Criterio de aceptación de la tarea. Un botón cuyo contenido es un
-    SVG o dos iniciales no dice nada al lector sin `aria-label`."""
-    sin_etiqueta = []
-    for tag in re.findall(r"<button\b[^>]*>", _html()):
-        if "aria-label" not in tag:
-            clase = re.search(r'class="([^"]*)"', tag)
-            sin_etiqueta.append(clase.group(1) if clase else tag)
-    assert not sin_etiqueta, f"botones sin aria-label: {sin_etiqueta}"
+    SVG o dos iniciales no dice nada al lector sin `aria-label`.
+
+    Los botones con texto visible quedan afuera: no lo necesitan, y
+    ponerlo de más puede tapar el texto que se ve.
+    """
+    mudos = botones_mudos(_html())
+    assert not mudos, f"botones que no dicen nada: {mudos}"
 
 
 @pytest.mark.unit
