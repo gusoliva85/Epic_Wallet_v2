@@ -34,6 +34,13 @@ INVARIANTES = {
     "--glass-shell-blur",
     "--glass-content-blur",
 }
+# La escala tipográfica y el interletrado tampoco: son medidas.
+INVARIANTES |= set(
+    re.findall(
+        r"(--(?:text|tracking)-[\w-]+)\s*:",
+        (ESTILOS / "tokens.css").read_text(encoding="utf-8"),
+    )
+)
 
 
 def _css() -> str:
@@ -166,3 +173,76 @@ def test_el_vidrio_tiene_su_degradacion() -> None:
 def test_el_movimiento_reducido_se_respeta() -> None:
     texto = (ESTILOS / "base.css").read_text(encoding="utf-8")
     assert "prefers-reduced-motion" in texto, "falta anular las animaciones"
+
+
+# ==================================================================
+#  Escala tipográfica (F01-T02)
+# ==================================================================
+@pytest.mark.unit
+def test_la_escala_coincide_con_la_documentada() -> None:
+    """Los tamaños salen de la tabla de la skill §4, que sale del mockup.
+
+    Si alguien cambia uno, esta prueba lo obliga a actualizar también la
+    skill, que es la referencia que lee cualquiera antes de escribir un
+    componente.
+    """
+    esperados = {
+        "--text-hero": "35px",
+        "--text-amount": "33px",
+        "--text-kpi": "27.5px",
+        "--text-kpi-sm": "23px",
+        "--text-sheet": "21.5px",
+        "--text-panel": "20px",
+        "--text-section": "19px",
+        "--text-kv": "16.5px",
+        "--text-base": "16.5px",
+        "--text-amount-row": "16px",
+        "--text-row": "15.5px",
+        "--text-button": "15.5px",
+        "--text-sub": "12px",
+        "--text-pill": "11px",
+        "--text-label": "10.5px",
+        "--text-axis": "10px",
+        "--text-axis-sm": "9.5px",
+    }
+    css = _css()
+    for token, valor in esperados.items():
+        hallado = re.search(rf"{re.escape(token)}:\s*([^;]+);", css)
+        assert hallado, f"falta el token {token}"
+        assert hallado.group(1).strip() == valor, (
+            f"{token} vale {hallado.group(1).strip()} y la skill dice {valor}"
+        )
+
+
+@pytest.mark.unit
+def test_ningun_tamano_de_fuente_suelto() -> None:
+    """Los tamaños se piden por rol, no por medida."""
+    texto = (ESTILOS / "base.css").read_text(encoding="utf-8")
+    texto += (ESTILOS / "components.css").read_text(encoding="utf-8")
+    texto = re.sub(r"/\*.*?\*/", "", texto, flags=re.S)
+    sueltos = [t for t in re.findall(r"font-size:\s*([^;]+);", texto) if "var(--text" not in t]
+    assert not sueltos, f"tamaños escritos a mano: {sueltos}. Usá var(--text-*)."
+
+
+@pytest.mark.unit
+def test_las_cifras_llevan_ancho_fijo() -> None:
+    """Sin tabular-nums, una lista se mueve entera al recalcularse."""
+    texto = (ESTILOS / "base.css").read_text(encoding="utf-8")
+    assert "tabular-nums" in texto
+    assert ".num" in texto
+
+
+@pytest.mark.unit
+def test_el_fondo_no_usa_background_attachment_fixed() -> None:
+    """Safari en iOS lo ignora y el fondo se desplazaría con el contenido.
+
+    Va en una capa `position: fixed` propia, que se comporta igual en
+    todos los navegadores.
+    """
+    texto = (ESTILOS / "base.css").read_text(encoding="utf-8")
+    sin_comentarios = re.sub(r"/\*.*?\*/", "", texto, flags=re.S)
+    assert "background-attachment: fixed" not in sin_comentarios, (
+        "usá una capa fija en lugar de background-attachment"
+    )
+    assert "body::after" in texto, "falta la capa del fondo"
+    assert "z-index: -1" in texto, "la capa del fondo tiene que ir detrás del contenido"
