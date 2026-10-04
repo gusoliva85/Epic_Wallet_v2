@@ -444,23 +444,34 @@ pintarTarjetas(contenedor, [ ...tarjetas ])   // escribe y arranca las barras
 
 **La barra nace en 0 en el CSS y recibe su ancho en `requestAnimationFrame`.** Puesta directo, la transición no tiene de dónde partir y aparece ya llena. Y tiene que ser `requestAnimationFrame`: una microtarea corre antes del pintado, así que el ancho se junta con el primer render y tampoco se ve crecer. Ojo: **esa diferencia no se puede probar en jsdom**, los dos se ven iguales; por eso `tests/unit/test_kpi.py` la verifica leyendo el código y lo dice.
 
-#### Tarjeta teñida con silueta
+#### Tarjeta de color
 
-Las cuatro métricas del tablero se reconocen **sin leer la etiqueta**: cada una se tiñe de su color y lleva una silueta de fondo. Las dos cosas van juntas y las pide una sola clase (`marca` en el componente → `.kpi-color` + `.kpi-marca`): una silueta sobre el vidrio neutro se ve como una mancha, y un fondo de color sin silueta no identifica nada.
+Las cuatro métricas del tablero son **tarjetas de color sólido con texto blanco**, para reconocerlas sin leer la etiqueta. Diseño de Gustavo: `documentacion/mockups/tarjetas.png` (en Smart_Building_ver_4).
 
-```text
-Ingresos    verde   · pesos + flecha arriba
-Egresos     rojo    · pesos + flecha abajo
-Gasto de hoy ámbar  · pesos + calendario
-Patrimonio  acento  · pesos + caja fuerte
+```javascript
+tarjetaMetrica({ etiqueta, cifra, sub, tarjeta: "inc" | "egr" | "dia" | "pat" })
 ```
 
-- **El tinte del fondo es del 16% y no más.** Más fuerte, el fondo compite con la cifra, que es justo lo que no tiene que pasar.
-- **Sobre una tarjeta teñida, la etiqueta y el subtítulo usan `--color-ink-2`, no `--ink-3`.** `--ink-3` da exactamente 4,5:1 sobre el vidrio neutro; con el fondo teñido cae a 3,89:1, por debajo del mínimo del propio sistema. Con `--ink-2` queda en 6,13:1.
-- La silueta va en un lienzo de **48×32** —el doble de ancho, porque combina dos figuras que en un cuadrado se pisarían—, anclada abajo a la derecha con `preserveAspectRatio="xMaxYMax"` para que al recortarse se pierda la parte de arriba y no el centro.
-- Opacidad por `--marca-op`: **13% en claro y 20% en oscuro.** Un trazo al 13% sobre un fondo casi negro no se ve.
-- Trazo simple y abierto: dibujado muy traslúcido y agrandado, un trazo con detalle se ve como una mancha sucia.
-- Va **primera en el DOM** y con `pointer-events: none`: pintada después taparía la cifra, y sin eso se come los clics.
+```text
+inc  verde    #237d62 · flecha arriba
+egr  rojo     #bc313e · flecha abajo
+dia  ocre     #8e6913 · calendario
+pat  grafito  #447496 · libro mayor
+```
+
+**Los cuatro fondos NO son los colores semánticos.** Están bajados hasta dar 5:1 con blanco. El ocre es el que más bajó: blanco sobre `--color-warn` puro da 2,95:1, menos de la mitad del mínimo. Son los mismos en los dos temas — una tarjeta de color es su propia superficie, no vidrio que se tiñe.
+
+**El signo pesos de fondo va MÁS OSCURO que la tarjeta, no más claro.** Es la decisión central y es contraintuitiva:
+
+> Con un signo claro, la cifra blanca que le cae encima baja de 5:1 a **3,3:1** y deja de cumplir el mínimo. Y no se arregla bajándole la opacidad: **ni al 10% llega a 4,5:1**. Oscureciéndolo sube a **6,8:1** — decoración que además ayuda a leer.
+
+El signo va como **texto**, no como trazo dibujado: así es el mismo glifo de la tipografía con la que se escriben los importes. Lleva `user-select: none` —si no, aparece en medio del texto al copiar la tarjeta— y se recorta contra el borde, que es de donde sale el efecto de que sea más grande que la tarjeta.
+
+El símbolo chico sí va claro: vive arriba a la derecha, **donde no pasa ninguna cifra por encima**.
+
+**El texto es blanco pleno, sin opacidades intermedias.** Al 92% ya da 4,52:1, demasiado al límite. La jerarquía la hacen el tamaño y el peso.
+
+Una tarjeta de color **no lleva además el cuadradito de icono**: la composición del fondo ya cumple esa función. Y la héroe **no** es de color: el contraste entre ella, de vidrio, y las cuatro sólidas es parte del diseño.
 
 ### Rejilla y entrada escalonada
 

@@ -1098,82 +1098,106 @@
   stroke-linejoin: round;
 }
 
-/* ---- tarjeta teñida con silueta de fondo ----
-   Pedido de Gustavo: que las cuatro métricas se reconozcan de un
-   vistazo sin leer la etiqueta. El color y la silueta van juntos; por
-   separado no funcionan —una silueta sobre el vidrio neutro se ve como
-   una mancha y un fondo de color sin silueta no identifica nada.
+/* ---- tarjeta de color ----
+   Diseño de Gustavo (documentacion/mockups/tarjetas.png): fondo sólido,
+   el signo pesos grande recortado contra el borde y el símbolo que
+   identifica la tarjeta arriba a la derecha.
 
-   El tinte es del 16% y no más: con la tarjeta más teñida, el
-   subtítulo pierde contraste (ver abajo) y la información empieza a
-   competir con el fondo, que es justo lo que no tenía que pasar. */
+   Dos cosas se apartan del diseño original, las dos por legibilidad:
+
+   1. El signo pesos va MÁS OSCURO que la tarjeta, no más claro. Con un
+      pesos claro, la cifra blanca que le cae encima baja de 5:1 a
+      3,3:1 y queda por debajo del mínimo del sistema; no alcanza con
+      bajarle la opacidad, porque ni al 10% llega. Oscuro sube a 6,8:1:
+      es decoración que además ayuda a leer.
+
+   2. El texto es blanco pleno, sin opacidades intermedias. Al 92% ya
+      queda en 4,52:1, demasiado al límite. La jerarquía la hacen el
+      tamaño y el peso, que es como tiene que hacerse.
+   ============================================================ */
 
 .kpi-color {
-  background:
-    linear-gradient(
-      155deg,
-      color-mix(in srgb, var(--c) 16%, transparent),
-      color-mix(in srgb, var(--c) 7%, transparent)
-    ),
-    var(--glass-shell-bg);
-  border-color: color-mix(in srgb, var(--c) 24%, var(--line));
+  background: var(--c-card);
+  border-color: transparent;
+  color: var(--color-on-accent);
 }
 
-/* Sin backdrop-filter, la capa de abajo tiene que ser opaca igual que
-   en el resto del vidrio. Va acá y no alcanza con la regla general de
-   `.shell`, porque esta tiene la misma especificidad y gana por venir
-   después en el archivo. */
-@supports not (
-  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
-) {
-  .kpi-color {
-    background:
-      linear-gradient(
-        155deg,
-        color-mix(in srgb, var(--c) 16%, transparent),
-        color-mix(in srgb, var(--c) 7%, transparent)
-      ),
-      var(--glass-shell-fallback);
-  }
-}
-
-/* La etiqueta y el subtítulo suben un nivel de tinta.
-   `--color-ink-3` sobre el tinte da 3,89:1 —por debajo del mínimo de
-   4,5:1 del propio sistema— porque el fondo deja de ser neutro.
-   Con `--color-ink-2` queda en 6,13:1. */
+/* El texto, todo del mismo blanco. Los cuatro fondos están elegidos
+   para que el blanco encima dé 5:1 o más. */
 .kpi-color .kpi-label,
+.kpi-color .kpi-num,
 .kpi-color .kpi-sub {
-  color: var(--color-ink-2);
+  color: var(--color-on-accent);
 }
 
-/* La silueta. Va anclada abajo a la derecha y se recorta contra el
-   borde de la tarjeta, que tiene `overflow: hidden`. */
-.kpi-marca {
+/* El brillo diagonal del vidrio, fuera: sobre un fondo sólido es un
+   velo blanco que ensucia el color en lugar de dar profundidad. La
+   línea clara de arriba de `--glass-in` sí se queda, que es la que da
+   el borde iluminado. */
+.kpi-color::before {
+  content: none;
+}
+
+/* ---- el signo pesos de fondo ----
+   Va como texto y no como trazo: así es el mismo glifo de la
+   tipografía con la que se escriben las cifras, no un dibujo que se le
+   parece. Se recorta contra el borde de la tarjeta, que ya tiene
+   `overflow: hidden`. */
+.kpi-peso {
   position: absolute;
-  right: -12px;
-  bottom: -16px;
-  width: 112px;
+  right: -4px;
+  bottom: -34px;
+  font-family: var(--font-display);
+  font-size: var(--text-peso);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--peso-sombra);
   pointer-events: none;
-  color: var(--c, var(--color-accent));
+  /* Que no se pueda seleccionar ni copiar: es decoración, y de otro
+     modo aparece en medio del texto al copiar la tarjeta. */
+  user-select: none;
+}
+
+/* El símbolo que identifica la tarjeta. Arriba a la derecha, donde no
+   pasa ninguna cifra por encima: por eso este sí puede ir claro. */
+.kpi-glifo {
+  position: absolute;
+  top: 13px;
+  right: 13px;
+  width: 24px;
+  height: 24px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.5;
+  stroke-width: 1.9;
   stroke-linecap: round;
   stroke-linejoin: round;
-  opacity: var(--marca-op);
+  color: var(--color-on-accent);
+  opacity: var(--glifo-op);
+  pointer-events: none;
 }
 
-/* En la héroe, que es el doble de ancha, la silueta es más grande. */
-.kpi--hero .kpi-marca {
-  width: 164px;
-}
-
-/* La silueta no se agranda con el hover de la tarjeta: moverla llama
-   la atención sobre el fondo en lugar de sobre la cifra. */
+/* En la rejilla de 4 y 6 columnas la tarjeta es más angosta: el signo
+   achica para no comerse el ancho de la cifra. */
 @media (min-width: 640px) {
-  .kpi-marca {
-    width: 124px;
+  .kpi-peso {
+    font-size: var(--text-peso-sm);
+    bottom: -30px;
   }
+}
+
+/* La cifra y el subtítulo se pintan por encima del signo. `.shell > *`
+   ya los sube, pero el signo es hermano de ellos y va primero en el
+   DOM, así que conviene dejarlo dicho. */
+.kpi-color .kpi-top,
+.kpi-color .kpi-num,
+.kpi-color .kpi-sub {
+  position: relative;
+  z-index: 1;
+}
+
+/* La etiqueta no se mete debajo del símbolo de la esquina. */
+.kpi-color .kpi-label {
+  padding-right: 30px;
 }
 
 /* ---- la barra de progreso de la tarjeta héroe ---- */

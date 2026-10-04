@@ -24,6 +24,15 @@ TOKENS = ESTILOS / "tokens.css"
 
 # No cambian con el tema: medidas, familias y curvas.
 INVARIANTES = {
+    # Las tarjetas de color son su propia superficie: el mismo fondo
+    # sólido con texto blanco en los dos temas. No se tiñen con el
+    # tema porque no son vidrio.
+    "--color-card-inc",
+    "--color-card-egr",
+    "--color-card-dia",
+    "--color-card-pat",
+    "--peso-sombra",
+    "--glifo-op",
     "--radius-ico",
     "--radius-btn",
     "--radius-nav",
@@ -355,7 +364,7 @@ def test_todo_var_usado_existe_de_verdad() -> None:
         texto = (ESTILOS / archivo).read_text(encoding="utf-8")
         usados |= set(re.findall(r"var\((--[\w-]+)", texto))
 
-    faltan = sorted(usados - definidos - {"--c"})
+    faltan = sorted(usados - definidos - {"--c", "--c-card"})
     assert not faltan, (
         f"estos tokens se usan y no están definidos en tokens.css: {faltan}. "
         "El navegador descarta la declaración sin avisar."
