@@ -163,3 +163,31 @@ def test_el_bloqueo_del_fondo_no_usa_overflow_hidden() -> None:
 
     assert 'style.position = "fixed"' in js
     assert "overflow" not in js, "el bloqueo del fondo volvió a overflow:hidden, que iOS ignora"
+
+
+@pytest.mark.unit
+def test_la_hoja_usa_el_vidrio_de_las_barras_y_no_el_de_una_tarjeta() -> None:
+    """Pedido de Gustavo al ver los dos modales: «es muy transparente,
+    necesito que sea más sólido, como el header y la barra inferior».
+
+    Es el mismo problema que tenían las barras. Una hoja se abre ENCIMA
+    de la aplicación y lleva texto: con el 52% de opacidad de una
+    tarjeta, el contenido de atrás se mezcla con el de adelante y las
+    dos cosas se leen peor.
+    """
+    cuerpo = _regla(".hoja")
+    assert "var(--glass-bar-bg)" in cuerpo, (
+        "la hoja tiene que usar el vidrio casi opaco de las barras"
+    )
+    assert "var(--glass-shell-bg)" not in cuerpo, "quedó el vidrio semitransparente de tarjeta"
+    assert "var(--glass-bar-blur)" in cuerpo, "el desenfoque también es el de la barra"
+
+
+@pytest.mark.unit
+def test_la_hoja_tiene_su_respaldo_opaco() -> None:
+    """Sin `backdrop-filter`, el texto de la hoja quedaría sobre un
+    fondo semitransparente sin desenfocar."""
+    bloques = re.findall(r"@supports not \(.*?\{(.*?)\n\}", _css(), re.S)
+    assert any(".hoja" in b and "--glass-bar-fallback" in b for b in bloques), (
+        "la hoja necesita su propio respaldo opaco"
+    )
