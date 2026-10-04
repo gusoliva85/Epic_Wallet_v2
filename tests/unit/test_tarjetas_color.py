@@ -236,3 +236,44 @@ def test_el_texto_de_la_tarjeta_de_color_es_blanco_pleno() -> None:
     assert m, "falta la regla del texto de la tarjeta de color"
     assert "var(--color-on-accent)" in m.group(1)
     assert "rgba" not in m.group(1), "el texto no lleva opacidad"
+
+
+def _saturacion(c: Color) -> float:
+    """La S de HLS, que es como se percibe «cuánto color» tiene."""
+    r, g, b = (v / 255 for v in c)
+    alto, bajo = max(r, g, b), min(r, g, b)
+    if alto == bajo:
+        return 0.0
+    luz = (alto + bajo) / 2
+    return (alto - bajo) / (2 - alto - bajo) if luz > 0.5 else (alto - bajo) / (alto + bajo)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("tarjeta", TARJETAS)
+def test_la_tarjeta_no_tiene_mas_color_que_el_acento_del_sistema(tarjeta: str) -> None:
+    """Pedido de Gustavo después de verlas: «tiene mucho color vivo y
+    fuerte, que sea acorde a lo que es todo el formato».
+
+    Una tarjeta de color sólido es una superficie grande, no un acento
+    chico. Con la saturación de los colores semánticos —entre 56% y
+    76%— se sale del tono grafito del resto de la aplicación y pesa más
+    que la información que lleva encima. El techo es la saturación de
+    `--color-accent`, que es la referencia de lo «grafito» del sistema.
+    """
+    techo = _saturacion(_hex(_token("--color-accent")))
+    tiene = _saturacion(_hex(_token(tarjeta)))
+    assert tiene <= techo + 0.02, (
+        f"{tarjeta} tiene {tiene:.0%} de saturación y el acento del "
+        f"sistema tiene {techo:.0%}: queda fuera de tono"
+    )
+
+
+@pytest.mark.unit
+def test_las_cuatro_tarjetas_pesan_lo_mismo() -> None:
+    """Si una contrasta mucho más que otra, la fila se ve como cuatro
+    oscuridades distintas en lugar de como un conjunto."""
+    contrastes = [contraste(BLANCO, _hex(_token(t))) for t in TARJETAS]
+    assert max(contrastes) - min(contrastes) <= 0.5, (
+        "las cuatro tarjetas tienen que contrastar parecido: "
+        + ", ".join(f"{t}={c:.2f}" for t, c in zip(TARJETAS, contrastes, strict=True))
+    )
