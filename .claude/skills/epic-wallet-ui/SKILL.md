@@ -626,6 +626,12 @@ Cada vista implementa los cuatro, con `components/estados.js`. **Nunca una panta
 
 **El interruptor de ajustes es un `<button role="switch" aria-checked>`**, no un `div` con clase: un div no se alcanza con teclado ni dice si está activado.
 
+## 11.3 · Dos cosas que no van en el tablero
+
+**Las alertas viven en una hoja que abre la campanita**, no en el tablero. Ahí competían con los indicadores y empujaban el resto de la pantalla hacia abajo. Es `.hoja--modal` y no `.hoja--cajon`: una alerta pide atención, no se mira de reojo mientras se sigue leyendo la lista. **El número del globo sale de la misma lista que llena la hoja** — escrito a mano, el botón diría un número y la hoja mostraría otro.
+
+**Un gráfico que todavía no existe NO se marca con un esqueleto de carga.** Un esqueleto que brilla para siempre dice «esto está cargando», no «esto llega más adelante», y quien abre la aplicación se queda esperando. Va `.grafico-pendiente`: borde punteado, el alto real del gráfico —para revisar la maqueta con las proporciones de verdad— y un texto que dice **qué** gráfico va ahí y **en qué fase** llega. El esqueleto sigue existiendo para su uso real: mientras la API responde.
+
 ## 11.2 · Los datos de ejemplo
 
 Todos en `web/src/js/datos-muestra.js`, **ninguna vista inventa un número**. Si una escribiera un importe propio, al conectar la API quedaría un número fijo en medio de los reales y nadie se daría cuenta; hay una prueba que lo impide.

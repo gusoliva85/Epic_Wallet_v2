@@ -111,7 +111,9 @@
             class="boton-icono"
             type="button"
             id="btn-alertas"
-            aria-label="Alertas: 4 sin leer"
+            aria-label="Alertas"
+            aria-expanded="false"
+            aria-controls="hoja-alertas"
           >
             <svg viewBox="0 0 24 24">
               <path d="M6 8a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6" />
@@ -264,11 +266,15 @@
               </span>
             </div>
             <!-- Marcador de posición: el gráfico es de la fase 3. -->
-            <div
-              class="esqueleto esqueleto--grafico"
-              id="grafico-diario"
-              aria-hidden="true"
-            ></div>
+            <div class="grafico-pendiente" role="note">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 20h18M6 20V11M11 20V5M16 20v-7M21 20v-4" /></svg
+              ><b>Gráfico de comportamiento diario</b>
+              <p>
+                Barras de ingresos y egresos por día, con la línea del ahorro
+                acumulado sobre su propio eje. Llega en la fase 3.
+              </p>
+            </div>
             <div class="chart-foot" id="pie-diario"></div>
           </article>
 
@@ -288,11 +294,15 @@
                 <button type="button">Tasa de ahorro</button>
               </div>
             </div>
-            <div
-              class="esqueleto esqueleto--grafico"
-              id="grafico-seis"
-              aria-hidden="true"
-            ></div>
+            <div class="grafico-pendiente" role="note">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 20h18M6 20V11M11 20V5M16 20v-7M21 20v-4" /></svg
+              ><b>Gráfico de los últimos seis meses</b>
+              <p>
+                Barras agrupadas de ingresos, egresos y ahorro. Llega en la fase
+                3.
+              </p>
+            </div>
             <div class="chart-foot" id="pie-seis"></div>
           </article>
 
@@ -328,14 +338,6 @@
               <div class="rows" id="movimientos-inicio"></div>
             </article>
           </div>
-
-          <div class="sec-head">
-            <div>
-              <h2 id="t-avisos">Alertas analíticas</h2>
-              <p>Sin presupuestos: sólo comportamiento observado.</p>
-            </div>
-          </div>
-          <div class="rows" id="avisos-inicio" style="padding: 0"></div>
         </section>
 
         <!-- ----------------------------------------------- MOVIMIENTOS -->
@@ -423,7 +425,15 @@
                 <p>Saldo inicial más los ahorros de cada mes.</p>
               </div>
             </div>
-            <div class="esqueleto esqueleto--grafico" aria-hidden="true"></div>
+            <div class="grafico-pendiente" role="note">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 20h18M6 20V11M11 20V5M16 20v-7M21 20v-4" /></svg
+              ><b>Gráfico de evolución del ahorro</b>
+              <p>
+                Área con la línea del saldo acumulado mes a mes. Llega en la
+                fase 5.
+              </p>
+            </div>
           </article>
 
           <p class="ghost-note">
@@ -512,7 +522,15 @@
                 </p>
               </div>
             </div>
-            <div class="esqueleto esqueleto--grafico" aria-hidden="true"></div>
+            <div class="grafico-pendiente" role="note">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 20h18M6 20V11M11 20V5M16 20v-7M21 20v-4" /></svg
+              ><b>Gráfico de composición del patrimonio</b>
+              <p>
+                Barra apilada con la parte líquida y la invertida. Llega en la
+                fase 7.
+              </p>
+            </div>
             <div class="chart-foot" id="patrimonio-pie"></div>
           </article>
         </section>
@@ -533,10 +551,15 @@
                   <p>Independiente de los movimientos del mes.</p>
                 </div>
               </div>
-              <div
-                class="esqueleto esqueleto--grafico"
-                aria-hidden="true"
-              ></div>
+              <div class="grafico-pendiente" role="note">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 20h18M6 20V11M11 20V5M16 20v-7M21 20v-4" /></svg
+                ><b>Gráfico de evolución salarial</b>
+                <p>
+                  Área con la línea del sueldo a lo largo del tiempo. Llega en
+                  la fase 8.
+                </p>
+              </div>
               <div class="rows" id="analisis-salarios"></div>
             </article>
 
@@ -661,6 +684,40 @@
         </button>
       </div>
       <div class="hoja-cuerpo"></div>
+    </aside>
+
+    <!-- Hoja de alertas. La abre la campanita de la barra superior.
+         Es modal y no cajón: las alertas piden atención, no se miran
+         de reojo mientras se sigue leyendo la lista. -->
+    <aside
+      class="hoja hoja--modal"
+      id="hoja-alertas"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="hoja-alertas-titulo"
+      aria-hidden="true"
+      tabindex="-1"
+    >
+      <div class="hoja-asa" aria-hidden="true"></div>
+      <div class="hoja-cabeza">
+        <div>
+          <h2 id="hoja-alertas-titulo">Alertas</h2>
+          <p id="hoja-alertas-sub">
+            Sin presupuestos: sólo comportamiento observado.
+          </p>
+        </div>
+        <button
+          class="hoja-cerrar"
+          type="button"
+          data-cerrar
+          aria-label="Cerrar"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
+      <div class="hoja-cuerpo" id="alertas-lista"></div>
     </aside>
 
     <!-- Hoja de detalle · F01-T11.

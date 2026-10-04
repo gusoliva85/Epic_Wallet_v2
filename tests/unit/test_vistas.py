@@ -71,7 +71,12 @@ def test_cada_vista_tiene_contenido_propio(vista: str) -> None:
 @pytest.mark.unit
 def test_el_orden_del_tablero_es_el_del_mockup() -> None:
     """Criterio de aceptación. Los indicadores arriba, después los dos
-    gráficos, después las dos listas y al final las alertas."""
+    gráficos y después las dos listas.
+
+    Las alertas estaban al final del tablero y se mudaron a su propia
+    hoja, que abre la campanita: ahí competían con los indicadores y
+    empujaban el resto de la pantalla hacia abajo.
+    """
     cuerpo = _cuerpo_de_vista("inicio")
     orden = [
         "kpis-inicio",
@@ -79,7 +84,6 @@ def test_el_orden_del_tablero_es_el_del_mockup() -> None:
         "Últimos seis meses",
         "Gastos por categoría",
         "Últimos movimientos",
-        "Alertas analíticas",
     ]
     posiciones = []
     for pieza in orden:
@@ -276,3 +280,95 @@ def test_el_interruptor_de_ajustes_es_accesible() -> None:
         assert 'type="button"' in i, f"interruptor que no es botón: {i}"
         assert 'role="switch"' in i, f"interruptor sin role=switch: {i}"
         assert "aria-checked" in i, f"interruptor que no dice su estado: {i}"
+
+
+# ------------------------------------------------- las alertas, en su hoja
+
+
+@pytest.mark.unit
+def test_las_alertas_no_estan_en_el_tablero() -> None:
+    """Pedido de Gustavo: le gustan como están diseñadas pero no dentro
+    del tablero. Ahí competían con los indicadores y empujaban el resto
+    de la pantalla hacia abajo.
+    """
+    assert "avisos-inicio" not in _html(), "el panel de alertas sigue en el tablero"
+
+
+@pytest.mark.unit
+def test_la_campanita_abre_la_hoja_de_alertas() -> None:
+    html = _html()
+    boton = re.search(r'<button[^>]*id="btn-alertas"[^>]*>', html, re.S)
+    assert boton, "falta la campanita"
+    assert 'aria-controls="hoja-alertas"' in boton.group(0), "el botón tiene que decir qué abre"
+    assert "aria-expanded" in boton.group(0)
+
+    hoja = re.search(r'<aside[^>]*id="hoja-alertas"[^>]*>', html, re.S)
+    assert hoja, "falta la hoja de alertas"
+    assert 'role="dialog"' in hoja.group(0)
+    assert "hoja--modal" in hoja.group(0), (
+        "las alertas piden atención: van en modal, no en cajón lateral"
+    )
+
+
+@pytest.mark.unit
+def test_el_contador_de_la_campanita_sale_de_la_lista() -> None:
+    """Escrito a mano, el botón diría un número y la hoja mostraría
+    otro."""
+    js = VISTAS_JS.read_text(encoding="utf-8")
+    m = re.search(r"function conectarAlertas\(\) \{(.*?)\n\}", js, re.S)
+    assert m, "falta el armado de las alertas"
+    cuerpo = m.group(1)
+
+    # La asignación concreta, no que el número aparezca en algún lado
+    # del bloque: con `textContent = "4"` y el aria-label derivado, la
+    # prueba pasaba igual y el globo quedaba fijo.
+    assert re.search(r"contador\.textContent = String\(D\.ALERTAS\.length\)", cuerpo), (
+        "el número del globo tiene que salir de la lista de alertas"
+    )
+    assert "alertas-lista" in cuerpo, "la hoja se llena de la misma lista"
+
+
+@pytest.mark.unit
+def test_sin_alertas_el_globo_de_la_campanita_desaparece() -> None:
+    """Un cero rojo en la esquina alarma sin motivo."""
+    js = VISTAS_JS.read_text(encoding="utf-8")
+    assert re.search(r"contador\.hidden = D\.ALERTAS\.length === 0", js)
+
+
+# ------------------------------------------- los gráficos que todavía no están
+
+
+@pytest.mark.unit
+def test_los_graficos_que_faltan_lo_dicen() -> None:
+    """Antes acá había un esqueleto de carga y estaba mal: un esqueleto
+    que brilla para siempre dice «esto está cargando», no «esto llega
+    más adelante», y quien abre la aplicación se queda esperando.
+    """
+    html = _html()
+    assert "esqueleto--grafico" not in html, (
+        "un esqueleto de carga permanente se lee como un cargando eterno"
+    )
+    marcadores = re.findall(r'<div class="grafico-pendiente"[^>]*>(.*?)</div>', html, re.S)
+    assert len(marcadores) == 5, f"se esperaban cinco gráficos, hay {len(marcadores)}"
+    for bruto in marcadores:
+        # Prettier parte el texto en varias líneas: sin juntar los
+        # espacios, «Llega en la fase 3» no se encuentra entero.
+        m = re.sub(r"\s+", " ", bruto)
+        assert re.search(r"Llega en la fase \d", m), f"el marcador no dice cuándo llega: {m[:90]}"
+        assert re.search(r"<b>Gráfico de [^<]+</b>", m), (
+            f"el marcador no dice qué gráfico va ahí: {m[:90]}"
+        )
+
+
+@pytest.mark.unit
+def test_el_marcador_ocupa_el_alto_del_grafico() -> None:
+    """Para poder revisar la maqueta con las proporciones reales."""
+    assert "height: 180px" in _regla(".grafico-pendiente")
+
+
+@pytest.mark.unit
+def test_el_esqueleto_de_carga_sigue_existiendo_para_su_uso_real() -> None:
+    """Sacarlo del HTML no significa borrarlo: es el estado de carga de
+    verdad, el que se va a usar mientras la API responde."""
+    assert ".esqueleto--grafico" in _css()
+    assert "esqueleto" in ESTADOS_JS.read_text(encoding="utf-8")
