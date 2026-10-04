@@ -210,13 +210,23 @@
           <article class="nota shell">
             <h2 id="t-inicio">Inicio</h2>
             <p>
-              Las tarjetas de arriba son del catálogo, con
-              <b>cifras de muestra</b>. Acá van también el gráfico de
-              comportamiento diario con la línea del ahorro acumulado y los
-              últimos movimientos.
+              Las tarjetas y las listas de esta pantalla son del catálogo, con
+              <b>cifras de muestra</b>. Acá va también el gráfico de
+              comportamiento diario con la línea del ahorro acumulado.
             </p>
             <p class="nota-pie">Fase 3 · tableros e indicadores.</p>
           </article>
+
+          <!-- Las filas las pinta views/inicio.js (F01-T10). -->
+          <section class="shell panel" aria-labelledby="t-ultimos">
+            <h3 id="t-ultimos" class="panel-titulo">Últimos movimientos</h3>
+            <div class="rows" id="movimientos-inicio"></div>
+          </section>
+
+          <section class="shell panel" aria-labelledby="t-categorias">
+            <h3 id="t-categorias" class="panel-titulo">Gastos por categoría</h3>
+            <div class="rows" id="categorias-inicio"></div>
+          </section>
 
           <!-- Relleno alto a propósito: sin contenido que desborde la
              pantalla no se puede comprobar que la barra superior queda

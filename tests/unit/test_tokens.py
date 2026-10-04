@@ -31,6 +31,7 @@ INVARIANTES = {
     "--radius-bar",
     "--radius-sheet",
     "--radius-sm",
+    "--radius-row",
     "--radius-card",
     "--radius-lg",
     "--font-display",

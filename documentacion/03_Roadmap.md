@@ -199,12 +199,12 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
 
 ### Tema 1.3 — Componentes del catálogo
 
-- [~] **F01-T09 · Tarjetas de indicador**
+- [x] **F01-T09 · Tarjetas de indicador**
   **Tipo:** Frontend · **Ref:** Mockup, Técnico §12.4
   **Hacer:** `components/kpi.js` con las variantes héroe (cifra grande, barra de progreso, pie de dos datos) y métrica (etiqueta, icono, cifra, subtítulo); rejilla de 2 → 4 → 6 columnas; animación escalonada de entrada; función `esc()` aplicada a todo texto.
   **Aceptación:** · la rejilla se comporta en los tres cortes · la animación escalona de a 60 ms · un dato con `<script>` se muestra como texto y no ejecuta nada.
 
-- [ ] **F01-T10 · Filas de lista**
+- [~] **F01-T10 · Filas de lista**
   **Tipo:** Frontend · **Ref:** Mockup
   **Hacer:** `components/rows.js` con la fila de movimiento (icono de dirección, categoría, fecha y descripción, importe con signo y color) y la fila de categoría (inicial, nombre, cantidad y porcentaje, barra de participación, total); estados hover y activo.
   **Aceptación:** · ingreso en verde con `+`, egreso en rojo con `−` · la barra de participación se anima al aparecer · la fila es un botón accesible por teclado con foco visible.
@@ -1377,7 +1377,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 | Fase | Tareas | Aprobadas | Estado |
 |---|---|---|---|
 | 0 · Puesta en marcha y producción | 12 | **12** | ✅ **Cerrada** el 03/10/2026 |
-| 1 · Sistema de estilo y esqueleto | 14 | 8 | **En curso** · próxima: F01-T09 |
+| 1 · Sistema de estilo y esqueleto | 14 | 9 | **En curso** · próxima: F01-T10 |
 | 2 · Cuentas y autenticación | 15 | 0 | Pendiente |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
 | 4 · Movimientos | 15 | 0 | Pendiente |

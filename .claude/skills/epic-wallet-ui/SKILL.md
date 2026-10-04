@@ -268,20 +268,38 @@ Funciones que reciben datos y devuelven HTML. Sin ciclo de vida, sin estado inte
 
 La barra se anima en el siguiente frame: `requestAnimationFrame(()=>el.style.width=el.dataset.w+'%')`.
 
-### Fila de lista
+### Filas de lista
 
-Rejilla `34px 1fr auto`: marca, contenido, valor. Hover `translateX(3px)`.
+`components/rows.js`. Dos filas y un separador, dentro de un contenedor `.rows`:
 
 ```javascript
-`<button class="row cg" data-tx="${id}" style="--c:var(--${inc?'inc':'egr'})">
-  <span class="row-ico"><svg viewBox="0 0 24 24">${inc?ICO.up:ICO.down}</svg></span>
-  <span class="row-main"><b>${esc(categoria)}</b><span>${fecha}${desc?' · '+esc(desc):''}</span></span>
-  <span class="row-val"><b class="num ${inc?'amt-in':'amt-out'}">${inc?'+':'−'}${fmt(monto)}</b>
-    <span>${esc(origen)}</span></span>
-</button>`
+filaMovimiento({ id, tipo, categoria, importe, fecha, descripcion, origen })
+filaCategoria({ id, nombre, total, detalle, participacion, pie })
+separadorDia("04 de octubre 2026")
+pintarFilas(contenedor, [ ...filas ])   // escribe y arranca las barras
 ```
 
-Ingreso en verde con `+`, egreso en rojo con `−`. **El color nunca es el único portador de información**: siempre lleva signo e icono de flecha.
+Rejilla de `34px 1fr auto`: marca, contenido, valor. **La fila es un `<button>`**, no un `div` con `onclick`: se abre para ver el detalle, así que tiene que alcanzarse con el tabulador y anunciarse.
+
+**El signo lo decide `tipo`, nunca el valor del importe.** El importe llega ya formateado del backend y sin signo: el frontend sólo formatea y no hace aritmética. Si el signo saliera del texto, un importe que ya trajera un menos saldría con dos.
+
+**Ingreso: `+`, verde y flecha hacia arriba. Egreso: `−`, rojo y flecha hacia abajo.** Los tres a la vez, porque el color no puede ser el único portador. El menos es **U+2212**, no el guión del teclado: el guión es más corto y a otra altura, y al lado de un `+` en una columna de cifras se nota.
+
+Los importes mezclan su color con la tinta (`color-mix` contra `--mix-ink`) y no lo usan puro: el verde y el rojo puros sobre vidrio quedan por debajo del contraste mínimo.
+
+La flecha y las iniciales van `aria-hidden`: la flecha repite el signo y las iniciales repiten el nombre de al lado — sin ocultarlas, el lector dice «AL Alquiler». La barra de participación también: el porcentaje ya está en el detalle.
+
+**`.row-main` lleva `min-width: 0` y ellipsis.** Sin eso, el nombre largo de una categoría empuja el importe fuera de la fila.
+
+#### El foco tiene que ganarle al hover
+
+`:focus-visible` de `base.css` pone el halo con un selector de **menor especificidad** que `.row:hover`, que reemplaza `box-shadow` entero. Al pasar el dedo por una fila enfocada, el halo desaparecía. Por eso `.row:focus-visible` se declara aparte, con el halo **primero** dentro de su propia `box-shadow` — dibujado después de la sombra del vidrio, queda por debajo.
+
+Esto vale para **cualquier componente que redefina `box-shadow` en `:hover`**: hay que repetir el halo en su propio `:focus-visible`.
+
+#### Panel
+
+`.panel` es la superficie que contiene una lista, y es mínima a propósito: la estructura final de cada vista, con cabeceras, conmutadores y pies de cifras, es de F01-T13.
 
 ### Pantallas de cuenta
 
