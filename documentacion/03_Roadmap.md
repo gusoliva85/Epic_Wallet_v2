@@ -54,7 +54,7 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
 | **5** | Cálculos y dashboard de indicadores | 12 | Los 6 indicadores obligatorios con datos reales |
 | **6** | Gráficos | 13 | Los 5 gráficos, incluido el diario con línea de ahorro |
 | **7** | Desglose y detalle de categoría | 9 | Desglose ordenable y detalle con movimientos por categoría |
-| **8** | Historial y carga consolidada | 12 | Historial mensual y carga manual de meses históricos |
+| **8** | Historial y carga consolidada | 13 | Historial mensual y carga manual de meses históricos |
 | **9** | Ahorro acumulado y patrimonio | 10 | Saldo acumulado y patrimonio neto |
 | **10** | Inversiones | 14 | Cartera completa con compra, venta y rendimientos |
 | **11** | Cotizaciones automáticas | 10 | Actualización automática con fallback manual |
@@ -65,7 +65,7 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
 | **16** | Seguridad, cierre y recuperación de contraseña | 16 | Los 24 criterios de aceptación del MVP verificados, más el ciclo de correo completo |
 | **17** | Preparación de integraciones futuras | 7 | Base lista para Excel y Mercado Pago, sin construirlos |
 
-**Total: 213 tareas.** Las 18 tareas de documentación de cierre de fase están incluidas en esos números.
+**Total: 214 tareas.** Las 18 tareas de documentación de cierre de fase están incluidas en esos números.
 
 ---
 
@@ -122,10 +122,11 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **Hacer:** proyecto en Vercel vinculado al repositorio; `vercel.json` completo de la sección 16.1 con rewrites, runtime de Python, cabeceras de seguridad y **`regions: ["gru1"]` (São Paulo) para que la función corra junto a la base de datos** (§20.1); variables de entorno cargadas en los tres entornos, con **`DB_SCHEMA=public` sólo en producción** y `DB_SCHEMA=dev` en preview y development; primer despliegue.
   **Aceptación:** · `https://<dominio>/api/health` responde desde internet · las cabeceras de seguridad llegan (verificable con las herramientas del navegador) · los secretos **no** están en el repositorio · la función reporta una latencia a la base por debajo de 50 ms, lo que confirma que está en la misma región.
 
-- [ ] **F00-T09 · Previews por rama**
+- [x] **F00-T09 · Previews por rama** · *parcial, el resto diferido a F08-T13*
   **Tipo:** Infra · **Ref:** Técnico §16.2, §16.3
-  **Hacer:** verificar que una rama cualquiera genera URL de preview; que preview usa el esquema `dev` y producción el `public`; exponer el esquema activo en `/api/health` para poder comprobarlo de un vistazo; documentar el flujo de la sección 16.3 en el README.
-  **Aceptación:** · una rama de prueba genera su URL · `/api/health` de preview informa esquema `dev` y el de producción `public` · abriste la preview desde el celular.
+  **Hecho:** se verificó que una rama genera su URL de preview con un patrón predecible; se documentó ese patrón y el flujo de trabajo en el README; `/api/health` informa el esquema activo, que es lo que permite distinguir una preview de producción de un vistazo; se desactivó la protección de previews para poder abrirlas desde el celular.
+  **Diferido a F08-T13:** cargar `DB_SCHEMA=dev` y `APP_ENV=preview` en el entorno Preview de Vercel. Hoy no hace falta porque **la base está vacía: no hay datos reales que proteger**. Se configura justo antes de cargar el histórico real, que es cuando la separación empieza a importar.
+  **Mientras tanto:** se trabaja contra producción, que ya responde. Si se pushea una rama, su preview va a fallar al arrancar por falta de `DB_SCHEMA`, y eso es deliberado: la protección de arranque prefiere un despliegue roto a escribir en `public` por descuido.
 
 ### Tema 0.4 — Primera pantalla visible
 
@@ -768,6 +769,12 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **Hacer:** conectar el gráfico de evolución del saldo acumulado con los datos reales, abajo de la tabla.
   **Aceptación:** · los puntos del gráfico coinciden con la columna de saldo acumulado de la tabla.
 
+- [ ] **F08-T13 · Configurar el entorno Preview de Vercel**
+  **Tipo:** Infra · **Ref:** Técnico §16.2 · **Viene de F00-T09**
+  **Hacer:** en Vercel → Settings → Environment Variables, cargar `DB_SCHEMA=dev` y `APP_ENV=preview` con la casilla **Preview** tildada (y Development también). Son dos variables; el resto ya está. Verificar con `curl <url-de-preview>/api/health | grep db_schema` que diga `dev`.
+  **Por qué acá y no antes:** hasta esta fase la base no tiene datos reales, así que no hay nada que proteger y trabajar contra producción alcanza. Desde que se carga el histórico, una preview mal configurada podría escribir sobre datos de verdad.
+  **Aceptación:** · la preview de una rama responde `db_schema: dev` · producción sigue respondiendo `public` · se probó una preview desde el celular.
+
 - [ ] **F08-T11 · Carga real del histórico del Excel**
   **Tipo:** QA · **Ref:** General §2.2
   **Hacer:** cargar en producción los meses históricos reales de tu planilla, mes por mes o con el script; verificar que el saldo acumulado final coincide con el del Excel.
@@ -1369,7 +1376,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 
 | Fase | Tareas | Aprobadas | Estado |
 |---|---|---|---|
-| 0 · Puesta en marcha y producción | 12 | 8 | **En curso** · próxima: F00-T09 |
+| 0 · Puesta en marcha y producción | 12 | 9 | **En curso** · próxima: F00-T10 |
 | 1 · Sistema de estilo y esqueleto | 14 | 0 | Pendiente |
 | 2 · Cuentas y autenticación | 15 | 0 | Pendiente |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
@@ -1377,7 +1384,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 | 5 · Cálculos y dashboard | 12 | 0 | Pendiente |
 | 6 · Gráficos | 13 | 0 | Pendiente |
 | 7 · Desglose y categorías | 9 | 0 | Pendiente |
-| 8 · Historial y carga consolidada | 12 | 0 | Pendiente |
+| 8 · Historial y carga consolidada | 13 | 0 | Pendiente |
 | 9 · Ahorro y patrimonio | 10 | 0 | Pendiente |
 | 10 · Inversiones | 14 | 0 | Pendiente |
 | 11 · Cotizaciones | 10 | 0 | Pendiente |
@@ -1387,7 +1394,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 | 15 · PWA | 9 | 0 | Pendiente |
 | 16 · Seguridad, cierre y correo | 16 | 0 | Pendiente |
 | 17 · Integraciones futuras | 7 | 0 | Pendiente |
-| **Total** | **213** | **5** | — |
+| **Total** | **214** | **9** | — |
 
 Este cuadro se actualiza al cerrar cada tarea.
 
