@@ -354,12 +354,101 @@ describe("tarjetas de indicador", () => {
     rejilla.id = "kpis-inicio";
     const { MUESTRA } = await import(modulo(["views", "inicio.js"]));
     await esperar(dom);
-    assert.equal(
-      MUESTRA.length,
-      7,
-      "siete tarjetas: una héroe y seis métricas",
-    );
-    assert.equal(rejilla.querySelectorAll(".kpi").length, 7);
+    assert.equal(MUESTRA.length, 5, "una héroe y cuatro métricas");
+    assert.equal(rejilla.querySelectorAll(".kpi").length, 5);
     assert.equal(rejilla.querySelectorAll(".kpi--hero").length, 1);
+  });
+
+  // --------------------------------- las cuatro métricas identificables
+
+  async function inicio() {
+    const b = await montar();
+    b.rejilla.id = "kpis-inicio";
+    await import(modulo(["views", "inicio.js"]));
+    await esperar(b.dom);
+    return b;
+  }
+
+  test("las cuatro metricas son las que quedaron", async () => {
+    // Se sacan «tasa de ahorro» y «cartera», que no decían nada, y
+    // «gasto diario» pasa a ser el gasto de HOY: un promedio del mes no
+    // sirve para decidir hoy.
+    const { rejilla } = await inicio();
+    const etiquetas = [
+      ...rejilla.querySelectorAll(".kpi-metric .kpi-label"),
+    ].map((e) => e.textContent);
+    assert.deepEqual(etiquetas, [
+      "Ingresos",
+      "Egresos",
+      "Gasto de hoy",
+      "Patrimonio",
+    ]);
+  });
+
+  test("las cuatro metricas estan tenidas y con silueta", async () => {
+    const { rejilla } = await inicio();
+    const metricas = [...rejilla.querySelectorAll(".kpi-metric")];
+    assert.equal(metricas.length, 4);
+    for (const t of metricas) {
+      assert.ok(t.classList.contains("kpi-color"), "no se tiñó");
+      const silueta = t.querySelector("svg.kpi-marca");
+      assert.ok(silueta, "falta la silueta de fondo");
+      assert.equal(silueta.getAttribute("aria-hidden"), "true");
+      assert.ok(silueta.querySelector("path"), "la silueta vino vacía");
+    }
+  });
+
+  test("cada metrica tiene su silueta y su color, sin repetir", async () => {
+    // Con la misma silueta o el mismo color, el fondo dejaría de
+    // identificarlas, que es para lo que está.
+    const { rejilla } = await inicio();
+    const metricas = [...rejilla.querySelectorAll(".kpi-metric")];
+    const siluetas = metricas.map(
+      (t) => t.querySelector(".kpi-marca").innerHTML,
+    );
+    const colores = metricas.map((t) => t.getAttribute("style"));
+    assert.equal(new Set(siluetas).size, 4, "hay siluetas repetidas");
+    assert.equal(new Set(colores).size, 4, "hay colores repetidos");
+  });
+
+  test("la silueta se pinta antes del texto", async () => {
+    // Va primera en el DOM: pintada después, taparía la cifra.
+    const { kpi, rejilla } = await montar();
+    kpi.pintarTarjetas(rejilla, [
+      kpi.tarjetaMetrica({
+        etiqueta: "x",
+        cifra: "$1",
+        color: "inc",
+        marca: "pesos-sube",
+      }),
+    ]);
+    const hijos = [...rejilla.querySelector(".kpi").children];
+    assert.ok(
+      hijos[0].classList.contains("kpi-marca"),
+      "la silueta no va primera",
+    );
+  });
+
+  test("sin marca la tarjeta no se tine ni trae silueta", async () => {
+    const { kpi, rejilla } = await montar();
+    kpi.pintarTarjetas(rejilla, [
+      kpi.tarjetaMetrica({ etiqueta: "x", cifra: "$1" }),
+    ]);
+    const t = rejilla.querySelector(".kpi");
+    assert.ok(!t.classList.contains("kpi-color"));
+    assert.equal(t.querySelector(".kpi-marca"), null);
+  });
+
+  test("una marca que no existe no tine la tarjeta", async () => {
+    const { kpi, rejilla } = await montar();
+    kpi.pintarTarjetas(rejilla, [
+      kpi.tarjetaMetrica({ etiqueta: "x", cifra: "$1", marca: "no-existe" }),
+    ]);
+    const t = rejilla.querySelector(".kpi");
+    assert.ok(
+      !t.classList.contains("kpi-color"),
+      "se tiñó con una silueta vacía",
+    );
+    assert.ok(!rejilla.innerHTML.includes("undefined"));
   });
 });

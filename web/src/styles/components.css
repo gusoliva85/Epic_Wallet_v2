@@ -402,7 +402,7 @@
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 2px;
-  padding: 7px 6px;
+  padding: 5px 6px;
   border-radius: var(--radius-bar);
 }
 
@@ -415,7 +415,7 @@
      etiqueta el alto sale solo, pero queda declarado para que una
      etiqueta más corta no lo baje sin que nadie lo note. */
   min-height: 44px;
-  padding: 6px 2px;
+  padding: 4px 2px;
   border: 0;
   border-radius: var(--radius-nav);
   background: transparent;
@@ -726,6 +726,43 @@
   stroke: currentColor;
   stroke-width: 2;
   stroke-linecap: round;
+}
+
+/* ============================================================
+   LAS DOS BARRAS DE NAVEGACIÓN · vidrio al mínimo
+
+   La topbar y la botnav son `.shell`, pero no pueden llevar el vidrio
+   de una tarjeta: tienen texto chico y pasan por delante de TODO el
+   contenido al hacer scroll. Con 52% de opacidad y 22 px de
+   desenfoque, las letras se mezclaban con lo que pasaba por detrás.
+
+   Acá el vidrio queda casi opaco, el desenfoque al mínimo y —esto es
+   lo que más ensuciaba— se anula el brillo diagonal, que es un
+   degradado blanco encima del texto.
+   ============================================================ */
+
+.topbar,
+.botnav {
+  background: var(--glass-bar-bg);
+  backdrop-filter: blur(var(--glass-bar-blur)) saturate(1.05);
+  -webkit-backdrop-filter: blur(var(--glass-bar-blur)) saturate(1.05);
+}
+
+/* El brillo diagonal de `.shell::before`, fuera: sobre una etiqueta de
+   9,5 px, un velo blanco encima es la diferencia entre leerla y no. */
+.topbar::before,
+.botnav::before {
+  content: none;
+}
+
+/* Y su propia degradación: sin backdrop-filter, opaco del todo. */
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .topbar,
+  .botnav {
+    background: var(--glass-bar-fallback);
+  }
 }
 
 /* ============================================================
@@ -1059,6 +1096,84 @@
   stroke-width: 1.9;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+/* ---- tarjeta teñida con silueta de fondo ----
+   Pedido de Gustavo: que las cuatro métricas se reconozcan de un
+   vistazo sin leer la etiqueta. El color y la silueta van juntos; por
+   separado no funcionan —una silueta sobre el vidrio neutro se ve como
+   una mancha y un fondo de color sin silueta no identifica nada.
+
+   El tinte es del 16% y no más: con la tarjeta más teñida, el
+   subtítulo pierde contraste (ver abajo) y la información empieza a
+   competir con el fondo, que es justo lo que no tenía que pasar. */
+
+.kpi-color {
+  background:
+    linear-gradient(
+      155deg,
+      color-mix(in srgb, var(--c) 16%, transparent),
+      color-mix(in srgb, var(--c) 7%, transparent)
+    ),
+    var(--glass-shell-bg);
+  border-color: color-mix(in srgb, var(--c) 24%, var(--line));
+}
+
+/* Sin backdrop-filter, la capa de abajo tiene que ser opaca igual que
+   en el resto del vidrio. Va acá y no alcanza con la regla general de
+   `.shell`, porque esta tiene la misma especificidad y gana por venir
+   después en el archivo. */
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .kpi-color {
+    background:
+      linear-gradient(
+        155deg,
+        color-mix(in srgb, var(--c) 16%, transparent),
+        color-mix(in srgb, var(--c) 7%, transparent)
+      ),
+      var(--glass-shell-fallback);
+  }
+}
+
+/* La etiqueta y el subtítulo suben un nivel de tinta.
+   `--color-ink-3` sobre el tinte da 3,89:1 —por debajo del mínimo de
+   4,5:1 del propio sistema— porque el fondo deja de ser neutro.
+   Con `--color-ink-2` queda en 6,13:1. */
+.kpi-color .kpi-label,
+.kpi-color .kpi-sub {
+  color: var(--color-ink-2);
+}
+
+/* La silueta. Va anclada abajo a la derecha y se recorta contra el
+   borde de la tarjeta, que tiene `overflow: hidden`. */
+.kpi-marca {
+  position: absolute;
+  right: -12px;
+  bottom: -16px;
+  width: 112px;
+  pointer-events: none;
+  color: var(--c, var(--color-accent));
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: var(--marca-op);
+}
+
+/* En la héroe, que es el doble de ancha, la silueta es más grande. */
+.kpi--hero .kpi-marca {
+  width: 164px;
+}
+
+/* La silueta no se agranda con el hover de la tarjeta: moverla llama
+   la atención sobre el fondo en lugar de sobre la cifra. */
+@media (min-width: 640px) {
+  .kpi-marca {
+    width: 124px;
+  }
 }
 
 /* ---- la barra de progreso de la tarjeta héroe ---- */

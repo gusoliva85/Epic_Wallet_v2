@@ -56,11 +56,16 @@
   --color-crit: #bc313e;
 
   /* ---- radios ---- */
-  --radius-btn: 13px; /* botones de icono, avatar, sello de la marca */
+  --radius-ico: 9px; /* cuadradito de icono dentro de una tarjeta */
   --radius-sm: 12px;
+  --radius-btn: 13px; /* botones de icono, avatar, sello de la marca */
+  --radius-nav: 14px; /* posición de la barra inferior */
   --radius-row: 15px; /* fila de lista */
+  --radius-fab: 19px; /* botón flotante */
   --radius-card: 20px;
+  --radius-bar: 22px; /* la barra inferior */
   --radius-lg: 24px;
+  --radius-sheet: 26px; /* las dos esquinas de arriba de una hoja */
 
   /* ---- tipografía ---- */
   --font-display: Outfit, sans-serif;
@@ -85,8 +90,11 @@
   --text-button: 15.5px;
   --text-sub: 12px; /* secundario de fila, subtítulo de indicador */
   --text-pill: 11px;
+  --text-chip: 12.5px; /* píldora de acción */
   --text-avatar: 12.5px; /* iniciales en el avatar de la barra */
+  --text-marca: 14px; /* iniciales en la marca de una fila */
   --text-badge: 9.5px; /* contador de alertas */
+  --text-nav: 9.5px; /* etiquetas de la barra inferior */
   --text-label: 10.5px; /* etiqueta de indicador, separador de día */
   --text-axis: 10px; /* valores de los ejes */
   --text-axis-sm: 9.5px; /* días de los ejes */
@@ -112,6 +120,19 @@
   --glass-shell-bg: rgba(255, 255, 255, 0.52);
   --glass-shell-blur: 22px;
   --glass-shell-fallback: rgba(255, 255, 255, 0.92);
+
+  /* Las dos barras de navegación son un caso aparte: llevan texto chico
+     y pasan por delante de todo el contenido al hacer scroll. Con el
+     vidrio de una tarjeta, las letras se mezclan con lo que pasa por
+     detrás y dejan de leerse. Acá el vidrio es casi opaco y el
+     desenfoque, el mínimo que todavía da sensación de profundidad. */
+  --glass-bar-bg: rgba(255, 255, 255, 0.94);
+  --glass-bar-blur: 10px;
+
+  /* Opacidad de la silueta de fondo de una tarjeta. En oscuro hace
+     falta más: un trazo al 13% sobre un fondo casi negro no se ve. */
+  --marca-op: 0.13;
+  --glass-bar-fallback: rgba(255, 255, 255, 0.985);
   --glass-content-bg: rgba(255, 255, 255, 0.68);
   --glass-content-blur: 7px;
   --glass-content-fallback: rgba(255, 255, 255, 0.94);
@@ -203,6 +224,9 @@ html[data-theme="dark"] {
 
   --glass-shell-bg: rgba(22, 25, 28, 0.5);
   --glass-shell-fallback: rgba(13, 15, 17, 0.94);
+  --glass-bar-bg: rgba(16, 19, 22, 0.95);
+  --glass-bar-fallback: rgba(14, 17, 20, 0.99);
+  --marca-op: 0.2;
   --glass-content-bg: rgba(22, 25, 28, 0.72);
   --glass-content-fallback: rgba(13, 15, 17, 0.96);
   --glass-in:
@@ -274,6 +298,9 @@ html[data-theme="dark"] {
 
     --glass-shell-bg: rgba(22, 25, 28, 0.5);
     --glass-shell-fallback: rgba(13, 15, 17, 0.94);
+    --glass-bar-bg: rgba(16, 19, 22, 0.95);
+    --glass-bar-fallback: rgba(14, 17, 20, 0.99);
+    --marca-op: 0.2;
     --glass-content-bg: rgba(22, 25, 28, 0.72);
     --glass-content-fallback: rgba(13, 15, 17, 0.96);
     --glass-in:
