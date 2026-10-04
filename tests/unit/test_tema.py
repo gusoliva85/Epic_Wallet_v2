@@ -138,6 +138,4 @@ def test_el_boton_existe_y_es_accesible() -> None:
     boton = re.search(r"<button[^>]*data-tema[^>]*>", html)
     assert boton, "el interruptor tiene que ser un <button>"
     assert "aria-label" in boton.group(0), "un botón de sólo icono necesita aria-label"
-    assert 'type="button"' in boton.group(0), (
-        "sin type explícito, dentro de un formulario enviaría"
-    )
+    assert 'type="button"' in boton.group(0), "sin type explícito, dentro de un formulario enviaría"

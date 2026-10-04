@@ -356,8 +356,8 @@
   }
 }
 
-/* La animación de entrada: la usan la nota de estado y, desde
-   F01-T09, las tarjetas del catálogo. */
+/* Entrada escalonada de tarjetas. La usa el catálogo desde F01-T09;
+   la entrada de una VISTA es otra, más corta, al final del archivo. */
 @keyframes entrada {
   from {
     opacity: 0;
@@ -729,15 +729,50 @@
 }
 
 /* ============================================================
-   NOTA DE ESTADO · provisoria
-   Ocupa el lugar de las vistas hasta F01-T07. Se borra entonces.
+   LAS VISTAS · F01-T07
+   Referencia: SKILL.md §6 (entrada de vista: 420 ms)
+
+   Una sola está activa. El enrutador pone `hidden` en las otras, que
+   ya las saca del flujo: la clase existe para la animación de entrada
+   y para que un componente pueda preguntar por `.view.activa`.
    ============================================================ */
 
-.nota {
+.view {
+  display: grid;
+  gap: 12px;
   margin-top: 12px;
+}
+
+/* `hidden` lo pone el enrutador. Vale declararlo igual: si una hoja de
+   estilos de utilidad define `display` para todo, el atributo deja de
+   esconder nada y las siete vistas aparecen apiladas. */
+.view[hidden] {
+  display: none;
+}
+
+.view.activa {
+  animation: entrada-vista 0.42s var(--ease) both;
+}
+
+@keyframes entrada-vista {
+  from {
+    opacity: 0;
+    /* Corto a propósito: 14 px se leen como que el contenido entra, y
+       un desplazamiento largo en una pantalla llena de vidrio arrastra
+       el desenfoque y se ve sucio. */
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* La nota de cada vista. Provisoria: la reemplaza el contenido real de
+   cada fase. */
+.nota {
   border-radius: var(--radius-card);
   padding: 22px 20px;
-  animation: entrada 0.6s var(--ease) both;
 }
 
 .nota p {
@@ -751,7 +786,8 @@
 }
 
 /* Altura suficiente para que la página pase del alto de la pantalla y
-   se pueda comprobar que la barra superior queda pegada. */
+   se pueda comprobar que la barra superior queda pegada y que al
+   cambiar de vista se vuelve arriba. */
 .relleno-scroll {
   height: 140vh;
 }

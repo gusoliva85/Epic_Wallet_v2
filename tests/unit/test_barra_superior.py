@@ -188,19 +188,26 @@ def test_sin_alertas_el_globo_desaparece() -> None:
 
 
 @pytest.mark.unit
-def test_las_pestanas_son_un_tablist() -> None:
+def test_las_pestanas_son_navegacion_y_no_un_grupo_de_pestanas() -> None:
+    """Hasta F01-T06 esto era un `tablist`. Dejó de serlo en F01-T07:
+    cambian la URL y el historial del navegador, y eso es navegación.
+
+    Un grupo de pestañas no se puede marcar como enlace ni se recorre
+    con el botón «atrás»; anunciarlo como pestañas le miente a quien usa
+    un lector de pantalla sobre lo que va a pasar al activarlas.
+    """
     html = _html()
-    assert 'role="tablist"' in html
     nav = re.search(r'<nav[^>]*id="nav-escritorio"[^>]*>', html)
-    assert nav and "aria-label" in nav.group(0), "el tablist necesita nombre"
+    assert nav, "falta el contenedor"
+    assert "aria-label" in nav.group(0), "la navegación necesita nombre"
+    assert 'role="tablist"' not in nav.group(0), "no es un tablist: cambia la URL, es navegación"
 
     js = BARRA_JS.read_text(encoding="utf-8")
-    assert 'role="tab"' in js
-    assert "aria-selected" in js, "la pestaña activa se marca con aria-selected"
-    assert "tabIndex" in js, (
-        "sólo una pestaña entra en el orden de tabulación; el resto se recorre con las flechas"
+    assert 'role="tab"' not in js
+    assert "aria-selected" not in js, (
+        "la posición activa se marca con aria-current, no con aria-selected"
     )
-    assert "ArrowRight" in js and "ArrowLeft" in js
+    assert "aria-current" in js
 
 
 # ------------------------------------------------------------ las secciones
