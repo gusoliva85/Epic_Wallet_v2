@@ -3,56 +3,61 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<!-- La barra de estado de Android acompaña al tema. -->
+<meta name="theme-color" content="#f1f2f3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0c0d0e" media="(prefers-color-scheme: dark)">
+
 <title>Epic Wallet</title>
-<!--
-  MARCADOR TEMPORAL · Fase 0
+<meta name="description" content="Aplicación personal de gestión financiera.">
+<meta name="color-scheme" content="light dark">
 
-  Esta página existe sólo para que el primer despliegue no devuelva un
-  404 en la raíz. La pantalla de verdad, con el fondo de lavados, la
-  capa de ruido y los tokens del sistema Vidrio Grafito, se construye
-  en F00-T10 y la reemplaza por completo.
+<!-- Fuentes: preconnect para adelantar el handshake, display=swap para
+     que el texto se vea desde el primer frame con la fuente del sistema. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style"
+  href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap">
 
-  No copiar estilos de acá: la referencia es
-  .claude/skills/epic-wallet-ui/SKILL.md
--->
-<style>
-  body{margin:0;min-height:100vh;display:grid;place-items:center;
-    background:#f1f2f3;color:#1c2024;
-    font:16px/1.6 system-ui,-apple-system,sans-serif;padding:24px}
-  main{max-width:420px;text-align:center}
-  h1{font-size:26px;letter-spacing:-.02em;margin:0 0 6px}
-  p{color:#7c828a;font-size:14px;margin:0 0 24px}
-  .estado{border:1px solid rgba(28,32,36,.1);border-radius:16px;padding:16px;
-    background:#fff;text-align:left;font-size:13px}
-  .estado b{display:block;font-size:11px;letter-spacing:.07em;text-transform:uppercase;
-    color:#7c828a;margin-bottom:8px}
-  code{font-family:ui-monospace,monospace;font-size:12px;color:#3e5a6d;
-    word-break:break-all;white-space:pre-wrap}
-  @media(prefers-color-scheme:dark){
-    body{background:#0c0d0e;color:#eef0f1}
-    .estado{background:#16191c;border-color:rgba(238,240,241,.1)}
-    code{color:#9bc0d4}
-  }
-</style>
+<link rel="stylesheet" href="/public/app.css">
 </head>
 <body>
-<main>
-  <h1>Epic Wallet</h1>
-  <p>Gestión financiera personal · en construcción</p>
-  <div class="estado">
-    <b>Estado de la API</b>
-    <code id="salud">consultando…</code>
-  </div>
+
+<main class="pantalla">
+  <section class="tarjeta shell">
+    <span class="marca" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 8.5A2.5 2.5 0 015.5 6H19a2 2 0 012 2v9a2 2 0 01-2 2H5.5A2.5 2.5 0 013 16.5v-8z"/>
+        <path d="M3 9.5h13.5a1.5 1.5 0 011.5 1.5v3a1.5 1.5 0 01-1.5 1.5H3"/>
+        <circle cx="7" cy="12.5" r="1.1"/>
+      </svg>
+    </span>
+
+    <h1>Epic Wallet</h1>
+    <p class="bajada">Gestión financiera personal</p>
+
+    <div class="regla" aria-hidden="true"></div>
+
+    <div class="fichas">
+      <div class="ficha cg">
+        <span>Fase</span>
+        <b>0</b>
+      </div>
+      <div class="ficha cg">
+        <span>Entorno</span>
+        <b>Producción</b>
+      </div>
+    </div>
+
+    <p class="pie">
+      La aplicación está en construcción.<br>
+      Estado del servicio en <code>/api/health</code>.
+    </p>
+  </section>
 </main>
-<script type="module">
-  const salida = document.getElementById("salud");
-  try {
-    const r = await fetch("/api/health");
-    const d = await r.json();
-    salida.textContent = JSON.stringify(d, null, 2);
-  } catch (err) {
-    salida.textContent = "No se pudo consultar /api/health\n" + err.message;
-  }
-</script>
+
 </body>
 </html>

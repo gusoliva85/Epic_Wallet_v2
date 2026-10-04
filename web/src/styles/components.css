@@ -1,9 +1,181 @@
 /* ============================================================
-   COMPONENTES · las dos capas de vidrio y el catálogo
-   Contenido completo en F01-T03 y siguientes.
+   COMPONENTES · las dos capas de vidrio
+   Referencia: .claude/skills/epic-wallet-ui/SKILL.md §3
 
-   Recordatorio: .shell y .cg exigen su bloque
-   @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px)))
-   o el texto queda ilegible donde no hay soporte.
-   Referencia: .claude/skills/epic-wallet-ui/SKILL.md §3 y §7
+   Toda la profundidad de la interfaz sale de estas dos clases.
+   No se inventan variantes. El catálogo (tarjetas de indicador,
+   filas, hojas, píldoras) se agrega en F01-T09 a F01-T12.
    ============================================================ */
+
+/* Contenedor: topbar, tarjetas de KPI, paneles, hojas, navegación. */
+.shell {
+  position: relative;
+  overflow: hidden;
+  background: var(--glass-shell-bg);
+  backdrop-filter: blur(var(--glass-shell-blur)) saturate(1.15);
+  -webkit-backdrop-filter: blur(var(--glass-shell-blur)) saturate(1.15);
+  border: 1px solid var(--line);
+  box-shadow: var(--glass-in), var(--sh-md);
+}
+
+/* El brillo diagonal. Va en ::before para no ocupar un nodo. */
+.shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--glass-sheen);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Contenido dentro de un .shell: filas, fichas, campos. */
+.cg {
+  background: var(--glass-content-bg);
+  backdrop-filter: blur(var(--glass-content-blur));
+  -webkit-backdrop-filter: blur(var(--glass-content-blur));
+  border: 1px solid var(--line-2);
+  box-shadow: var(--glass-in);
+}
+
+/* DEGRADACIÓN OBLIGATORIA.
+   Sin esto, donde no hay soporte de backdrop-filter el texto queda
+   sobre un fondo semitransparente sin desenfocar: ilegible. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .shell {
+    background: var(--glass-shell-fallback);
+  }
+  .cg {
+    background: var(--glass-content-fallback) !important;
+  }
+}
+
+/* ============================================================
+   PANTALLA DE PRESENTACIÓN · F00-T10
+   Única pieza de layout de esta tarea: sirve para comprobar que el
+   vidrio, el fondo y las fuentes funcionan en producción y en el
+   celular. F01-T05 en adelante la reemplaza por la aplicación real.
+   ============================================================ */
+
+.pantalla {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px max(16px, env(safe-area-inset-left))
+    max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right));
+}
+
+.tarjeta {
+  width: 100%;
+  max-width: 400px;
+  border-radius: var(--radius-lg);
+  padding: 32px 26px 28px;
+  text-align: center;
+  animation: entrada 0.6s var(--ease) both;
+}
+
+/* Todo el contenido por encima del brillo del ::before. */
+.tarjeta > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes entrada {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.marca {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 18px;
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  background: linear-gradient(155deg, var(--color-accent), var(--color-accent-2));
+  box-shadow: var(--glass-in), 0 10px 24px -8px rgba(var(--shadow-rgb), 0.45);
+}
+
+/* El mismo reflejo que el mockup le da a la marca. */
+.marca::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(125deg, rgba(255, 255, 255, 0.55), transparent 50%);
+}
+
+.marca svg {
+  width: 28px;
+  height: 28px;
+  position: relative;
+}
+
+.tarjeta h1 {
+  font-size: 28px;
+  letter-spacing: -0.025em;
+}
+
+.bajada {
+  margin-top: 6px;
+  font-size: 13.5px;
+  color: var(--color-ink-3);
+}
+
+.regla {
+  width: 70px;
+  height: 5px;
+  margin: 20px auto;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--color-accent), var(--color-accent-2));
+}
+
+.fichas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.ficha {
+  border-radius: var(--radius-sm);
+  padding: 12px 10px;
+}
+
+.ficha span {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+
+.ficha b {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.pie {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--color-ink-4);
+}
+
+.pie code {
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 11.5px;
+  color: var(--color-accent-2);
+}

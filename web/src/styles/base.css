@@ -1,5 +1,107 @@
 /* ============================================================
    BASE · fondo, ruido y tipografía
-   Contenido completo en F01-T02.
    Referencia: .claude/skills/epic-wallet-ui/SKILL.md §2 y §4
    ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--color-ink);
+  font: 16.5px/1.55 var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Tres lavados radiales sobre un degradado vertical. `fixed` para que
+     no se desplacen con el scroll: el fondo es el ambiente, no contenido. */
+  background:
+    radial-gradient(ellipse 52% 34% at 10% -6%, var(--color-wash-a), transparent 62%),
+    radial-gradient(ellipse 42% 28% at 106% 6%, var(--color-wash-b), transparent 58%),
+    radial-gradient(ellipse 38% 26% at 50% 104%, var(--color-wash-a), transparent 66%),
+    linear-gradient(180deg, var(--color-bg-1), var(--color-bg-2));
+  background-attachment: fixed;
+  transition: color 0.3s ease;
+}
+
+/* Capa de ruido: una sola, en SVG embebido, nunca una imagen.
+   Es lo que evita que el vidrio se vea plástico. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/* ---- tipografía ----
+   Outfit para cifras y títulos, Inter para todo lo demás.
+   La escala completa se aplica por componente (SKILL §4). */
+h1,
+h2,
+h3,
+h4,
+.display {
+  margin: 0;
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+  font-weight: 700;
+}
+
+h1 { font-size: 26px; }
+h2 { font-size: 20px; }
+h3 { font-size: 19px; }
+
+p {
+  margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+/* Las cifras llevan siempre ancho fijo: si no, "bailan" al actualizarse. */
+.num,
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+a {
+  color: var(--color-accent-2);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+/* ---- foco visible, obligatorio (SKILL §11) ---- */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--accent-ring);
+  border-radius: 6px;
+}
+
+/* ---- movimiento reducido: anula todo, no es opcional ---- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
