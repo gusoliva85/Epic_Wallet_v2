@@ -1,0 +1,28 @@
+# Lo que no tiene sentido subir al build de Vercel.
+# Reduce el tamaño del despliegue y el tiempo de build.
+
+# Documentación y mockups: 500 KB que no se sirven
+documentacion/
+docs/
+
+# Pruebas y migraciones: no se ejecutan en el despliegue
+tests/
+migrations/
+scripts/
+
+# Entorno local
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Configuración de desarrollo
+alembic.ini
+.env
+.env.*
+!.env.example
+
+# Claude Code
+.claude/

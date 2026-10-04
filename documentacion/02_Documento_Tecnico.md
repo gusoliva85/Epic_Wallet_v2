@@ -1406,31 +1406,46 @@ El `theme_color` del manifest y el `<meta name="theme-color">` se actualizan al 
 ### 16.1 Un proyecto de Vercel, dos cosas dentro
 
 ```jsonc
-// vercel.json
+// vercel.json — el archivo real del repositorio
 {
   "buildCommand": "npm run build",
   "outputDirectory": "web",
-  "regions": ["gru1"],
-  "functions": { "api/index.py": { "runtime": "python3.12", "maxDuration": 30 } },
+  "framework": null,
+  "regions": ["gru1"],                      // junto a la base, ver §20.1
+  "functions": {
+    "api/index.py": { "maxDuration": 30, "memory": 1024 }
+  },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index" }
   ],
-  "headers": [
-    { "source": "/(.*)", "headers": [
-      { "key": "X-Content-Type-Options", "value": "nosniff" },
-      { "key": "X-Frame-Options", "value": "DENY" },
-      { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-      { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" }
-    ]},
-    { "source": "/public/(.*)", "headers": [
-      { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-    ]},
-    { "source": "/service-worker.js", "headers": [
-      { "key": "Cache-Control", "value": "no-cache" }
-    ]}
-  ]
+  "headers": [ /* seguridad y caché, ver abajo */ ]
 }
 ```
+
+Notas sobre la configuración:
+
+- **No se declara `runtime`.** Vercel detecta Python por la extensión de `api/index.py` e instala `requirements.txt`. Fijar el runtime a mano es una fuente habitual de despliegues fallidos porque el nombre válido cambia entre versiones de la plataforma; si en algún momento hace falta otra versión de Python, se fija en el panel (Settings → General).
+- **`framework: null`** evita que Vercel intente autodetectar un framework de frontend y aplique convenciones que no son las nuestras.
+- **`memory: 1024`** porque la función carga SQLAlchemy, Pydantic y `cryptography`: con la memoria mínima el arranque en frío se alarga.
+- **`maxDuration: 30`** da margen al arranque en frío con la búsqueda inicial del JWKS.
+
+Cabeceras que se aplican:
+
+| Ruta | Cabecera | Para qué |
+|---|---|---|
+| todo | `X-Content-Type-Options: nosniff` | que el navegador no adivine tipos |
+| todo | `X-Frame-Options: DENY` | no embebible en un iframe |
+| todo | `Referrer-Policy: strict-origin-when-cross-origin` | no filtrar rutas al salir del sitio |
+| todo | `Permissions-Policy` | cámara, micrófono y ubicación denegados: no se usan |
+| todo | `Strict-Transport-Security` | HTTPS obligatorio por un año |
+| `/api/*` | `Cache-Control: no-store` | los datos financieros no se cachean nunca |
+| `/public/*` | `Cache-Control: immutable, 1 año` | el CSS compilado lleva hash |
+| `/icons/*` | `Cache-Control: 1 semana` | |
+| `/service-worker.js` | `Cache-Control: no-cache` | que una versión nueva se tome enseguida |
+
+`.vercelignore` deja fuera del despliegue la documentación, los mockups, las pruebas, las migraciones y el entorno virtual: unos 680 KB de documentación y 178 MB de `.venv` que no se sirven.
+
+Queda una consecuencia menor de `outputDirectory: "web"`: los fuentes de CSS en `web/src/` quedan accesibles públicamente. No hay secretos en ellos (son hojas de estilo), y excluirlos rompería el build porque Tailwind los necesita como entrada.
 
 ```python
 # api/index.py — punto de entrada de la función
