@@ -140,7 +140,7 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **Hacer:** `manifest.json` de la sección 15; iconos 192, 512 y maskable 512; service worker mínimo que sólo se registra (sin cachear nada aún); enlazar todo desde el HTML.
   **Aceptación:** · Android ofrece "Instalar aplicación" · se abre en modo `standalone` sin barra del navegador · el icono se ve bien en el cajón de aplicaciones · Lighthouse marca la PWA como instalable.
 
-- [~] **F00-T12 · Documentación de la Fase 0**
+- [x] **F00-T12 · Documentación de la Fase 0**
   **Tipo:** Doc
   **Hacer:** `docs/FASE_00_PUESTA_EN_MARCHA.md`: qué quedó montado y por qué, cuadro de entornos con sus URLs y esquemas, **por qué un solo proyecto de Supabase con dos esquemas y qué implica** (autenticación compartida, aislación lógica y no física, pausa por inactividad), el flujo de trabajo por tarea explicado con un ejemplo concreto, cómo levantar el proyecto en una máquina nueva paso a paso, y dónde vive cada secreto (sin los valores).
   **Aceptación:** · alguien que nunca vio el proyecto lo levanta siguiendo el documento · el cuadro de entornos coincide con la realidad.
@@ -1376,7 +1376,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 
 | Fase | Tareas | Aprobadas | Estado |
 |---|---|---|---|
-| 0 · Puesta en marcha y producción | 12 | 11 | **En curso** · F00-T12 esperando prueba |
+| 0 · Puesta en marcha y producción | 12 | **12** | ✅ **Cerrada** el 03/10/2026 |
 | 1 · Sistema de estilo y esqueleto | 14 | 0 | Pendiente |
 | 2 · Cuentas y autenticación | 15 | 0 | Pendiente |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
@@ -1394,7 +1394,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 | 15 · PWA | 9 | 0 | Pendiente |
 | 16 · Seguridad, cierre y correo | 16 | 0 | Pendiente |
 | 17 · Integraciones futuras | 7 | 0 | Pendiente |
-| **Total** | **214** | **11** | — |
+| **Total** | **214** | **12** | — |
 
 Este cuadro se actualiza al cerrar cada tarea.
 
