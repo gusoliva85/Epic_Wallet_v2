@@ -203,12 +203,17 @@
           aria-labelledby="t-inicio"
           hidden
         >
+          <!-- Las tarjetas las pinta views/inicio.js con datos de muestra
+               (F01-T09). Los de verdad llegan en la fase 3. -->
+          <div class="kpi-grid stagger" id="kpis-inicio"></div>
+
           <article class="nota shell">
             <h2 id="t-inicio">Inicio</h2>
             <p>
-              Acá van los indicadores del mes, el gráfico de comportamiento
-              diario con la línea del ahorro acumulado y los últimos
-              movimientos.
+              Las tarjetas de arriba son del catálogo, con
+              <b>cifras de muestra</b>. Acá van también el gráfico de
+              comportamiento diario con la línea del ahorro acumulado y los
+              últimos movimientos.
             </p>
             <p class="nota-pie">Fase 3 · tableros e indicadores.</p>
           </article>
@@ -376,6 +381,7 @@
     <script type="module" src="/src/js/barra-inferior.js"></script>
     <script type="module" src="/src/js/boton-tema.js"></script>
     <script type="module" src="/src/js/barra-mes.js"></script>
+    <script type="module" src="/src/js/views/inicio.js"></script>
     <script type="module" src="/src/js/app.js"></script>
     <script type="module" src="/src/js/registrar-sw.js"></script>
   </body>
