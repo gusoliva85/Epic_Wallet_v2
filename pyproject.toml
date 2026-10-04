@@ -31,6 +31,7 @@ dev = [
     "pytest-cov>=5.0,<7.0",
     "ruff>=0.7,<1.0",
     "mypy>=1.11,<2.0",
+    "Pillow>=10.0",              # genera los iconos de la PWA (scripts/generar_iconos.py)
 ]
 
 [build-system]

@@ -21,6 +21,16 @@
 <link rel="stylesheet"
   href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap">
 
+<!-- PWA: instalable en Android desde el navegador -->
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="icon" href="/icons/icon-512.png" sizes="512x512" type="image/png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Epic Wallet">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="mobile-web-app-capable" content="yes">
+
 <link rel="stylesheet" href="/public/app.css">
 </head>
 <body>
@@ -47,17 +57,21 @@
         <b>0</b>
       </div>
       <div class="ficha cg">
-        <span>Entorno</span>
-        <b>Producción</b>
+        <span>App</span>
+        <b>Instalable</b>
       </div>
     </div>
 
     <p class="pie">
       La aplicación está en construcción.<br>
-      Estado del servicio en <code>/api/health</code>.
+      Podés instalarla desde el menú del navegador.
     </p>
   </section>
 </main>
+
+<!-- En archivo aparte, no en línea: así la política de contenido
+     mantiene script-src 'self' sin unsafe-inline. -->
+<script type="module" src="/src/js/registrar-sw.js"></script>
 
 </body>
 </html>
