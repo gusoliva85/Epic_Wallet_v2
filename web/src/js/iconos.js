@@ -28,6 +28,10 @@ const TRAZOS = {
     '<circle cx="16.5" cy="16.5" r="2.5"/>',
   calendario:
     '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  // Libro mayor: lo que registra el patrimonio.
+  libro:
+    '<path d="M6 4h11.5A1.5 1.5 0 0119 5.5v15H7.5A1.5 1.5 0 016 19V4z"/>' +
+    '<path d="M9.2 4v16.5"/>',
 };
 
 /** Los nombres válidos. Útil para las pruebas y para no adivinar. */
@@ -42,52 +46,4 @@ export const ICONOS = Object.freeze(Object.keys(TRAZOS));
  */
 export function icono(nombre) {
   return TRAZOS[nombre] ?? "";
-}
-
-/* ============================================================
-   MARCAS DE AGUA · siluetas de fondo de las tarjetas
-
-   Van en un lienzo de 48×32 y no de 24×24 como los iconos: son el
-   doble de anchas porque cada una combina DOS figuras —el signo pesos
-   y lo que identifica la tarjeta— y en un cuadrado se pisarían.
-
-   Trazo simple y abierto a propósito: se dibujan muy traslúcidas y
-   agrandadas, y un trazo con detalle a esa opacidad se ve como una
-   mancha sucia en lugar de una silueta.
-   ============================================================ */
-
-/* El signo pesos, a la izquierda del lienzo. Se repite en las cuatro
-   porque es lo que dice que la tarjeta habla de dinero. */
-const PESOS =
-  '<path d="M19.5 10.5c-1.2-1.3-3.1-2.1-5.3-2.1-3.1 0-5.1 1.3-5.1 3.4 0 ' +
-  "2.2 1.8 2.9 5.2 3.6 3.5.7 5.7 1.6 5.7 4 0 2.3-2.2 3.8-5.6 3.8-2.3 " +
-  '0-4.4-.7-5.7-2"/><path d="M12.5 5v22"/><path d="M16.5 5v22"/>';
-
-const MARCAS = {
-  // Ingresos: el dinero que entra.
-  "pesos-sube": `${PESOS}<path d="M36 27V9"/><path d="M30 15l6-6 6 6"/>`,
-  // Egresos: el que sale.
-  "pesos-baja": `${PESOS}<path d="M36 5v18"/><path d="M30 17l6 6 6-6"/>`,
-  // Gasto del día: el dinero de una fecha.
-  "pesos-dia":
-    `${PESOS}<rect x="29" y="9" width="15" height="17" rx="2.5"/>` +
-    '<path d="M29 15h15"/><path d="M33.5 6v5"/><path d="M39.5 6v5"/>',
-  // Patrimonio: lo que está guardado.
-  "pesos-caja":
-    `${PESOS}<rect x="29" y="8" width="15" height="18" rx="2.5"/>` +
-    '<circle cx="36.5" cy="17" r="4"/><path d="M36.5 11v1.5"/>' +
-    '<path d="M36.5 21.5v1.5"/>',
-};
-
-/** Los nombres válidos de marca de agua. */
-export const MARCAS_VALIDAS = Object.freeze(Object.keys(MARCAS));
-
-/**
- * Devuelve el trazo de una marca de agua por nombre.
- *
- * Igual que `icono()`: un nombre que no existe devuelve cadena vacía,
- * nunca `undefined` dentro del SVG.
- */
-export function marca(nombre) {
-  return MARCAS[nombre] ?? "";
 }

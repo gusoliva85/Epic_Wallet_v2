@@ -385,70 +385,129 @@ describe("tarjetas de indicador", () => {
     ]);
   });
 
-  test("las cuatro metricas estan tenidas y con silueta", async () => {
+  // ------------------------------- las cuatro tarjetas de color
+
+  test("las cuatro metricas son tarjetas de color", async () => {
     const { rejilla } = await inicio();
     const metricas = [...rejilla.querySelectorAll(".kpi-metric")];
     assert.equal(metricas.length, 4);
     for (const t of metricas) {
-      assert.ok(t.classList.contains("kpi-color"), "no se tiñó");
-      const silueta = t.querySelector("svg.kpi-marca");
-      assert.ok(silueta, "falta la silueta de fondo");
-      assert.equal(silueta.getAttribute("aria-hidden"), "true");
-      assert.ok(silueta.querySelector("path"), "la silueta vino vacía");
+      assert.ok(t.classList.contains("kpi-color"), "no es tarjeta de color");
+      assert.ok(t.querySelector(".kpi-peso"), "falta el signo pesos de fondo");
+      assert.ok(t.querySelector("svg.kpi-glifo path"), "falta el símbolo");
     }
   });
 
-  test("cada metrica tiene su silueta y su color, sin repetir", async () => {
-    // Con la misma silueta o el mismo color, el fondo dejaría de
-    // identificarlas, que es para lo que está.
+  test("cada tarjeta tiene su fondo y su simbolo, sin repetir", async () => {
+    // Con el mismo fondo o el mismo símbolo dejarían de identificar
+    // nada, que es para lo que están.
     const { rejilla } = await inicio();
     const metricas = [...rejilla.querySelectorAll(".kpi-metric")];
-    const siluetas = metricas.map(
-      (t) => t.querySelector(".kpi-marca").innerHTML,
+    const fondos = metricas.map((t) => t.getAttribute("style"));
+    const simbolos = metricas.map(
+      (t) => t.querySelector(".kpi-glifo").innerHTML,
     );
-    const colores = metricas.map((t) => t.getAttribute("style"));
-    assert.equal(new Set(siluetas).size, 4, "hay siluetas repetidas");
-    assert.equal(new Set(colores).size, 4, "hay colores repetidos");
+    assert.equal(new Set(fondos).size, 4, "hay fondos repetidos");
+    assert.equal(new Set(simbolos).size, 4, "hay símbolos repetidos");
   });
 
-  test("la silueta se pinta antes del texto", async () => {
-    // Va primera en el DOM: pintada después, taparía la cifra.
+  test("el fondo sale del catalogo, no de un valor libre", async () => {
+    // Termina dentro de un atributo `style` y la política del sitio
+    // admite estilos en línea: un valor libre sería CSS inyectable.
+    const { kpi, rejilla } = await montar();
+    kpi.pintarTarjetas(rejilla, [
+      kpi.tarjetaMetrica({
+        etiqueta: "x",
+        cifra: "$1",
+        tarjeta: "red; background:url(http://malo/)",
+      }),
+    ]);
+    const t = rejilla.querySelector(".kpi");
+    assert.ok(
+      !t.classList.contains("kpi-color"),
+      "aceptó una tarjeta inventada",
+    );
+    assert.ok(!rejilla.innerHTML.includes("malo"));
+  });
+
+  test("los cuatro nombres del catalogo se resuelven a un token", async () => {
+    const { kpi, rejilla } = await montar();
+    for (const nombre of kpi.TARJETAS_VALIDAS) {
+      kpi.pintarTarjetas(rejilla, [
+        kpi.tarjetaMetrica({ etiqueta: "x", cifra: "$1", tarjeta: nombre }),
+      ]);
+      const estilo = rejilla.querySelector(".kpi").getAttribute("style");
+      assert.match(
+        estilo,
+        /^--c-card: ?var\(--color-card-\w+\)$/,
+        `${nombre}: ${estilo}`,
+      );
+    }
+  });
+
+  test("el signo pesos se pinta antes que el texto", async () => {
+    // Va primero en el DOM; pintado después, taparía la cifra.
+    const { kpi, rejilla } = await montar();
+    kpi.pintarTarjetas(rejilla, [
+      kpi.tarjetaMetrica({ etiqueta: "x", cifra: "$1", tarjeta: "inc" }),
+    ]);
+    const hijos = [...rejilla.querySelector(".kpi").children];
+    assert.ok(hijos[0].classList.contains("kpi-peso"));
+  });
+
+  test("ni el signo ni el simbolo los lee el lector", async () => {
+    const { kpi, rejilla } = await montar();
+    kpi.pintarTarjetas(rejilla, [
+      kpi.tarjetaMetrica({ etiqueta: "Ingresos", cifra: "$1", tarjeta: "inc" }),
+    ]);
+    for (const sel of [".kpi-peso", ".kpi-glifo"]) {
+      assert.equal(
+        rejilla.querySelector(sel).getAttribute("aria-hidden"),
+        "true",
+        `${sel} tiene que estar oculto al lector`,
+      );
+    }
+  });
+
+  test("la tarjeta de color no lleva ademas el cuadradito de icono", async () => {
+    // La composición del fondo ya identifica la tarjeta.
+    const { kpi, rejilla } = await montar();
+    kpi.pintarTarjetas(rejilla, [
+      kpi.tarjetaMetrica({
+        etiqueta: "x",
+        cifra: "$1",
+        tarjeta: "inc",
+        icono: "sube",
+      }),
+    ]);
+    assert.equal(rejilla.querySelector(".kpi-ico"), null);
+  });
+
+  test("sin tarjeta sigue siendo la de vidrio de siempre", async () => {
     const { kpi, rejilla } = await montar();
     kpi.pintarTarjetas(rejilla, [
       kpi.tarjetaMetrica({
         etiqueta: "x",
         cifra: "$1",
         color: "inc",
-        marca: "pesos-sube",
+        icono: "sube",
       }),
-    ]);
-    const hijos = [...rejilla.querySelector(".kpi").children];
-    assert.ok(
-      hijos[0].classList.contains("kpi-marca"),
-      "la silueta no va primera",
-    );
-  });
-
-  test("sin marca la tarjeta no se tine ni trae silueta", async () => {
-    const { kpi, rejilla } = await montar();
-    kpi.pintarTarjetas(rejilla, [
-      kpi.tarjetaMetrica({ etiqueta: "x", cifra: "$1" }),
     ]);
     const t = rejilla.querySelector(".kpi");
     assert.ok(!t.classList.contains("kpi-color"));
-    assert.equal(t.querySelector(".kpi-marca"), null);
+    assert.equal(t.querySelector(".kpi-peso"), null);
+    assert.ok(
+      t.querySelector(".kpi-ico"),
+      "la de vidrio sí lleva el cuadradito",
+    );
   });
 
-  test("una marca que no existe no tine la tarjeta", async () => {
-    const { kpi, rejilla } = await montar();
-    kpi.pintarTarjetas(rejilla, [
-      kpi.tarjetaMetrica({ etiqueta: "x", cifra: "$1", marca: "no-existe" }),
-    ]);
-    const t = rejilla.querySelector(".kpi");
-    assert.ok(
-      !t.classList.contains("kpi-color"),
-      "se tiñó con una silueta vacía",
-    );
-    assert.ok(!rejilla.innerHTML.includes("undefined"));
+  test("la heroe no se vuelve tarjeta de color", async () => {
+    // Es la cifra principal y es de vidrio a propósito: el contraste
+    // entre ella y las cuatro de color es parte del diseño.
+    const { rejilla } = await inicio();
+    const heroe = rejilla.querySelector(".kpi--hero");
+    assert.ok(!heroe.classList.contains("kpi-color"));
+    assert.equal(heroe.querySelector(".kpi-peso"), null);
   });
 });

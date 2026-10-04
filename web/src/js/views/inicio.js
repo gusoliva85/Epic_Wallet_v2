@@ -37,17 +37,13 @@ const MUESTRA = [
     etiqueta: "Ingresos",
     cifra: "$2.105.000",
     sub: "4 movimientos",
-    color: "inc",
-    icono: "sube",
-    marca: "pesos-sube",
+    tarjeta: "inc",
   }),
   tarjetaMetrica({
     etiqueta: "Egresos",
     cifra: "$820.700",
     sub: "37 movimientos",
-    color: "egr",
-    icono: "baja",
-    marca: "pesos-baja",
+    tarjeta: "egr",
   }),
   // Gasto de HOY, no el promedio del mes. El promedio no dice nada
   // para decidir hoy; lo que sirve es cuánto se gastó en el día.
@@ -55,17 +51,13 @@ const MUESTRA = [
     etiqueta: "Gasto de hoy",
     cifra: "$55.100",
     sub: "2 movimientos",
-    color: "warn",
-    icono: "calendario",
-    marca: "pesos-dia",
+    tarjeta: "dia",
   }),
   tarjetaMetrica({
     etiqueta: "Patrimonio",
     cifra: "$14.902.500",
     sub: "Ahorro e inversiones",
-    color: "accent",
-    icono: "caja",
-    marca: "pesos-caja",
+    tarjeta: "pat",
   }),
 ];
 

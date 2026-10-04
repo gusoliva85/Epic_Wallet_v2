@@ -16,7 +16,7 @@
    categoría que escribió el usuario— y acá se escapa también. */
 
 import { esc } from "../format.js";
-import { icono, marca } from "../iconos.js";
+import { icono } from "../iconos.js";
 
 /* Los colores que puede pedir una tarjeta. Lista cerrada a propósito:
    el valor termina dentro de un atributo `style`, y la política de
@@ -36,6 +36,21 @@ const COLORES = {
 
 export const COLORES_VALIDOS = Object.freeze(Object.keys(COLORES));
 
+/* Las cuatro tarjetas de color del tablero. Fondo sólido y texto
+   blanco, para reconocerlas de un vistazo sin leer la etiqueta.
+
+   Es una lista cerrada por lo mismo que los colores: el fondo termina
+   dentro de un atributo `style`. Y además porque son cuatro y son
+   éstas: no es un parámetro libre, es un catálogo. */
+const TARJETAS = {
+  inc: { fondo: "var(--color-card-inc)", glifo: "sube" },
+  egr: { fondo: "var(--color-card-egr)", glifo: "baja" },
+  dia: { fondo: "var(--color-card-dia)", glifo: "calendario" },
+  pat: { fondo: "var(--color-card-pat)", glifo: "libro" },
+};
+
+export const TARJETAS_VALIDAS = Object.freeze(Object.keys(TARJETAS));
+
 function color(nombre) {
   return COLORES[nombre] ?? COLORES.accent;
 }
@@ -43,12 +58,12 @@ function color(nombre) {
 /**
  * Tarjeta de métrica: etiqueta, icono, cifra y subtítulo.
  *
- * Con `marca`, la tarjeta se tiñe del color y lleva esa silueta de
- * fondo: es lo que las hace identificables de un vistazo sin leer la
- * etiqueta.
+ * Con `tarjeta` —uno de `TARJETAS_VALIDAS`— pasa a ser una tarjeta de
+ * color: fondo sólido, texto blanco y la composición de fondo que la
+ * identifica. Sin eso, es la tarjeta de vidrio de siempre.
  *
  * @param {{etiqueta: string, cifra: string, sub?: string,
- *          color?: string, icono?: string, marca?: string}} datos
+ *          color?: string, icono?: string, tarjeta?: string}} datos
  */
 export function tarjetaMetrica({
   etiqueta,
@@ -56,25 +71,32 @@ export function tarjetaMetrica({
   sub = "",
   color: c,
   icono: ico,
-  marca: silueta,
+  tarjeta,
 }) {
-  // Con marca de agua, la tarjeta además se tiñe entera del color. Las
-  // dos cosas van juntas y por eso las pide una sola clase: una
-  // silueta sobre el vidrio neutro se ve como una mancha, y un fondo
-  // de color sin silueta no identifica nada.
-  const trazo = silueta ? marca(silueta) : "";
+  const t = TARJETAS[tarjeta];
+
+  if (t) {
+    // Tarjeta de color: fondo sólido, texto blanco, el signo pesos
+    // grande de fondo y el símbolo que la identifica arriba a la
+    // derecha. No lleva el cuadradito de icono: la composición del
+    // fondo ya cumple esa función y las dos cosas juntas sobrecargan.
+    return (
+      `<article class="kpi kpi-metric shell kpi-color" style="--c-card:${t.fondo}">` +
+      // El signo va como texto y no como trazo: así es el mismo glifo
+      // de la tipografía de las cifras, no un dibujo que se le parece.
+      '<span class="kpi-peso" aria-hidden="true">$</span>' +
+      `<svg class="kpi-glifo" viewBox="0 0 24 24" aria-hidden="true">${icono(t.glifo)}</svg>` +
+      '<div class="kpi-top">' +
+      `<div class="kpi-label">${esc(etiqueta)}</div>` +
+      "</div>" +
+      `<div class="kpi-num num">${esc(cifra)}</div>` +
+      `<div class="kpi-sub">${esc(sub)}</div>` +
+      "</article>"
+    );
+  }
 
   return (
-    `<article class="kpi kpi-metric shell${trazo ? " kpi-color" : ""}" ` +
-    `style="--c:${color(c)}">` +
-    (trazo
-      ? // El lienzo mide 48×32 y se agranda mucho.
-        // `preserveAspectRatio="xMaxYMax"` lo ancla abajo a la derecha:
-        // al recortarse contra el borde de la tarjeta se pierde la
-        // parte de arriba y no el centro de la figura.
-        '<svg class="kpi-marca" viewBox="0 0 48 32" aria-hidden="true" ' +
-        `preserveAspectRatio="xMaxYMax meet">${trazo}</svg>`
-      : "") +
+    `<article class="kpi kpi-metric shell" style="--c:${color(c)}">` +
     '<div class="kpi-top">' +
     `<div class="kpi-label">${esc(etiqueta)}</div>` +
     (ico
