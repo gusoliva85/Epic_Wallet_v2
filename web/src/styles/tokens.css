@@ -45,13 +45,24 @@
      Fondo sólido, texto blanco. Son los mismos en los dos temas: una
      tarjeta de color es su propia superficie, no cambia con el tema.
 
-     No son los colores semánticos sin más: están bajados hasta que el
-     blanco encima da 5:1. El ámbar es el que más bajó —blanco sobre
-     --color-warn puro da 2,95:1, menos de la mitad del mínimo. */
-  --color-card-inc: #237d62; /* ingresos      5,01:1 con blanco */
-  --color-card-egr: #bc313e; /* egresos       5,76:1 */
-  --color-card-dia: #8e6913; /* gasto de hoy  5,00:1 */
-  --color-card-pat: #447496; /* patrimonio    5,01:1 */
+     Dos cosas los definen y las dos están medidas:
+
+     SATURACIÓN al 38%, que es la de --color-accent. Una tarjeta de
+     color sólido es una superficie grande, no un acento chico: con la
+     saturación de los colores semánticos (56% a 76%) se sale del tono
+     grafito del resto de la aplicación y pesa más que la información
+     que lleva encima.
+
+     CONTRASTE parejo de 5,4:1 con blanco en las cuatro. No son los
+     colores semánticos sin más; están bajados hasta llegar ahí. El
+     ámbar es el que más bajó —blanco sobre --color-warn puro da
+     2,95:1, menos de la mitad del mínimo— y por eso quedó oliva. Que
+     las cuatro den lo mismo es lo que hace que la fila se lea como un
+     conjunto y no como cuatro oscuridades distintas. */
+  --color-card-inc: #357662; /* ingresos      5,39:1 con blanco */
+  --color-card-egr: #aa4c55; /* egresos       5,41:1 */
+  --color-card-dia: #7c6838; /* gasto de hoy  5,41:1 */
+  --color-card-pat: #416f90; /* patrimonio    5,40:1 */
 
   --color-avatar-1: #5c6469;
   --color-avatar-2: #33383c;

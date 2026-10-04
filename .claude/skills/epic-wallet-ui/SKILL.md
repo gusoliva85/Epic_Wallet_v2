@@ -453,13 +453,18 @@ tarjetaMetrica({ etiqueta, cifra, sub, tarjeta: "inc" | "egr" | "dia" | "pat" })
 ```
 
 ```text
-inc  verde    #237d62 · flecha arriba
-egr  rojo     #bc313e · flecha abajo
-dia  ocre     #8e6913 · calendario
-pat  grafito  #447496 · libro mayor
+inc  verde apagado   #357662 · flecha arriba
+egr  ladrillo        #aa4c55 · flecha abajo
+dia  oliva           #7c6838 · calendario
+pat  azul grafito    #416f90 · libro mayor
 ```
 
-**Los cuatro fondos NO son los colores semánticos.** Están bajados hasta dar 5:1 con blanco. El ocre es el que más bajó: blanco sobre `--color-warn` puro da 2,95:1, menos de la mitad del mínimo. Son los mismos en los dos temas — una tarjeta de color es su propia superficie, no vidrio que se tiñe.
+**Los cuatro fondos NO son los colores semánticos**, y se apartan por dos medidas:
+
+- **Saturación al 38%, la de `--color-accent`.** Una tarjeta de color sólido es una superficie grande, no un acento chico: con la saturación de los colores semánticos (56% a 76%) se sale del tono grafito del resto de la aplicación y pesa más que la información que lleva encima.
+- **Contraste parejo de 5,4:1 con blanco en las cuatro.** El ámbar es el que más bajó —blanco sobre `--color-warn` puro da 2,95:1— y por eso quedó oliva. Que las cuatro den lo mismo es lo que hace que la fila se lea como un conjunto y no como cuatro oscuridades distintas.
+
+Son los mismos en los dos temas: una tarjeta de color es su propia superficie, no vidrio que se tiñe.
 
 **El signo pesos de fondo va MÁS OSCURO que la tarjeta, no más claro.** Es la decisión central y es contraintuitiva:
 
