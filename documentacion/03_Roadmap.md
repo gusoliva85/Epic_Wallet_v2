@@ -130,12 +130,12 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
 
 ### Tema 0.4 — Primera pantalla visible
 
-- [~] **F00-T10 · `index.html` con el fondo y la estética**
+- [x] **F00-T10 · `index.html` con el fondo y la estética**
   **Tipo:** Frontend · **Ref:** Técnico §13.1, §13.3
   **Hacer:** `web/index.html` con `<head>` completo (viewport con `viewport-fit=cover`, `theme-color`, precarga de fuentes, CSP); fondo de lavados radiales y capa de ruido; una tarjeta `.shell` de prueba con el logotipo y el nombre; nada de JavaScript todavía.
   **Aceptación:** · la pantalla se ve como el mockup en fondo y tarjeta · se ve bien a 390 px y a 1440 px · sin errores en consola · desplegada y abierta en tu celular.
 
-- [ ] **F00-T11 · Manifest e instalación como PWA**
+- [~] **F00-T11 · Manifest e instalación como PWA**
   **Tipo:** Frontend · **Ref:** Técnico §15
   **Hacer:** `manifest.json` de la sección 15; iconos 192, 512 y maskable 512; service worker mínimo que sólo se registra (sin cachear nada aún); enlazar todo desde el HTML.
   **Aceptación:** · Android ofrece "Instalar aplicación" · se abre en modo `standalone` sin barra del navegador · el icono se ve bien en el cajón de aplicaciones · Lighthouse marca la PWA como instalable.
@@ -1376,7 +1376,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 
 | Fase | Tareas | Aprobadas | Estado |
 |---|---|---|---|
-| 0 · Puesta en marcha y producción | 12 | 9 | **En curso** · F00-T10 esperando prueba |
+| 0 · Puesta en marcha y producción | 12 | 10 | **En curso** · F00-T11 esperando prueba |
 | 1 · Sistema de estilo y esqueleto | 14 | 0 | Pendiente |
 | 2 · Cuentas y autenticación | 15 | 0 | Pendiente |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
