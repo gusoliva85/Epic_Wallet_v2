@@ -171,9 +171,62 @@
       </main>
     </div>
 
+    <!-- ======================= NAVEGACIÓN DEL TELÉFONO · F01-T06 =======================
+         Las cinco posiciones y las opciones de la hoja las pinta
+         barra-inferior.js desde nav.js. Desaparece desde 960 px, donde
+         manda la barra superior. -->
+    <nav
+      class="botnav shell"
+      id="barra-inferior"
+      aria-label="Navegación principal"
+    ></nav>
+
+    <button
+      class="fab"
+      type="button"
+      id="btn-nuevo"
+      aria-label="Nuevo movimiento"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 5v14M5 12h14" />
+      </svg>
+    </button>
+
+    <!-- El velo. Cerrado no intercepta toques. -->
+    <div class="fondo-hoja" id="fondo-hoja"></div>
+
+    <aside
+      class="hoja"
+      id="hoja-mas"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="hoja-mas-titulo"
+      aria-hidden="true"
+    >
+      <div class="hoja-asa" aria-hidden="true"></div>
+      <div class="hoja-cabeza">
+        <div>
+          <h2 id="hoja-mas-titulo">Más</h2>
+          <p>Patrimonio, análisis y ajustes</p>
+        </div>
+        <button
+          class="hoja-cerrar"
+          type="button"
+          data-cerrar
+          aria-label="Cerrar"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
+      <div class="hoja-cuerpo"></div>
+    </aside>
+
     <!-- En archivo aparte, no en línea: así la política de contenido
      mantiene script-src 'self' sin unsafe-inline. -->
     <script type="module" src="/src/js/barra-superior.js"></script>
+    <script type="module" src="/src/js/barra-inferior.js"></script>
     <script type="module" src="/src/js/boton-tema.js"></script>
     <script type="module" src="/src/js/registrar-sw.js"></script>
   </body>

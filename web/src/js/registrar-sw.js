@@ -8,7 +8,9 @@
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("/service-worker.js", { scope: "/" });
+      const reg = await navigator.serviceWorker.register("/service-worker.js", {
+        scope: "/",
+      });
       console.info("[pwa] service worker registrado:", reg.scope);
     } catch (err) {
       // Que falle el registro no debe romper la aplicación: sin service

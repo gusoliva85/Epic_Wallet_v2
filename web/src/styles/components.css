@@ -380,6 +380,355 @@
 }
 
 /* ============================================================
+   BARRA INFERIOR Y BOTÓN FLOTANTE · F01-T06
+   Referencia: mockup 01, .botnav y .fab · SKILL.md §5
+
+   Esta es la navegación del teléfono. Las pestañas de la barra
+   superior aparecen desde 960 px y acá desaparece todo, para que no
+   haya dos navegaciones a la vez.
+   ============================================================ */
+
+.botnav {
+  position: fixed;
+  /* Flotante y separada de los bordes, como la barra de arriba: el
+     hueco de 10 px deja ver el fondo por detrás del vidrio. */
+  left: 10px;
+  right: 10px;
+  /* La franja de gestos de Android y el borde inferior del iPhone se
+     comen esta zona. Sin el inset, la fila de iconos queda debajo de
+     la barra del sistema y no se puede tocar. */
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  z-index: 45;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 2px;
+  padding: 7px 6px;
+  border-radius: var(--radius-bar);
+}
+
+.botnav button {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 3px;
+  /* 44 px es el mínimo de la skill §5. Con el icono, el hueco y la
+     etiqueta el alto sale solo, pero queda declarado para que una
+     etiqueta más corta no lo baje sin que nadie lo note. */
+  min-height: 44px;
+  padding: 6px 2px;
+  border: 0;
+  border-radius: var(--radius-nav);
+  background: transparent;
+  color: var(--color-ink-3);
+  font-size: var(--text-nav);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    color 0.2s var(--ease),
+    background 0.2s var(--ease);
+}
+
+.botnav button svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* La posición activa se marca con color Y con fondo: el color solo no
+   alcanza para quien no lo distingue. */
+.botnav button.activa {
+  color: var(--color-accent-2);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+
+/* La etiqueta no se parte en dos líneas aunque no entre: en 320 px
+   queda justa y partida rompería la altura de la fila. */
+.botnav button span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- botón flotante ----
+   Arriba de la barra inferior y a la derecha: el alcance natural del
+   pulgar en un teléfono de 390 px. */
+.fab {
+  position: fixed;
+  right: 16px;
+  bottom: calc(84px + env(safe-area-inset-bottom));
+  z-index: 46;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 0;
+  border-radius: var(--radius-fab);
+  background: linear-gradient(
+    155deg,
+    var(--color-accent),
+    var(--color-accent-2)
+  );
+  color: var(--color-on-accent);
+  cursor: pointer;
+  box-shadow:
+    var(--glass-in),
+    0 14px 30px -10px rgba(var(--shadow-rgb), 0.55);
+  transition: transform 0.22s var(--ease);
+}
+
+.fab::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-fab);
+  background: var(--solid-sheen);
+}
+
+.fab:hover {
+  transform: translateY(-3px) rotate(90deg);
+}
+
+.fab:active {
+  transform: scale(0.93);
+}
+
+.fab svg {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.1;
+  stroke-linecap: round;
+}
+
+/* ---- escritorio ----
+   Desde 960 px manda la barra superior. Si quedaran las dos habría dos
+   navegaciones compitiendo y dos posiciones activas que mantener de
+   acuerdo. */
+@media (min-width: 960px) {
+  .botnav {
+    display: none;
+  }
+
+  /* El botón de alta sí se queda: cargar un movimiento es la acción
+     principal en cualquier tamaño. Baja a su lugar porque ya no tiene
+     la barra inferior debajo. */
+  .fab {
+    bottom: 24px;
+  }
+
+  /* Sin barra inferior, el hueco de abajo sobra. */
+  .app {
+    padding-bottom: 28px;
+  }
+}
+
+/* ============================================================
+   HOJA INFERIOR · versión mínima para la hoja de Más (F01-T06)
+
+   El componente completo es de F01-T11: foco atrapado, bloqueo del
+   scroll de fondo y, desde 900 px, cajón lateral o modal centrado.
+   Acá está lo que esta hoja necesita para no ser una trampa: fondo
+   oscurecido, cierre por toque afuera, por Escape y por botón.
+   ============================================================ */
+
+.fondo-hoja {
+  position: fixed;
+  inset: 0;
+  z-index: 48;
+  background: var(--scrim-0);
+  backdrop-filter: blur(0);
+  -webkit-backdrop-filter: blur(0);
+  /* Cerrado no intercepta toques: sin esto, una capa invisible a
+     pantalla completa dejaría la aplicación entera sin reaccionar. */
+  pointer-events: none;
+  transition:
+    background 0.34s ease,
+    backdrop-filter 0.34s ease;
+}
+
+.fondo-hoja.abierto {
+  pointer-events: auto;
+  background: var(--scrim);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.hoja {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  max-height: 88vh;
+  overflow: auto;
+  /* Que el gesto de scroll dentro de la hoja no arrastre la página de
+     atrás al llegar al final. */
+  overscroll-behavior: contain;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  background: var(--glass-shell-bg);
+  backdrop-filter: blur(26px) saturate(1.15);
+  -webkit-backdrop-filter: blur(26px) saturate(1.15);
+  box-shadow: var(--glass-in), var(--sh-lg);
+  transform: translateY(105%);
+  transition: transform 0.38s var(--ease);
+}
+
+.hoja.abierta {
+  transform: translateY(0);
+}
+
+/* Fuera de la pantalla no basta: un elemento corrido con transform
+   sigue siendo alcanzable con el tabulador y lo lee el lector de
+   pantalla. `visibility` lo saca del árbol de accesibilidad, y se
+   demora lo que dura la transición para que la salida siga viéndose. */
+.hoja:not(.abierta) {
+  visibility: hidden;
+  transition:
+    transform 0.38s var(--ease),
+    visibility 0s linear 0.38s;
+}
+
+.hoja-asa {
+  width: 38px;
+  height: 4px;
+  margin: 10px auto 4px;
+  border-radius: 99px;
+  background: var(--line-strong);
+}
+
+.hoja-cabeza {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 19px 13px;
+  border-bottom: 1px solid var(--line-2);
+}
+
+.hoja-cabeza h2 {
+  font-size: var(--text-sheet);
+}
+
+.hoja-cabeza p {
+  margin-top: 2px;
+  font-size: var(--text-sub);
+  color: var(--color-ink-3);
+}
+
+.hoja-cerrar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 31px;
+  height: 31px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-sm);
+  background: var(--glass-content-bg);
+  color: var(--color-ink-2);
+  cursor: pointer;
+  transition: transform 0.18s var(--ease);
+}
+
+/* El recuadro mide 31 px por proporción; el área táctil llega a 44. */
+.hoja-cerrar::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
+
+.hoja-cerrar:hover {
+  transform: rotate(90deg);
+}
+
+.hoja-cerrar svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.hoja-cuerpo {
+  display: grid;
+  gap: 8px;
+  padding: 15px 19px calc(26px + env(safe-area-inset-bottom));
+}
+
+/* ---- las opciones de la hoja de Más ---- */
+
+.hoja-opcion {
+  display: grid;
+  grid-template-columns: 38px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  color: var(--color-ink);
+  cursor: pointer;
+  transition: transform 0.18s var(--ease);
+}
+
+.hoja-opcion:hover {
+  transform: translateX(3px);
+}
+
+.hoja-opcion-ico {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-btn);
+  background: color-mix(in srgb, var(--color-accent) 14%, var(--mix-tint));
+  color: color-mix(in srgb, var(--color-accent) 80%, var(--mix-ink));
+}
+
+.hoja-opcion-ico svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.hoja-opcion b {
+  display: block;
+  font-size: var(--text-row);
+  font-weight: 600;
+}
+
+.hoja-opcion-flecha {
+  color: var(--color-ink-4);
+}
+
+.hoja-opcion-flecha svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+/* ============================================================
    NOTA DE ESTADO · provisoria
    Ocupa el lugar de las vistas hasta F01-T07. Se borra entonces.
    ============================================================ */
