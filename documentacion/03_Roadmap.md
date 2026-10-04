@@ -155,7 +155,7 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
 
 ### Tema 1.1 — Tokens y capas de vidrio
 
-- [~] **F01-T01 · Tokens de diseño en Tailwind**
+- [x] **F01-T01 · Tokens de diseño en Tailwind**
   **Tipo:** Frontend · **Ref:** Técnico §13.2
   **Hacer:** `web/src/styles/tokens.css` con el bloque `@theme` completo (fondo, 4 niveles de tinta, líneas, acento, semántica financiera `--color-inc`/`--color-egr`/`--color-sav`, severidades, radios, fuentes, curva de animación); bloque `html[data-theme="dark"]` redefiniendo todo.
   **Aceptación:** · los tokens se usan como utilidad (`text-ink-3`) y como variable (`var(--color-ink-3)`) · cambiar `data-theme` a mano en el inspector cambia toda la paleta · ningún valor de color queda escrito fuera de este archivo.
@@ -1377,7 +1377,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 | Fase | Tareas | Aprobadas | Estado |
 |---|---|---|---|
 | 0 · Puesta en marcha y producción | 12 | **12** | ✅ **Cerrada** el 03/10/2026 |
-| 1 · Sistema de estilo y esqueleto | 14 | 0 | **En curso** · F01-T01 esperando prueba |
+| 1 · Sistema de estilo y esqueleto | 14 | 1 | **En curso** · próxima: F01-T02 |
 | 2 · Cuentas y autenticación | 15 | 0 | Pendiente |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
 | 4 · Movimientos | 15 | 0 | Pendiente |
@@ -1394,7 +1394,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 | 15 · PWA | 9 | 0 | Pendiente |
 | 16 · Seguridad, cierre y correo | 16 | 0 | Pendiente |
 | 17 · Integraciones futuras | 7 | 0 | Pendiente |
-| **Total** | **214** | **12** | — |
+| **Total** | **214** | **13** | — |
 
 Este cuadro se actualiza al cerrar cada tarea.
 
