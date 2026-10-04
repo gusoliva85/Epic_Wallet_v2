@@ -6,7 +6,7 @@ fase, cuando todas sus tareas están aprobadas.
 | Fase | Documento | Estado |
 |---|---|---|
 | 0 · Puesta en marcha y producción | [FASE_00_PUESTA_EN_MARCHA.md](FASE_00_PUESTA_EN_MARCHA.md) | Cerrada el 03/10/2026 |
-| 1 · Sistema de estilo y esqueleto visual | — | Pendiente |
+| 1 · Sistema de estilo y esqueleto visual | [FASE_01_SISTEMA_DE_ESTILO.md](FASE_01_SISTEMA_DE_ESTILO.md) | Cerrada el 04/10/2026 |
 | 2 · Cuentas de usuario y autenticación | — | Pendiente |
 | 3 · Meses y categorías | — | Pendiente |
 | 4 · Movimientos | — | Pendiente |

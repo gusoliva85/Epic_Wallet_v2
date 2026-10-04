@@ -40,7 +40,9 @@ async function build() {
     await run(process.execPath, ARGS, { windowsHide: true });
     console.log(`  ✓ ${hora()}  compilado en ${Date.now() - t0} ms`);
   } catch (err) {
-    console.error(`  ✗ ${hora()}  error de compilación:\n${err.stderr || err.message}`);
+    console.error(
+      `  ✗ ${hora()}  error de compilación:\n${err.stderr || err.message}`,
+    );
   } finally {
     building = false;
     if (queued) {
