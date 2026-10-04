@@ -57,7 +57,11 @@ async function main() {
     for (const tamano of TAMANOS) {
       const contexto = await navegador.newContext({
         viewport: { width: tamano.ancho, height: tamano.alto },
-        deviceScaleFactor: 2,
+        /* Escala 1 y no 2. A 2x las 34 capturas pesan 40 MB, y un
+           repositorio carga ese peso para siempre aunque después se
+           borren. A 1x se leen igual en el documento y pesan la
+           cuarta parte. */
+        deviceScaleFactor: 1,
         // El tema lo fija `data-theme`, pero se declara también la
         // preferencia del sistema: así la captura del tema claro no
         // depende de cómo esté la máquina donde se corre el script.

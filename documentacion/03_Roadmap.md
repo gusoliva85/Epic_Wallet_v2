@@ -224,7 +224,7 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **Hacer:** cada vista con su estructura final y datos fijos: inicio (indicadores, dos paneles de gráfico con un marcador de posición, categorías, últimos movimientos, alertas), movimientos (filtros y lista agrupada por día), historial (tabla), inversiones (indicadores y tabla), patrimonio (ecuación y composición), análisis (métricas y evolución salarial), configuración (categorías, preferencias, datos laborales, respaldo).
   **Aceptación:** · las siete se ven terminadas en el celular · ninguna tiene scroll horizontal salvo las tablas, que lo tienen a propósito · el orden del dashboard es el del mockup aprobado · los cuatro estados (cargando, error, vacío, sin conexión) están maquetados aunque todavía no se disparen.
 
-- [ ] **F01-T14 · Documentación de la Fase 1**
+- [~] **F01-T14 · Documentación de la Fase 1**
   **Tipo:** Doc
   **Hacer:** `docs/FASE_01_SISTEMA_DE_ESTILO.md`: el sistema de estilo explicado (identidad, cuadro completo de tokens, las dos capas de vidrio con ejemplo de código, escala tipográfica, cortes, movimiento), catálogo de componentes con captura y fragmento de uso de cada uno, y la regla de que ningún componente nuevo introduce valores fuera de los tokens.
   **Aceptación:** · el cuadro de tokens coincide con `tokens.css` · cada componente tiene ejemplo de uso copiable · incluye capturas en claro y en oscuro.
