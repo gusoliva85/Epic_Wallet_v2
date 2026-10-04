@@ -33,6 +33,8 @@ INVARIANTES = {
     "--color-card-pat",
     "--peso-sombra",
     "--glifo-op",
+    "--radius-linea",
+    "--radius-enlace",
     "--radius-tilde",
     "--radius-ico",
     "--radius-aviso",

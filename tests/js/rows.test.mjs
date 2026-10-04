@@ -373,17 +373,23 @@ describe("filas de lista", () => {
     otra.id = "categorias-inicio";
     dom.window.document.body.append(otra);
 
-    const vista = await import(modulo(["views", "inicio.js"]));
+    const vistas = await import(modulo(["views", "vistas.js"]));
+    vistas.pintarVistas();
     await esperar(dom);
 
+    // Las cantidades salen de los datos, no escritas a mano: así
+    // cambiar la muestra no obliga a tocar la prueba.
+    const datos = await import(modulo(["datos-muestra.js"]));
+    const enInicio = datos.MOVIMIENTOS.slice(0, 5);
+    const dias = new Set(enInicio.map((m) => m.dia)).size;
+
+    assert.equal(lista.querySelectorAll(".row").length, enInicio.length);
     assert.equal(
-      lista.querySelectorAll(".row").length,
-      4,
-      "cuatro movimientos",
+      lista.querySelectorAll(".day-sep").length,
+      dias,
+      "un separador por día",
     );
-    assert.equal(lista.querySelectorAll(".day-sep").length, 2, "dos días");
-    assert.equal(otra.querySelectorAll(".row").length, 4, "cuatro categorías");
-    assert.equal(vista.MOVIMIENTOS.length, 6, "cuatro filas y dos separadores");
+    assert.equal(otra.querySelectorAll(".row").length, datos.CATEGORIAS.length);
   });
 
   test("la muestra de inicio trae ingresos y egresos", async () => {
@@ -395,7 +401,8 @@ describe("filas de lista", () => {
     otra.id = "categorias-inicio";
     dom.window.document.body.append(otra);
 
-    await import(modulo(["views", "inicio.js"]));
+    const vistas = await import(modulo(["views", "vistas.js"]));
+    vistas.pintarVistas();
     await esperar(dom);
 
     assert.ok(lista.querySelector(".amt-in"), "falta un ingreso en la muestra");
