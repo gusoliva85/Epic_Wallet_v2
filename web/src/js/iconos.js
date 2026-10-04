@@ -28,6 +28,14 @@ const TRAZOS = {
     '<circle cx="16.5" cy="16.5" r="2.5"/>',
   calendario:
     '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  // --- severidades, para los avisos ---
+  tilde: '<path d="M4.5 12.5l5 5 10-11"/>',
+  aviso:
+    '<path d="M12 3.8L2.6 20.2h18.8L12 3.8z"/><path d="M12 10v4.2"/>' +
+    '<circle cx="12" cy="17.4" r="1"/>',
+  reloj: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5.3l3.4 2"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.9" r="1"/>',
+
   // Libro mayor: lo que registra el patrimonio.
   libro:
     '<path d="M6 4h11.5A1.5 1.5 0 0119 5.5v15H7.5A1.5 1.5 0 016 19V4z"/>' +

@@ -209,12 +209,12 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **Hacer:** `components/rows.js` con la fila de movimiento (icono de dirección, categoría, fecha y descripción, importe con signo y color) y la fila de categoría (inicial, nombre, cantidad y porcentaje, barra de participación, total); estados hover y activo.
   **Aceptación:** · ingreso en verde con `+`, egreso en rojo con `−` · la barra de participación se anima al aparecer · la fila es un botón accesible por teclado con foco visible.
 
-- [~] **F01-T11 · Hoja inferior y cajón lateral**
+- [x] **F01-T11 · Hoja inferior y cajón lateral**
   **Tipo:** Frontend · **Ref:** Técnico §13.5, §13.6
   **Hacer:** `components/sheet.js`; en móvil hoja que sube desde abajo con asa, fondo oscurecido con desenfoque y cierre por toque afuera o Escape; desde 900 px el panel de detalle pasa a cajón lateral derecho y el formulario a modal centrado; bloqueo del scroll de fondo.
   **Aceptación:** · abre y cierra con la curva y duración de la tabla de movimiento · el fondo no hace scroll con la hoja abierta · Escape cierra · el foco queda atrapado dentro mientras está abierta.
 
-- [ ] **F01-T12 · Avisos, píldoras y notificaciones**
+- [~] **F01-T12 · Avisos, píldoras y notificaciones**
   **Tipo:** Frontend · **Ref:** Mockup
   **Hacer:** `.alert` en las cuatro severidades; `.pill` para etiquetas de estado y porcentajes; `components/toast.js` con `aria-live="polite"` y cierre automático a los 2,6 s.
   **Aceptación:** · las cuatro severidades se distinguen en claro y en oscuro · el lector de pantalla anuncia el toast · dos toasts seguidos no se superponen.
@@ -1377,7 +1377,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 | Fase | Tareas | Aprobadas | Estado |
 |---|---|---|---|
 | 0 · Puesta en marcha y producción | 12 | **12** | ✅ **Cerrada** el 03/10/2026 |
-| 1 · Sistema de estilo y esqueleto | 14 | 10 | **En curso** · próxima: F01-T11 |
+| 1 · Sistema de estilo y esqueleto | 14 | 11 | **En curso** · próxima: F01-T12 |
 | 2 · Cuentas y autenticación | 15 | 0 | Pendiente |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
 | 4 · Movimientos | 15 | 0 | Pendiente |

@@ -1500,6 +1500,216 @@
 }
 
 /* ============================================================
+   AVISOS, PÍLDORAS Y NOTIFICACIONES · F01-T12
+   Referencia: mockup 01, .alert / .pill / .toast
+
+   Las proporciones de color se apartan del mockup, que mezclaba el
+   texto al 80% del color: en claro, el ámbar daba 3,51:1 y el naranja
+   4,29:1, los dos por debajo del mínimo. Al 60% el peor caso de las
+   cinco severidades en los dos temas queda en 4,98:1.
+   ============================================================ */
+
+/* ---- aviso ---- */
+
+.alert {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 11px 12px;
+  border-radius: var(--radius-row);
+  border: 1px solid color-mix(in srgb, var(--c) 34%, var(--line-2));
+  /* Sombra teñida de la severidad: es lo que hace que un aviso crítico
+     pese más en la pantalla que uno informativo, sin gritar. */
+  box-shadow:
+    var(--glass-in),
+    0 10px 22px -14px color-mix(in srgb, var(--c) 60%, transparent);
+}
+
+.alert-ico {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-aviso);
+  background: color-mix(in srgb, var(--c) 17%, var(--mix-tint));
+  /* El icono es un gráfico, no texto: el mínimo es 3:1, y al 80% del
+     color el peor caso da 3,42:1. Por eso conserva más color que el
+     texto de la píldora. */
+  color: color-mix(in srgb, var(--c) 80%, var(--mix-ink));
+}
+
+.alert-ico svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.alert b {
+  display: block;
+  font-size: var(--text-aviso);
+  font-weight: 700;
+}
+
+.alert p {
+  margin: 3px 0 0;
+  font-size: var(--text-chip);
+  line-height: 1.45;
+  color: var(--color-ink-3);
+}
+
+/* Las cinco severidades. Lo único que cambia es `--c`; el resto de las
+   reglas lo usan. */
+.a-ok {
+  --c: var(--color-ok);
+}
+.a-warn {
+  --c: var(--color-warn);
+}
+.a-pend {
+  --c: var(--color-pend);
+}
+.a-crit {
+  --c: var(--color-crit);
+}
+.a-info {
+  --c: var(--color-accent);
+}
+
+/* ---- píldora de estado ---- */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 99px;
+  font-size: var(--text-pill);
+  font-weight: 700;
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--c) 15%, var(--mix-tint));
+  /* 60% y no 80% como el mockup: ahí el ámbar y el naranja no llegaban
+     al mínimo de contraste en tema claro. */
+  color: color-mix(in srgb, var(--c) 60%, var(--mix-ink));
+}
+
+.pill.ok {
+  --c: var(--color-ok);
+}
+.pill.warn {
+  --c: var(--color-warn);
+}
+.pill.pend {
+  --c: var(--color-pend);
+}
+.pill.crit {
+  --c: var(--color-crit);
+}
+.pill.info {
+  --c: var(--color-accent);
+}
+
+/* La neutral no tiene severidad: un estado sin carga. */
+.pill.neutral {
+  background: var(--groove-bg);
+  color: var(--color-ink-2);
+}
+
+/* ---- notificación breve ---- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  /* Arriba de la barra inferior y del botón flotante: tapado por
+     ellos, el mensaje no se lee. */
+  bottom: calc(150px + env(safe-area-inset-bottom));
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 15px;
+  max-width: calc(100vw - 32px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-toast);
+  background: var(--glass-bar-bg);
+  backdrop-filter: blur(var(--glass-bar-blur)) saturate(1.05);
+  -webkit-backdrop-filter: blur(var(--glass-bar-blur)) saturate(1.05);
+  box-shadow: var(--glass-in), var(--sh-lg);
+  font-size: var(--text-row);
+  font-weight: 600;
+  color: var(--color-ink);
+  /* Vacío y fuera de vista, pero PRESENTE: la región viva tiene que
+     existir antes que el mensaje o el lector no anuncia nada. */
+  opacity: 0;
+  transform: translate(-50%, 16px);
+  pointer-events: none;
+  transition:
+    opacity 0.3s var(--ease),
+    transform 0.3s var(--ease);
+}
+
+.toast.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* Vacío no ocupa lugar ni recibe toques; con `display:none` el lector
+   dejaría de observar la región. */
+.toast:empty {
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+}
+
+.toast-ico {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 21px;
+  height: 21px;
+  border-radius: var(--radius-tilde);
+  background: color-mix(in srgb, var(--c) 18%, var(--mix-tint));
+  color: color-mix(in srgb, var(--c) 80%, var(--mix-ink));
+}
+
+.toast-ico svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.t-ok {
+  --c: var(--color-ok);
+}
+.t-warn {
+  --c: var(--color-warn);
+}
+.t-pend {
+  --c: var(--color-pend);
+}
+.t-crit {
+  --c: var(--color-crit);
+}
+.t-info {
+  --c: var(--color-accent);
+}
+
+/* Sin barra inferior ni botón flotante debajo, el mensaje baja. */
+@media (min-width: 960px) {
+  .toast {
+    bottom: 28px;
+  }
+}
+
+/* ============================================================
    ENTRADA ESCALONADA
 
    En CSS y no con `style` en línea desde JavaScript: así el retardo

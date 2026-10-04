@@ -217,6 +217,13 @@
             <p class="nota-pie">Fase 3 · tableros e indicadores.</p>
           </article>
 
+          <!-- Avisos y píldoras de muestra (F01-T12). Los de verdad
+               salen de las reglas de alerta, en la fase 8. -->
+          <section class="shell panel" aria-labelledby="t-avisos">
+            <h3 id="t-avisos" class="panel-titulo">Alertas</h3>
+            <div class="rows" id="avisos-inicio"></div>
+          </section>
+
           <!-- Las filas las pinta views/inicio.js (F01-T10). -->
           <section class="shell panel" aria-labelledby="t-ultimos">
             <h3 id="t-ultimos" class="panel-titulo">Últimos movimientos</h3>
@@ -424,6 +431,18 @@
         <div class="relleno-hoja" aria-hidden="true"></div>
       </div>
     </aside>
+
+    <!-- La notificación breve. Va VACÍA en el HTML y se queda: un
+         lector de pantalla anuncia los cambios dentro de una región
+         aria-live, y si la región se creara junto con el texto no
+         habría cambio que anunciar. -->
+    <div
+      class="toast"
+      id="toast"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    ></div>
 
     <!-- En archivo aparte, no en línea: así la política de contenido
      mantiene script-src 'self' sin unsafe-inline. -->
