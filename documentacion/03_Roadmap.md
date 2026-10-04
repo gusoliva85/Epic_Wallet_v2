@@ -219,7 +219,7 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **Hacer:** `.alert` en las cuatro severidades; `.pill` para etiquetas de estado y porcentajes; `components/toast.js` con `aria-live="polite"` y cierre automático a los 2,6 s.
   **Aceptación:** · las cuatro severidades se distinguen en claro y en oscuro · el lector de pantalla anuncia el toast · dos toasts seguidos no se superponen.
 
-- [~] **F01-T13 · Las siete vistas maquetadas con datos de ejemplo**
+- [x] **F01-T13 · Las siete vistas maquetadas con datos de ejemplo**
   **Tipo:** Frontend · **Ref:** General §48
   **Hacer:** cada vista con su estructura final y datos fijos: inicio (indicadores, dos paneles de gráfico con un marcador de posición, categorías, últimos movimientos, alertas), movimientos (filtros y lista agrupada por día), historial (tabla), inversiones (indicadores y tabla), patrimonio (ecuación y composición), análisis (métricas y evolución salarial), configuración (categorías, preferencias, datos laborales, respaldo).
   **Aceptación:** · las siete se ven terminadas en el celular · ninguna tiene scroll horizontal salvo las tablas, que lo tienen a propósito · el orden del dashboard es el del mockup aprobado · los cuatro estados (cargando, error, vacío, sin conexión) están maquetados aunque todavía no se disparen.
@@ -1377,7 +1377,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 | Fase | Tareas | Aprobadas | Estado |
 |---|---|---|---|
 | 0 · Puesta en marcha y producción | 12 | **12** | ✅ **Cerrada** el 03/10/2026 |
-| 1 · Sistema de estilo y esqueleto | 14 | 12 | **En curso** · próxima: F01-T13 |
+| 1 · Sistema de estilo y esqueleto | 14 | 13 | **En curso** · próxima: F01-T14 |
 | 2 · Cuentas y autenticación | 15 | 0 | Pendiente |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
 | 4 · Movimientos | 15 | 0 | Pendiente |

@@ -67,9 +67,14 @@ function esElActual(m) {
 
 function pintar(refs) {
   refs.titulo.textContent = nombre(actual);
+  /* Corto a propósito. «Mes abierto · transaccional» no entra en la
+     barra de un teléfono de 390 px y se corta en «TRANSACCIO…», que es
+     peor que decir menos. Las dos palabras eran casi sinónimos: la que
+     informa es la segunda, y «abierto / consolidado» ya dice lo mismo
+     con la mitad de los caracteres. */
   refs.estado.textContent = esElActual(actual)
-    ? "Mes abierto · transaccional"
-    : "Mes cerrado · consolidado";
+    ? "Mes abierto"
+    : "Mes consolidado";
 
   // Regla 1: no hay meses futuros.
   refs.siguiente.disabled = esElActual(actual);

@@ -12,11 +12,13 @@
     "build:debug": "tailwindcss -i web/src/app.css -o web/public/app.css",
     "size": "node scripts/css-size.mjs",
     "dev:tailwind": "tailwindcss -i web/src/app.css -o web/public/app.css --watch",
-    "test": "node --test \"tests/js/*.test.mjs\""
+    "test": "node --test \"tests/js/*.test.mjs\"",
+    "capturas": "node scripts/capturas.mjs"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.0.0",
     "jsdom": "^30.1.1",
+    "playwright": "^1.63.0",
     "tailwindcss": "^4.0.0"
   },
   "engines": {

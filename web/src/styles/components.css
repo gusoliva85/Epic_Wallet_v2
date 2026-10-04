@@ -573,12 +573,26 @@
   overscroll-behavior: contain;
   border: 1px solid var(--line);
   border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
-  background: var(--glass-shell-bg);
-  backdrop-filter: blur(26px) saturate(1.15);
-  -webkit-backdrop-filter: blur(26px) saturate(1.15);
+  /* El mismo vidrio casi opaco de las dos barras, no el de una
+     tarjeta. Una hoja se abre ENCIMA de la aplicación y lleva texto:
+     con el 52% de una tarjeta, el contenido de atrás se mezcla con el
+     de adelante y las dos cosas se leen peor. Es el mismo motivo por
+     el que la barra superior y la inferior tienen su propio vidrio. */
+  background: var(--glass-bar-bg);
+  backdrop-filter: blur(var(--glass-bar-blur)) saturate(1.05);
+  -webkit-backdrop-filter: blur(var(--glass-bar-blur)) saturate(1.05);
   box-shadow: var(--glass-in), var(--sh-lg);
   transform: translateY(105%);
   transition: transform 0.38s var(--ease);
+}
+
+/* Y su respaldo opaco, por lo mismo que el resto del vidrio. */
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .hoja {
+    background: var(--glass-bar-fallback);
+  }
 }
 
 .hoja.abierta {

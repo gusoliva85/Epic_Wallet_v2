@@ -176,7 +176,12 @@ describe("barra de mes", () => {
   test("el mes actual se anuncia transaccional", async () => {
     const b = await montar();
     assert.match(b.estado.textContent, /abierto/i);
-    assert.match(b.estado.textContent, /transaccional/i);
+    // El texto es corto a propósito: «Mes abierto · transaccional» se
+    // corta en la barra de un teléfono de 390 px.
+    assert.ok(
+      b.estado.textContent.length <= 18,
+      `el subtítulo tiene ${b.estado.textContent.length} caracteres y se va a cortar`,
+    );
   });
 
   test("un mes anterior se anuncia consolidado", async () => {
