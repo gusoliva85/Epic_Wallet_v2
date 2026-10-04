@@ -14,6 +14,7 @@ import {
   tarjetaMetrica,
   pintarTarjetas,
 } from "../components/kpi.js";
+import { crearHoja } from "../components/sheet.js";
 import {
   filaMovimiento,
   filaCategoria,
@@ -144,10 +145,41 @@ const CATEGORIAS = [
   }),
 ];
 
+/* ---- la hoja de detalle (F01-T11) ----
+   Abre al tocar una fila. El contenido de verdad llega en la fase 4;
+   por ahora toma el nombre de la fila para que se vea que es ESA la
+   que se abrió, y para poder probar con el dedo la hoja y con el mouse
+   el cajón lateral. */
+
+function conectarDetalle() {
+  const hoja = document.getElementById("hoja-detalle");
+  if (!hoja) return;
+
+  const control = crearHoja(hoja);
+  if (!control) return;
+
+  const titulo = hoja.querySelector("#hoja-detalle-titulo");
+  const sub = hoja.querySelector("#hoja-detalle-sub");
+
+  document.addEventListener("click", (ev) => {
+    const fila = ev.target.closest("[data-movimiento], [data-categoria]");
+    if (!fila) return;
+
+    const esMovimiento = fila.hasAttribute("data-movimiento");
+    // textContent y no innerHTML: lo que se lee del DOM se trata como
+    // dato, aunque lo haya escrito esta misma aplicación.
+    titulo.textContent =
+      fila.querySelector(".row-main b")?.textContent ?? "Detalle";
+    sub.textContent = esMovimiento ? "Movimiento" : "Categoría del mes";
+    control.abrir();
+  });
+}
+
 function conectar() {
   pintarTarjetas(document.getElementById("kpis-inicio"), MUESTRA);
   pintarFilas(document.getElementById("movimientos-inicio"), MOVIMIENTOS);
   pintarFilas(document.getElementById("categorias-inicio"), CATEGORIAS);
+  conectarDetalle();
 }
 
 if (document.readyState === "loading") {

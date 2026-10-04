@@ -385,6 +385,46 @@
       <div class="hoja-cuerpo"></div>
     </aside>
 
+    <!-- Hoja de detalle · F01-T11.
+         Desde 900 px es un cajón lateral derecho. El contenido de
+         verdad —los datos del movimiento o de la categoría— llega en
+         la fase 4; acá sirve para probar la hoja con el dedo y el
+         cajón con el mouse. -->
+    <aside
+      class="hoja hoja--cajon"
+      id="hoja-detalle"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="hoja-detalle-titulo"
+      aria-hidden="true"
+      tabindex="-1"
+    >
+      <div class="hoja-asa" aria-hidden="true"></div>
+      <div class="hoja-cabeza">
+        <div>
+          <h2 id="hoja-detalle-titulo">Detalle</h2>
+          <p id="hoja-detalle-sub">—</p>
+        </div>
+        <button
+          class="hoja-cerrar"
+          type="button"
+          data-cerrar
+          aria-label="Cerrar"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
+      <div class="hoja-cuerpo">
+        <p class="nota-pie">
+          Acá van los datos del movimiento o de la categoría y su lista de
+          movimientos. Fase 4 y fase 5.
+        </p>
+        <div class="relleno-hoja" aria-hidden="true"></div>
+      </div>
+    </aside>
+
     <!-- En archivo aparte, no en línea: así la política de contenido
      mantiene script-src 'self' sin unsafe-inline. -->
     <script type="module" src="/src/js/barra-superior.js"></script>
