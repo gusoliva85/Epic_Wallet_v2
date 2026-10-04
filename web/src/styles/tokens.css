@@ -30,6 +30,9 @@
   --color-accent: #57768c;
   --color-accent-2: #3e5a6d;
   --color-accent-soft: #e2e9ed;
+  /* Contenido sobre una superficie de acento. Es blanco en los dos
+     temas: el acento siempre es lo bastante oscuro. */
+  --color-on-accent: #ffffff;
 
   /* ---- semántica financiera ---- */
   --color-inc: #2e8067;  /* ingresos */
@@ -74,6 +77,9 @@
   --glass-in: inset 0 1px 0 rgba(255, 255, 255, 0.85),
     inset 0 0 0 1px rgba(255, 255, 255, 0.45);
   --glass-sheen: linear-gradient(120deg, rgba(255, 255, 255, 0.55), transparent 45%);
+  /* Reflejo de las superficies sólidas (la marca, los botones de acento),
+     más inclinado y más corto que el del vidrio. */
+  --solid-sheen: linear-gradient(125deg, rgba(255, 255, 255, 0.55), transparent 50%);
 
   --accent-ring: rgba(87, 118, 140, 0.28);
 
@@ -112,6 +118,7 @@ html[data-theme="dark"] {
   --color-accent: #7ea3ba;
   --color-accent-2: #9bc0d4;
   --color-accent-soft: #151e23;
+  --color-on-accent: #0c0d0e;
 
   --color-inc: #49a383;
   --color-egr: #cf6270;
@@ -133,6 +140,7 @@ html[data-theme="dark"] {
   --glass-in: inset 0 1px 0 rgba(255, 255, 255, 0.07),
     inset 0 0 0 1px rgba(255, 255, 255, 0.05);
   --glass-sheen: linear-gradient(120deg, rgba(255, 255, 255, 0.07), transparent 45%);
+  --solid-sheen: linear-gradient(125deg, rgba(255, 255, 255, 0.34), transparent 50%);
 
   --accent-ring: rgba(126, 163, 186, 0.3);
 
@@ -163,6 +171,7 @@ html[data-theme="dark"] {
     --color-accent: #7ea3ba;
     --color-accent-2: #9bc0d4;
     --color-accent-soft: #151e23;
+    --color-on-accent: #0c0d0e;
 
     --color-inc: #49a383;
     --color-egr: #cf6270;
@@ -184,6 +193,7 @@ html[data-theme="dark"] {
     --glass-in: inset 0 1px 0 rgba(255, 255, 255, 0.07),
       inset 0 0 0 1px rgba(255, 255, 255, 0.05);
     --glass-sheen: linear-gradient(120deg, rgba(255, 255, 255, 0.07), transparent 45%);
+    --solid-sheen: linear-gradient(125deg, rgba(255, 255, 255, 0.34), transparent 50%);
 
     --accent-ring: rgba(126, 163, 186, 0.3);
 

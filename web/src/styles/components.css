@@ -97,10 +97,10 @@
   width: 60px;
   height: 60px;
   margin: 0 auto 18px;
-  border-radius: 20px;
+  border-radius: var(--radius-card);
   position: relative;
   overflow: hidden;
-  color: #fff;
+  color: var(--color-on-accent);
   background: linear-gradient(155deg, var(--color-accent), var(--color-accent-2));
   box-shadow: var(--glass-in), 0 10px 24px -8px rgba(var(--shadow-rgb), 0.45);
 }
@@ -110,7 +110,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(125deg, rgba(255, 255, 255, 0.55), transparent 50%);
+  background: var(--solid-sheen);
 }
 
 .marca svg {
