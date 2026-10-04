@@ -192,14 +192,14 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **Hacer:** `router.js` con las siete rutas; `<section class="view">` para cada una; activación por hash; botón "atrás" del navegador funcionando; animación de entrada de vista; vuelta al inicio del scroll al cambiar.
   **Aceptación:** · recargar en `#/inversiones` abre inversiones · "atrás" vuelve a la vista previa · una ruta inválida cae en inicio · la navegación no recarga la página.
 
-- [~] **F01-T08 · Barra de mes (sin lógica real)**
+- [x] **F01-T08 · Barra de mes (sin lógica real)**
   **Tipo:** Frontend · **Ref:** General §12.1
   **Hacer:** `.monthbar` con flechas de anterior y siguiente, título del mes, subtítulo de estado (abierto o consolidado) y botón "Hoy"; por ahora con valores fijos.
   **Aceptación:** · se ve como el mockup · los botones tienen estado deshabilitado visible · el título no se corta en pantallas angostas.
 
 ### Tema 1.3 — Componentes del catálogo
 
-- [ ] **F01-T09 · Tarjetas de indicador**
+- [~] **F01-T09 · Tarjetas de indicador**
   **Tipo:** Frontend · **Ref:** Mockup, Técnico §12.4
   **Hacer:** `components/kpi.js` con las variantes héroe (cifra grande, barra de progreso, pie de dos datos) y métrica (etiqueta, icono, cifra, subtítulo); rejilla de 2 → 4 → 6 columnas; animación escalonada de entrada; función `esc()` aplicada a todo texto.
   **Aceptación:** · la rejilla se comporta en los tres cortes · la animación escalona de a 60 ms · un dato con `<script>` se muestra como texto y no ejecuta nada.
@@ -1377,7 +1377,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 | Fase | Tareas | Aprobadas | Estado |
 |---|---|---|---|
 | 0 · Puesta en marcha y producción | 12 | **12** | ✅ **Cerrada** el 03/10/2026 |
-| 1 · Sistema de estilo y esqueleto | 14 | 7 | **En curso** · próxima: F01-T08 |
+| 1 · Sistema de estilo y esqueleto | 14 | 8 | **En curso** · próxima: F01-T09 |
 | 2 · Cuentas y autenticación | 15 | 0 | Pendiente |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
 | 4 · Movimientos | 15 | 0 | Pendiente |

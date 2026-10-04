@@ -385,6 +385,33 @@ Botón chico de acción: las flechas de mes, «Hoy» y, desde F01-T12, los filtr
 
 El recuadro mide unos 33 px, así que el área táctil llega a 44 con un `::after` centrado. **En `:disabled` ese `::after` se saca** (`content: none`): si se mantuviera, un toque al lado de un botón apagado caería en el apagado y no pasaría nada. El `:hover` y el `:active` llevan `:not(:disabled)`, o un botón apagado se levanta al pasarle el dedo y parece tocable.
 
+### Tarjetas de indicador
+
+`components/kpi.js`. Dos variantes y nada más: **héroe** (cifra grande, barra de progreso, pie de dos datos) para el ahorro del mes y el patrimonio, y **métrica** (etiqueta, icono, cifra, subtítulo) para todo lo demás.
+
+```javascript
+tarjetaHeroe({ etiqueta, cifra, sub, porcentaje, pieIzq, pieDer, color })
+tarjetaMetrica({ etiqueta, cifra, sub, color, icono })
+pintarTarjetas(contenedor, [ ...tarjetas ])   // escribe y arranca las barras
+```
+
+- **Todo campo pasa por `esc()`, los seis.** El ejemplo del documento técnico §12.4 escapa `label` y `value` pero no `sub`: un subtítulo puede traer el nombre de una categoría que escribió el usuario, y es una puerta igual que los otros. Lo mismo el pie de la héroe y la cifra.
+- **`color` sale de una lista cerrada** (`COLORES_VALIDOS`), no de un string libre: el valor termina dentro de un atributo `style` y la política del sitio admite estilos en línea, así que un color libre sería CSS inyectable. Un nombre inválido cae en el acento.
+- **`icono` también es un nombre de `iconos.js`**, no un trazo. Un nombre que no existe devuelve cadena vacía, nunca `undefined` dentro del SVG.
+- `porcentaje` se recorta a 0–100: un ahorro negativo daría una barra de ancho negativo y un 140 % desbordaría el surco.
+- La barra y el surco van `aria-hidden`: la cifra de arriba ya dice el valor.
+- **`pintarTarjetas` escribe todas de una vez.** Con siete asignaciones a `innerHTML` el navegador recalcula el layout siete veces y en un teléfono se ve el salto.
+
+**La barra nace en 0 en el CSS y recibe su ancho en `requestAnimationFrame`.** Puesta directo, la transición no tiene de dónde partir y aparece ya llena. Y tiene que ser `requestAnimationFrame`: una microtarea corre antes del pintado, así que el ancho se junta con el primer render y tampoco se ve crecer. Ojo: **esa diferencia no se puede probar en jsdom**, los dos se ven iguales; por eso `tests/unit/test_kpi.py` la verifica leyendo el código y lo dice.
+
+### Rejilla y entrada escalonada
+
+`.kpi-grid` va **2 → 4 → 6** columnas en los cortes de §5, y `.kpi--hero` ocupa siempre media fila (2 de 2, 2 de 4, 3 de 6) para que la cifra importante conserve su peso.
+
+`.stagger > *` escalona **de a 60 ms, en CSS con `nth-child`**, no con `style` en línea desde JavaScript: el retardo vive con el resto del estilo y un componente no tiene que saber en qué posición lo van a pintar. A partir de la novena el retardo se congela — con 20 filas, la última entraría más de un segundo después y parecería que la pantalla se cuelga por partes.
+
+**El bloque de `prefers-reduced-motion` de `base.css` anula la duración, no el retardo.** Sin anularlo aparte, con movimiento reducido las tarjetas siguen apareciendo de a una, sólo que de golpe.
+
 ### Otros
 
 - **`.pill`** en cinco variantes: `ok`, `warn`, `pend`, `crit`, `neutral`.

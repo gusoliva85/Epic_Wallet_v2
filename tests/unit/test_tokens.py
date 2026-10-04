@@ -24,6 +24,7 @@ TOKENS = ESTILOS / "tokens.css"
 
 # No cambian con el tema: medidas, familias y curvas.
 INVARIANTES = {
+    "--radius-ico",
     "--radius-btn",
     "--radius-nav",
     "--radius-fab",
