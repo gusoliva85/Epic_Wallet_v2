@@ -13,14 +13,13 @@
    entonces un toque sólo marca la posición, que es lo que permite ver
    los estados en el teléfono.
 
-   La hoja es la versión mínima de F01-T06. El componente completo
-   —foco atrapado, bloqueo del scroll de fondo, cajón lateral desde
-   900 px— es de F01-T11, que la reemplaza. Lo que sí tiene acá es todo
-   lo necesario para que no sea una trampa: cierre por toque afuera,
-   por Escape y por botón, y devolución del foco al salir. */
+   La hoja de «Más» la maneja `components/sheet.js` desde F01-T11: foco
+   atrapado, bloqueo del scroll de fondo y, desde 900 px, cajón lateral
+   o modal centrado. Acá sólo se arma y se le dice qué la abre. */
 
 import { SECCIONES, seccion } from "./nav.js";
 import { navegar, rutaActual, EVENTO } from "./router.js";
+import { crearHoja } from "./components/sheet.js";
 
 const FLECHA = '<path d="M9 6l6 6-6 6"/>';
 const MAS =
@@ -82,49 +81,6 @@ function opciones(cuerpo) {
     .join("");
 }
 
-function crearHoja(hoja, fondo, disparador) {
-  let devolverFocoA = null;
-
-  function abrir() {
-    devolverFocoA = document.activeElement;
-    hoja.classList.add("abierta");
-    fondo.classList.add("abierto");
-    hoja.setAttribute("aria-hidden", "false");
-    disparador.setAttribute("aria-expanded", "true");
-    // El primer elemento accionable, no la hoja: así quien navega con
-    // teclado entra directo en las opciones.
-    hoja.querySelector("button")?.focus();
-  }
-
-  function cerrar() {
-    if (!hoja.classList.contains("abierta")) return;
-    hoja.classList.remove("abierta");
-    fondo.classList.remove("abierto");
-    hoja.setAttribute("aria-hidden", "true");
-    disparador.setAttribute("aria-expanded", "false");
-    // Sin esto el foco queda en un botón que se acaba de esconder y el
-    // tabulador reaparece al principio de la página.
-    devolverFocoA?.focus?.();
-    devolverFocoA = null;
-  }
-
-  disparador.addEventListener("click", () => {
-    if (hoja.classList.contains("abierta")) cerrar();
-    else abrir();
-  });
-
-  fondo.addEventListener("click", cerrar);
-  hoja.querySelector("[data-cerrar]")?.addEventListener("click", cerrar);
-
-  // En `document` y no en la hoja: con el foco devuelto al disparador o
-  // perdido, un listener puesto en la hoja no recibe la tecla.
-  document.addEventListener("keydown", (ev) => {
-    if (ev.key === "Escape") cerrar();
-  });
-
-  return { abrir, cerrar };
-}
-
 /* ----------------------------------------------------------- el armado */
 
 function conectar() {
@@ -137,7 +93,10 @@ function conectar() {
   marcar(barra, rutaActual());
   opciones(hoja.querySelector(".hoja-cuerpo"));
 
-  const control = crearHoja(hoja, fondo, barra.querySelector("[data-hoja]"));
+  const control = crearHoja(hoja, {
+    fondo,
+    disparador: barra.querySelector("[data-hoja]"),
+  });
 
   barra.addEventListener("click", (ev) => {
     const boton = ev.target.closest("[data-ir]");

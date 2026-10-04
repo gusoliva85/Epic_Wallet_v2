@@ -25,6 +25,7 @@ INDEX = WEB / "index.html"
 COMPONENTES = WEB / "src" / "styles" / "components.css"
 NAV_JS = WEB / "src" / "js" / "nav.js"
 BARRA_JS = WEB / "src" / "js" / "barra-inferior.js"
+SHEET_JS = WEB / "src" / "js" / "components" / "sheet.js"
 
 
 def _html() -> str:
@@ -273,10 +274,12 @@ def test_los_iconos_decorativos_no_se_leen() -> None:
 
 @pytest.mark.unit
 def test_el_acceso_a_la_hoja_dice_que_despliega() -> None:
+    """La barra declara el estado inicial; mantenerlo al día es del
+    componente de hoja (F01-T11), y eso lo prueba su propio archivo."""
     js = _js()
     assert "aria-expanded" in js, "el botón que abre la hoja necesita aria-expanded"
     assert "aria-controls" in js, "y decir qué abre"
-    assert 'setAttribute("aria-expanded", "true")' in js, (
+    assert 'setAttribute("aria-expanded", "true")' in SHEET_JS.read_text(encoding="utf-8"), (
         "aria-expanded tiene que actualizarse al abrir, no quedar fijo"
     )
 
@@ -309,24 +312,6 @@ def test_la_hoja_cerrada_no_se_alcanza_con_el_tabulador() -> None:
 
 
 @pytest.mark.unit
-def test_la_hoja_se_cierra_de_las_tres_formas() -> None:
-    """Toque afuera, Escape y botón. Sin las tres es una trampa."""
-    js = _js()
-    assert "fondo.addEventListener" in js, "falta el cierre por toque afuera"
-    assert 'ev.key === "Escape"' in js, "falta el cierre con Escape"
-    assert "[data-cerrar]" in js, "falta el botón de cerrar"
-    assert "data-cerrar" in _html()
-
-
-@pytest.mark.unit
-def test_escape_se_escucha_en_el_documento() -> None:
-    """Puesto en la hoja no recibe la tecla cuando el foco está afuera."""
-    js = _js()
-    m = re.search(r'document\.addEventListener\("keydown"', js)
-    assert m, "el listener de Escape va en document"
-
-
-@pytest.mark.unit
 def test_el_velo_cerrado_no_bloquea_la_aplicacion() -> None:
     """Es una capa a pantalla completa: sin esto, cerrada deja la
     aplicación entera sin reaccionar a los toques."""
@@ -342,26 +327,6 @@ def test_el_velo_no_parpadea_al_abrir() -> None:
     assert "--scrim-0" in tokens and "--scrim:" in tokens
     assert "transparent" not in _regla(".fondo-hoja"), (
         "el velo cerrado usa --scrim-0, no transparent"
-    )
-
-
-@pytest.mark.unit
-def test_el_foco_vuelve_al_cerrar() -> None:
-    """Si no, queda en un botón que se acaba de esconder y el tabulador
-    reaparece al principio de la página."""
-    js = _sin_comentarios(_js())
-    assert "document.activeElement" in js, "hay que recordar de dónde se venía"
-    # Recordarlo no alcanza: hay que devolverlo.
-    assert re.search(r"devolverFocoA\??\.focus\??\.?\(\)", js), (
-        "falta devolver el foco a donde estaba antes de abrir"
-    )
-
-
-@pytest.mark.unit
-def test_al_abrir_el_foco_entra_en_la_hoja() -> None:
-    js = _js()
-    assert re.search(r'hoja\.querySelector\("button"\)\??\.focus\(\)', js), (
-        "el foco va al primer elemento accionable de la hoja"
     )
 
 

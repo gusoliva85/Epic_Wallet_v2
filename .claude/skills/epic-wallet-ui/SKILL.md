@@ -390,16 +390,34 @@ La etiqueta usa `corta` ("Movim."), no `label`: con el nombre largo se recorta. 
 
 **El `.app` lleva 104 px de relleno abajo.** La barra es `fixed`: sin ese hueco tapa las últimas filas y nunca se llega al final de una lista.
 
-### Hoja inferior
+### Hoja inferior y cajón lateral
 
-El componente completo es de F01-T11. Lo que una hoja necesita para no ser una trampa:
+`components/sheet.js`. Una hoja es cualquier panel que se abre encima de la aplicación.
 
-- **Tres formas de cerrar**: toque en el velo, Escape y botón. El listener de Escape va en `document`, no en la hoja: con el foco afuera la hoja no recibe la tecla.
-- **`visibility: hidden` cuando está cerrada.** Correrla con `transform` no basta: el tabulador sigue entrando en sus botones invisibles y el foco desaparece de la pantalla. La visibilidad se demora lo que dura la transición (`visibility 0s linear .38s`) o la salida no se ve.
-- **El velo cerrado lleva `pointer-events: none`.** Es una capa a pantalla completa: sin eso deja la aplicación entera sin reaccionar.
-- **El velo transparente se declara con el mismo color y alfa cero** (`--scrim-0`), nunca `transparent`: animado desde `transparent`, Chrome interpola pasando por negro y se ve un parpadeo oscuro al abrir.
-- **Al abrir, el foco entra en el primer accionable; al cerrar, vuelve de donde vino.** Si no, queda en un botón que se acaba de esconder.
-- `max-height: 88vh` y `overscroll-behavior: contain`: queda fondo visible —lo que indica que se cierra tocando afuera— y el scroll no arrastra la página de atrás.
+```javascript
+const hoja = crearHoja(elemento, { disparador, fondo, alAbrir, alCerrar });
+hoja.abrir();  hoja.cerrar();  hoja.alternar();  hoja.estaAbierta();
+```
+
+En el teléfono sube desde abajo. Desde 900 px, según su variante:
+
+| Clase | Uso | Cómo entra |
+|---|---|---|
+| `.hoja--cajon` | ver un detalle sin perder de vista la lista | desde la derecha |
+| `.hoja--modal` | un formulario, que pide atención completa | centrado, creciendo con fundido |
+
+**380 ms y la curva del sistema**, de la tabla del Técnico §13.6.
+
+#### Las cuatro cosas que hacen que una hoja sea usable
+
+1. **El fondo no hace scroll — y `overflow: hidden` en el body NO alcanza.** iOS lo ignora para el scroller del documento y el fondo se sigue moviendo detrás de la hoja. Hay que usar `position: fixed`, que sí lo frena en todos lados pero salta al principio, así que se guarda `scrollY` y se devuelve al cerrar con `behavior: "instant"` (suave, se ve a la página viajando sola).
+2. **El foco queda atrapado adentro**, con el ciclo del tabulador cerrado en los dos sentidos, y vuelve de donde vino al cerrar. Si el foco se fue afuera, el próximo Tab lo trae de vuelta. **Con la hoja cerrada el atrapado no actúa**, o la aplicación se queda sin tabulador.
+3. **Lo de atrás queda `inert`.** Es lo que hace que `aria-modal` no sea una promesa vacía: sin eso, el lector de pantalla sigue leyendo la página de atrás aunque no se la vea. El velo NO se vuelve inerte, o deja de recibir el toque que cierra.
+4. **Tres formas de cerrar**: toque en el velo, Escape y botón. El oyente de Escape va en `document`, no en la hoja: con el foco devuelto al disparador, una hoja no recibe la tecla.
+
+**El bloqueo del scroll se cuenta, no se alterna.** Se bloquea con la primera hoja y se suelta con la última: si cada una lo manejara por su cuenta, abrir un detalle desde dentro de otra hoja soltaría el scroll al cerrar la de arriba.
+
+Una hoja que puede quedarse sin nada accionable adentro necesita `tabindex="-1"`: si no, el foco no la puede recibir y se queda en el fondo, que está inerte.
 
 ### Barra de mes
 
