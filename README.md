@@ -10,7 +10,7 @@ Reemplaza la planilla de Excel que vengo usando hace años: conserva su lógica 
 
 ## Estado del proyecto
 
-**Fase 0 — Puesta en marcha.** En construcción. El avance tarea por tarea está en [`documentacion/03_Roadmap.md`](documentacion/03_Roadmap.md).
+**Fase 0 — Puesta en marcha.** En construcción. La API ya está en internet: [https://epic-wallet-v2.vercel.app/api/health](https://epic-wallet-v2.vercel.app/api/health) El avance tarea por tarea está en [`documentacion/03_Roadmap.md`](documentacion/03_Roadmap.md).
 
 ---
 
@@ -153,7 +153,7 @@ Se copian de `.env.example` y se completan con los valores de tu proyecto de Sup
 
 | Entorno | Rama | URL | Base de datos |
 |---|---|---|---|
-| Producción | `main` | por definir | Supabase · esquema `public` |
+| Producción | `main` | [epic-wallet-v2.vercel.app](https://epic-wallet-v2.vercel.app) | Supabase · esquema `public` |
 | Preview | cualquier otra rama | URL automática de Vercel por rama | Supabase · esquema `dev` |
 | Local | — | `localhost:8000` | Supabase · esquema `dev` |
 

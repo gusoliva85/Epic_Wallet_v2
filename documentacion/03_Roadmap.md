@@ -117,7 +117,7 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **Hacer:** `api/app/core/config.py` con `Settings` (pydantic-settings); `api/app/core/db.py` con engine y sesión; `api/app/main.py` creando la app con los manejadores de error del formato de la sección 9.3; endpoint `GET /api/health` que devuelve versión, entorno y si la base responde; `api/index.py` exponiendo `app`.
   **Aceptación:** · `uvicorn` local responde `{"status":"ok","database":"connected"}` · si la base está caída devuelve `"database":"error"` sin romper · los errores salen en el formato uniforme.
 
-- [ ] **F00-T08 · Configurar Vercel y desplegar**
+- [~] **F00-T08 · Configurar Vercel y desplegar**
   **Tipo:** Infra · **Ref:** Técnico §16.1
   **Hacer:** proyecto en Vercel vinculado al repositorio; `vercel.json` completo de la sección 16.1 con rewrites, runtime de Python, cabeceras de seguridad y **`regions: ["gru1"]` (São Paulo) para que la función corra junto a la base de datos** (§20.1); variables de entorno cargadas en los tres entornos, con **`DB_SCHEMA=public` sólo en producción** y `DB_SCHEMA=dev` en preview y development; primer despliegue.
   **Aceptación:** · `https://<dominio>/api/health` responde desde internet · las cabeceras de seguridad llegan (verificable con las herramientas del navegador) · los secretos **no** están en el repositorio · la función reporta una latencia a la base por debajo de 50 ms, lo que confirma que está en la misma región.
@@ -1369,7 +1369,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 
 | Fase | Tareas | Aprobadas | Estado |
 |---|---|---|---|
-| 0 · Puesta en marcha y producción | 12 | 7 | **En curso** · próxima: F00-T08 |
+| 0 · Puesta en marcha y producción | 12 | 7 | **En curso** · F00-T08 esperando prueba |
 | 1 · Sistema de estilo y esqueleto | 14 | 0 | Pendiente |
 | 2 · Cuentas y autenticación | 15 | 0 | Pendiente |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |

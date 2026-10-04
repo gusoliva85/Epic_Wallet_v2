@@ -1026,12 +1026,12 @@ SUPABASE_JWT_SECRET=...                  # SECRETA, verifica firmas
 # --- Autenticación ---
 # URL pública de la app, para armar los enlaces de los mails de
 # confirmación y de recuperación de contraseña (§8.6).
-PUBLIC_APP_URL=https://epic-wallet.vercel.app
+PUBLIC_APP_URL=https://epic-wallet-v2.vercel.app
 
 # --- Aplicación ---
 APP_ENV=production                       # development | preview | production
 APP_TIMEZONE=America/Argentina/Buenos_Aires
-ALLOWED_ORIGINS=https://epic-wallet.vercel.app
+ALLOWED_ORIGINS=https://epic-wallet-v2.vercel.app
 PRICE_PROVIDER_ORDER=byma,public,manual
 PRICE_REFRESH_COOLDOWN_MINUTES=15
 LOG_LEVEL=INFO
@@ -1460,7 +1460,7 @@ Frontend y API comparten dominio, así que **no hay CORS** en producción. Sólo
 
 | Entorno | Rama | URL | Base de datos |
 |---|---|---|---|
-| Producción | `main` | `epic-wallet.vercel.app` | Supabase · esquema `public` |
+| Producción | `main` | `epic-wallet-v2.vercel.app` | Supabase · esquema `public` |
 | Preview | cualquier otra rama o PR | URL automática por rama | Supabase · esquema `dev` |
 | Local | — | `localhost:3000` + `localhost:8000` | Supabase · esquema `dev` |
 
