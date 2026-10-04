@@ -167,10 +167,16 @@ def test_el_contador_no_se_lee_dos_veces() -> None:
     globo = re.search(r'<span class="contador"[^>]*>', html)
     assert globo, "falta el contador de alertas"
     assert 'aria-hidden="true"' in globo.group(0)
-    boton = re.search(r'<button[^>]*id="btn-alertas"[^>]*>', html)
-    assert boton and re.search(r'aria-label="[^"]*\d', boton.group(0)), (
-        "el aria-label del botón de alertas tiene que incluir la cuenta"
-    )
+
+    boton = re.search(r'<button[^>]*id="btn-alertas"[^>]*>', html, re.S)
+    assert boton and "aria-label" in boton.group(0), "el botón necesita etiqueta"
+
+    # Desde que las alertas viven en su hoja (F01-T13), la cuenta sale
+    # de los datos y no del HTML: escrita a mano, el botón diría un
+    # número y la hoja mostraría otro.
+    js = (WEB / "src" / "js" / "views" / "vistas.js").read_text(encoding="utf-8")
+    assert "sin leer" in js, "el aria-label con la cuenta lo pone el JavaScript"
+    assert "D.ALERTAS.length" in js, "la cuenta tiene que salir de la lista"
 
 
 @pytest.mark.unit

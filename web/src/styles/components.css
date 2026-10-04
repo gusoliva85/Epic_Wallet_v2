@@ -2364,3 +2364,48 @@
 .relleno-hoja {
   height: 80vh;
 }
+
+/* ---- marcador de gráfico pendiente ----
+   Antes acá había un esqueleto de carga, y estaba mal: un esqueleto
+   que brilla para siempre dice «esto está cargando», no «esto llega
+   más adelante». Alguien que abre la aplicación se queda esperando.
+
+   Ocupa el mismo alto que va a ocupar el gráfico, así la maqueta se
+   puede revisar con las proporciones reales. */
+
+.grafico-pendiente {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 6px;
+  height: 180px;
+  margin: 12px 14px;
+  padding: 16px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+.grafico-pendiente svg {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: var(--color-ink-4);
+}
+
+.grafico-pendiente b {
+  font-size: var(--text-row);
+  font-weight: 600;
+  color: var(--color-ink-2);
+}
+
+.grafico-pendiente p {
+  max-width: 40ch;
+  font-size: var(--text-sub);
+  line-height: 1.5;
+  color: var(--color-ink-3);
+}

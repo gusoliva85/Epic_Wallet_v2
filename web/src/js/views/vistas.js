@@ -115,8 +115,6 @@ function inicio() {
     $("movimientos-inicio"),
     filasDeMovimientos(D.MOVIMIENTOS.slice(0, 5)),
   );
-
-  escribir("avisos-inicio", D.ALERTAS.map(aviso).join(""));
 }
 
 /* ------------------------------------------------------- movimientos */
@@ -369,8 +367,39 @@ function conectarDetalle() {
   });
 }
 
+/* Las alertas viven en una hoja que abre la campanita de la barra
+   superior, no en el tablero. En el tablero competían con los
+   indicadores y empujaban el resto de la pantalla hacia abajo; acá
+   están cuando se las busca.
+
+   El contador de la campanita sale de la misma lista: escrito a mano
+   diría un número y la hoja mostraría otro. */
+function conectarAlertas() {
+  const hoja = $("hoja-alertas");
+  const disparador = $("btn-alertas");
+  const control = hoja && crearHoja(hoja, { disparador });
+  if (!control) return;
+
+  escribir("alertas-lista", D.ALERTAS.map(aviso).join(""));
+
+  const contador = $("contador-alertas");
+  if (contador) {
+    contador.textContent = String(D.ALERTAS.length);
+    // Sin alertas no se muestra el globo: un cero rojo alarma sin
+    // motivo.
+    contador.hidden = D.ALERTAS.length === 0;
+  }
+  disparador?.setAttribute(
+    "aria-label",
+    D.ALERTAS.length === 1
+      ? "Alertas: 1 sin leer"
+      : `Alertas: ${D.ALERTAS.length} sin leer`,
+  );
+}
+
 function conectar() {
   pintarVistas();
+  conectarAlertas();
   conectarControles();
   conectarDetalle();
   conectarSinConexion();
