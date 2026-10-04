@@ -170,14 +170,14 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **Hacer:** `components.css` con `.shell` (desenfoque 22 px, saturación, brillo diagonal en `::before`, sombra interior) y `.cg` (desenfoque 7 px); bloque `@supports not (backdrop-filter)` con los fondos opacos de respaldo.
   **Aceptación:** · se distingue la jerarquía entre contenedor y contenido · con el desenfoque desactivado el texto sigue legible · funciona en Chrome de Android y en Safari de iOS.
 
-- [ ] **F01-T04 · Cambio de tema claro/oscuro**
+- [x] **F01-T04 · Cambio de tema claro/oscuro**
   **Tipo:** Frontend · **Ref:** Técnico §13.2, §13.6
   **Hacer:** botón en la barra superior; `data-theme` en `<html>`; persistencia en `localStorage`; respeto de `prefers-color-scheme` en la primera visita; transición con View Transitions API cuando el navegador la soporta; actualización del `<meta name="theme-color">`.
   **Aceptación:** · el tema persiste al recargar · la primera visita respeta el sistema · la barra de estado de Android acompaña el cambio · sin destello blanco al cargar en oscuro.
 
 ### Tema 1.2 — Estructura y navegación
 
-- [ ] **F01-T05 · Barra superior**
+- [~] **F01-T05 · Barra superior**
   **Tipo:** Frontend · **Ref:** Mockup
   **Hacer:** `.topbar` pegajosa con el logotipo y nombre, navegación de pestañas visible desde 960 px, botón de alertas con contador, botón de tema y avatar que lleva a configuración.
   **Aceptación:** · queda pegada al hacer scroll sin tapar contenido · en móvil no desborda · todos los botones de icono tienen `aria-label`.
@@ -1377,7 +1377,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 | Fase | Tareas | Aprobadas | Estado |
 |---|---|---|---|
 | 0 · Puesta en marcha y producción | 12 | **12** | ✅ **Cerrada** el 03/10/2026 |
-| 1 · Sistema de estilo y esqueleto | 14 | 3 | **En curso** · próxima: F01-T04 |
+| 1 · Sistema de estilo y esqueleto | 14 | 4 | **En curso** · próxima: F01-T05 |
 | 2 · Cuentas y autenticación | 15 | 0 | Pendiente |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
 | 4 · Movimientos | 15 | 0 | Pendiente |
