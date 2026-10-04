@@ -1,165 +1,175 @@
-"""Genera los iconos de la PWA.
+"""Genera los iconos y el logotipo a partir de los originales.
 
 Uso:  python scripts/generar_iconos.py
 
-Dibuja la marca de Epic Wallet —el símbolo de billetera sobre el
-degradado de acento del sistema Vidrio Grafito— y escribe los tres
-PNG que pide el manifest:
+Fuentes (no se tocan, se leen):
+    documentacion/ejemplos/icono.png    1024x1024
+    documentacion/ejemplos/logo.png     1376x768
 
+Salidas en web/icons/:
     icon-192.png       lanzador de Android
     icon-512.png       pantalla de arranque y tiendas
-    maskable-512.png   igual, con la zona segura del 20% que Android
-                       necesita para recortarlo en círculo, cuadrado
-                       redondeado o la forma que use el teléfono
+    maskable-512.png   con la zona segura del 20% que Android recorta
+    logo.png           el logotipo recortado, con fondo transparente
+    logo@2x.png        el mismo al doble, para pantallas densas
 
-Se versiona el script y no sólo los PNG: así los iconos se pueden
-regenerar si cambia el acento, sin depender de un editor de imágenes.
+Qué hace con cada original:
 
-Referencia: 02_Documento_Tecnico.md §15 · tokens en
-.claude/skills/epic-wallet-ui/SKILL.md §1
+- **icono.png** trae el símbolo arriba y el texto "Epic Wallet" abajo.
+  Para un icono de aplicación el texto sobra —lo pone el sistema bajo
+  el icono—, así que se recorta sólo el símbolo.
+
+- **logo.png** tiene el logotipo sobre un fondo oscuro con mucho aire.
+  Se recorta al contenido y se vuelve transparente el fondo, para que
+  se pueda apoyar sobre cualquier superficie.
+
+Referencia: 02_Documento_Tecnico.md §15
 """
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image
 
 RAIZ = Path(__file__).resolve().parent.parent
+ORIGENES = RAIZ / "documentacion" / "ejemplos"
 DESTINO = RAIZ / "web" / "icons"
 
-# Tokens del sistema. Si cambia --accent, se cambia acá y se regenera.
-ACENTO = (87, 118, 140)  # #57768c
-ACENTO_2 = (62, 90, 109)  # #3e5a6d
-BLANCO = (255, 255, 255)
+# El recuadro del icono dentro de icono.png, medido sobre el original.
+# El texto "Epic Wallet" arranca en y 890 y queda fuera a propósito.
+# Se recorta por DENTRO de su borde redondeado: el PNG de un icono
+# tiene que llenar el cuadrado, porque el sistema le aplica su propia
+# forma. Si trajera sus esquinas ya redondeadas, Android dibujaría un
+# recorte sobre otro y se vería el borde interno.
+RECUADRO = (137, 126, 882, 858)
+INSET = 44
 
-# Se dibuja a 4x y se reduce al final: así los bordes quedan suaves
-# sin depender de antialias de Pillow, que no lo aplica a los polígonos.
-ESCALA = 4
-
-
-def _degradado(lado: int) -> Image.Image:
-    """Degradado diagonal de acento a acento-2, como la marca del mockup."""
-    img = Image.new("RGB", (lado, lado))
-    pix = img.load()
-    assert pix is not None
-    for y in range(lado):
-        for x in range(lado):
-            # 155° en el mockup: diagonal con más peso vertical
-            t = (x * 0.42 + y * 0.58) / lado
-            t = min(1.0, max(0.0, t))
-            pix[x, y] = tuple(  # type: ignore[assignment]
-                round(a + (b - a) * t) for a, b in zip(ACENTO, ACENTO_2, strict=True)
-            )
-    return img
+# Recortes dentro de logo.png (1376x768), medidos sobre el original.
+# LOGOTIPO: el conjunto completo, símbolo más texto, con su fondo.
+# ISOTIPO: sólo el símbolo, que al ser luminoso funciona sobre
+# cualquier superficie y sirve para la barra superior.
+LOGOTIPO = (160, 215, 1215, 500)
+ISOTIPO = (172, 228, 522, 492)
 
 
-def _reflejo(img: Image.Image) -> None:
-    """El brillo diagonal del sistema: un degradado suave, no un corte.
+def _recortar_cuadrado(img: Image.Image, caja: tuple[int, int, int, int]) -> Image.Image:
+    """Recorta y deja un cuadrado perfecto, centrado en la caja dada."""
+    x0, y0, x1, y1 = caja
+    cx, cy = (x0 + x1) // 2, (y0 + y1) // 2
+    lado = max(x1 - x0, y1 - y0)
+    mitad = lado // 2
+    return img.crop((cx - mitad, cy - mitad, cx + mitad, cy + mitad))
 
-    Se construye como máscara de alfa que decae hacia el centro, igual
-    que el `linear-gradient(125deg, rgba(255,255,255,.55), transparent 50%)`
-    que llevan las superficies en CSS.
+
+def _sin_borde(img: Image.Image, inset: int) -> Image.Image:
+    """Recorta hacia adentro para dejar fuera el borde redondeado."""
+    w, h = img.size
+    return img.crop((inset, inset, w - inset, h - inset))
+
+
+def _color_interior(img: Image.Image) -> tuple[int, int, int]:
+    """Color del fondo del icono, muestreado dentro del recuadro.
+
+    Se promedian puntos del perímetro interior, lejos del símbolo, para
+    que las esquinas rellenadas se confundan con el fondo del icono.
     """
     lado = img.size[0]
-    mascara = Image.new("L", (lado, lado))
-    pix = mascara.load()
-    assert pix is not None
-    for y in range(lado):
-        for x in range(lado):
-            # 125°: la diagonal va de arriba-izquierda a abajo-derecha
-            t = (x * 0.58 + y * 0.42) / lado
-            # se apaga del todo antes de la mitad, como el `transparent 50%`
-            valor = 0 if t >= 0.5 else round(78 * (1 - t / 0.5) ** 1.4)
-            pix[x, y] = valor  # type: ignore[index]
-    img.paste(Image.new("RGB", (lado, lado), BLANCO), (0, 0), mascara)
+    px = img.load()
+    assert px is not None
+    d = round(lado * 0.09)
+    puntos = [
+        (d, d),
+        (lado - d, d),
+        (d, lado - d),
+        (lado - d, lado - d),
+        (lado // 2, d),
+        (lado // 2, lado - d),
+        (d, lado // 2),
+        (lado - d, lado // 2),
+    ]
+    muestras = [px[x, y] for x, y in puntos]
+    return tuple(round(sum(c[i] for c in muestras) / len(muestras)) for i in range(3))  # type: ignore[return-value]
 
 
-def _billetera(img: Image.Image, lado: int, margen: float) -> None:
-    """El símbolo: cuerpo de billetera, bolsillo interior y botón.
+def generar_iconos() -> None:
+    fuente = Image.open(ORIGENES / "icono.png").convert("RGB")
+    simbolo = _sin_borde(_recortar_cuadrado(fuente, RECUADRO), INSET)
 
-    Sigue el trazo del SVG de la marca del mockup, simplificado para
-    que se lea a 48 px en el lanzador del teléfono.
+    # --- iconos normales: el símbolo tal cual, a tamaño ---
+    for lado in (192, 512):
+        img = simbolo.resize((lado, lado), Image.Resampling.LANCZOS)
+        ruta = DESTINO / f"icon-{lado}.png"
+        img.save(ruta, "PNG", optimize=True)
+        print(f"    {ruta.name:20} {lado}x{lado}  normal     {ruta.stat().st_size / 1024:5.1f} KB")
+
+    # --- maskable: Android recorta hasta el 20% de cada borde, así que
+    #     el símbolo se achica y se centra sobre el color del fondo ---
+    lado = 512
+    seguro = round(lado * 0.74)  # deja ~13% de margen a cada lado
+    lienzo = Image.new("RGB", (lado, lado), _color_interior(simbolo))
+    centro = simbolo.resize((seguro, seguro), Image.Resampling.LANCZOS)
+    pos = (lado - seguro) // 2
+    lienzo.paste(centro, (pos, pos))
+    ruta = DESTINO / "maskable-512.png"
+    lienzo.save(ruta, "PNG", optimize=True)
+    print(f"    {ruta.name:20} {lado}x{lado}  maskable   {ruta.stat().st_size / 1024:5.1f} KB")
+
+
+def generar_logo() -> None:
+    """Dos piezas a partir de logo.png.
+
+    El logotipo está pensado para fondo oscuro: su texto es blanco y el
+    subtítulo gris claro. Sobre una superficie clara no se leería. Por
+    eso se genera de dos formas:
+
+    - `logo.png` conserva su fondo oscuro y funciona como una placa
+      apoyable sobre cualquier superficie, en tema claro u oscuro.
+    - `isotipo.png` es sólo el símbolo, con fondo transparente. Al ser
+      un trazo luminoso y saturado se lee bien sobre claro y sobre
+      oscuro, así que sirve para la barra superior junto al nombre
+      escrito con la tipografía de la aplicación.
     """
-    d = ImageDraw.Draw(img)
-    grosor = max(2, round(lado * 0.040))
+    fuente = Image.open(ORIGENES / "logo.png").convert("RGB")
 
-    caja = lado * (1 - 2 * margen)
-    x0 = lado * margen
-    ancho = caja
-    alto = caja * 0.74
-    y0 = lado * margen + (caja - alto) / 2
+    # --- logotipo completo, con su fondo ---
+    placa = fuente.crop(LOGOTIPO)
+    for sufijo, ancho in (("", 560), ("@2x", 1120)):
+        alto = round(placa.size[1] * ancho / placa.size[0])
+        img = placa.resize((ancho, alto), Image.Resampling.LANCZOS)
+        ruta = DESTINO / f"logo{sufijo}.png"
+        img.save(ruta, "PNG", optimize=True)
+        print(f"    {ruta.name:20} {ancho}x{alto}  logotipo   {ruta.stat().st_size / 1024:5.1f} KB")
 
-    # Cuerpo
-    d.rounded_rectangle(
-        [x0, y0, x0 + ancho, y0 + alto],
-        radius=alto * 0.28,
-        outline=BLANCO,
-        width=grosor,
-    )
-
-    # Bolsillo: una banda interior a la derecha, bien dentro del cuerpo.
-    margen_interior = grosor * 1.9
-    bx1 = x0 + ancho - margen_interior
-    bx0 = x0 + ancho * 0.36
-    by0 = y0 + alto * 0.33
-    by1 = y0 + alto * 0.67
-    d.rounded_rectangle(
-        [bx0, by0, bx1, by1],
-        radius=(by1 - by0) * 0.46,
-        outline=BLANCO,
-        width=grosor,
-    )
-
-    # Botón, a la izquierda del bolsillo.
-    r = alto * 0.062
-    cx = x0 + ancho * 0.21
-    cy = y0 + alto * 0.5
-    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=BLANCO)
-
-
-def generar(lado: int, nombre: str, *, maskable: bool = False) -> Path:
-    grande = lado * ESCALA
-    img = _degradado(grande)
-    _reflejo(img)
-
-    # maskable: Android recorta hasta el 20% de cada borde, así que el
-    # símbolo tiene que quedar dentro de la zona segura central.
-    margen = 0.30 if maskable else 0.22
-    _billetera(img, grande, margen)
-
-    if not maskable:
-        # Los iconos normales llevan esquinas redondeadas propias; los
-        # maskable NO, porque el sistema les aplica su propia forma.
-        mascara = Image.new("L", (grande, grande), 0)
-        ImageDraw.Draw(mascara).rounded_rectangle(
-            [0, 0, grande - 1, grande - 1], radius=round(grande * 0.22), fill=255
-        )
-        salida = Image.new("RGBA", (grande, grande), (0, 0, 0, 0))
-        salida.paste(img, (0, 0), mascara)
-        img = salida  # type: ignore[assignment]
-    else:
-        img = img.convert("RGBA")  # type: ignore[assignment]
-
-    img = img.resize((lado, lado), Image.Resampling.LANCZOS)
-    ruta = DESTINO / nombre
-    img.save(ruta, "PNG", optimize=True)
-    return ruta
+    # --- isotipo, con el fondo oscuro vuelto transparente ---
+    simbolo = fuente.crop(ISOTIPO).convert("RGBA")
+    px = simbolo.load()
+    assert px is not None
+    w, h = simbolo.size
+    for y in range(h):
+        for x in range(w):
+            r, g, b, _ = px[x, y]
+            lum = (r * 299 + g * 587 + b * 114) // 1000
+            if lum < 26:
+                alfa = 0
+            elif lum < 70:
+                alfa = round((lum - 26) * 255 / 44)
+            else:
+                alfa = 255
+            px[x, y] = (r, g, b, alfa)
+    for sufijo, ancho in (("", 240), ("@2x", 480)):
+        alto = round(h * ancho / w)
+        img = simbolo.resize((ancho, alto), Image.Resampling.LANCZOS)
+        ruta = DESTINO / f"isotipo{sufijo}.png"
+        img.save(ruta, "PNG", optimize=True)
+        print(f"    {ruta.name:20} {ancho}x{alto}  isotipo    {ruta.stat().st_size / 1024:5.1f} KB")
 
 
 def main() -> None:
     DESTINO.mkdir(parents=True, exist_ok=True)
-    pedidos = [
-        (192, "icon-192.png", False),
-        (512, "icon-512.png", False),
-        (512, "maskable-512.png", True),
-    ]
-    print("\n  Iconos de Epic Wallet")
-    for lado, nombre, maskable in pedidos:
-        ruta = generar(lado, nombre, maskable=maskable)
-        kb = ruta.stat().st_size / 1024
-        etiqueta = "maskable" if maskable else "normal"
-        print(f"    {nombre:20} {lado}x{lado}  {etiqueta:9} {kb:5.1f} KB")
+    print("\n  Iconos y logotipo de Epic Wallet")
+    generar_iconos()
+    generar_logo()
     print(f"\n  en {DESTINO.relative_to(RAIZ)}\n")
 
 

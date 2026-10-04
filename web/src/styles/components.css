@@ -91,41 +91,20 @@
   }
 }
 
-.marca {
-  display: grid;
-  place-items: center;
-  width: 60px;
-  height: 60px;
-  margin: 0 auto 18px;
-  border-radius: 20px;
-  position: relative;
-  overflow: hidden;
-  color: #fff;
-  background: linear-gradient(155deg, var(--color-accent), var(--color-accent-2));
-  box-shadow: var(--glass-in), 0 10px 24px -8px rgba(var(--shadow-rgb), 0.45);
-}
-
-/* El mismo reflejo que el mockup le da a la marca. */
-.marca::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(125deg, rgba(255, 255, 255, 0.55), transparent 50%);
-}
-
-.marca svg {
-  width: 28px;
-  height: 28px;
-  position: relative;
-}
-
-.tarjeta h1 {
-  font-size: 28px;
-  letter-spacing: -0.025em;
+.logotipo {
+  display: block;
+  width: min(300px, 86%);
+  height: auto;
+  margin: 0 auto 4px;
+  /* El logotipo trae su propio fondo oscuro: se apoya como una placa,
+     con el mismo radio y la misma sombra que el resto de las
+     superficies del sistema. */
+  border-radius: var(--radius-sm);
+  box-shadow: var(--sh-sm);
 }
 
 .bajada {
-  margin-top: 6px;
+  margin-top: 12px;
   font-size: 13.5px;
   color: var(--color-ink-3);
 }
