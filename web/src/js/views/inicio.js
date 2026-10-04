@@ -39,6 +39,7 @@ const MUESTRA = [
     sub: "4 movimientos",
     color: "inc",
     icono: "sube",
+    marca: "pesos-sube",
   }),
   tarjetaMetrica({
     etiqueta: "Egresos",
@@ -46,13 +47,17 @@ const MUESTRA = [
     sub: "37 movimientos",
     color: "egr",
     icono: "baja",
+    marca: "pesos-baja",
   }),
+  // Gasto de HOY, no el promedio del mes. El promedio no dice nada
+  // para decidir hoy; lo que sirve es cuánto se gastó en el día.
   tarjetaMetrica({
-    etiqueta: "Tasa de ahorro",
-    cifra: "61,0%",
-    sub: "+8,4 pts vs. septiembre",
-    color: "ok",
-    icono: "porcentaje",
+    etiqueta: "Gasto de hoy",
+    cifra: "$55.100",
+    sub: "2 movimientos",
+    color: "warn",
+    icono: "calendario",
+    marca: "pesos-dia",
   }),
   tarjetaMetrica({
     etiqueta: "Patrimonio",
@@ -60,20 +65,7 @@ const MUESTRA = [
     sub: "Ahorro e inversiones",
     color: "accent",
     icono: "caja",
-  }),
-  tarjetaMetrica({
-    etiqueta: "Gasto diario",
-    cifra: "$27.356",
-    sub: "Promedio del mes",
-    color: "warn",
-    icono: "calendario",
-  }),
-  tarjetaMetrica({
-    etiqueta: "Cartera",
-    cifra: "$6.340.000",
-    sub: "+12,7% en el año",
-    color: "sav",
-    icono: "grafico",
+    marca: "pesos-caja",
   }),
 ];
 

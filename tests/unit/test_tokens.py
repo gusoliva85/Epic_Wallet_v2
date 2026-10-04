@@ -38,6 +38,7 @@ INVARIANTES = {
     "--font-sans",
     "--ease-glass",
     "--ease",
+    "--glass-bar-blur",
     "--glass-shell-blur",
     "--glass-content-blur",
 }
@@ -328,3 +329,34 @@ def test_la_skill_no_miente_sobre_los_colores() -> None:
             if real and real.lower() != valor.lower():
                 desfasados.append(f"--{nombre} ({tema}): la skill dice {valor} y es {real}")
     assert not desfasados, "la skill tiene colores viejos:\n  " + "\n  ".join(desfasados)
+
+
+@pytest.mark.unit
+def test_todo_var_usado_existe_de_verdad() -> None:
+    """Un `var(--x)` que no está definido NO es un error visible: el
+    navegador descarta la declaración entera y el elemento se queda sin
+    ese estilo, en silencio.
+
+    Esto pasó de verdad y estuvo en producción desde F01-T06: ocho
+    tokens que creí agregados nunca entraron al archivo, porque los
+    reemplazos de texto no encajaron y no lo verifiqué. La barra
+    inferior, el botón flotante y la hoja quedaron con las esquinas
+    cuadradas y la etiqueta de la barra inferior, con el tamaño
+    heredado en lugar de 9,5 px. Las pruebas no lo vieron porque todas
+    comprobaban que el CSS *usara* `var(--radius-*)`, nunca que el
+    token existiera.
+
+    `--c` es la excepción: lo pone cada componente en su atributo
+    `style`, no los tokens.
+    """
+    definidos = set(re.findall(r"(--[\w-]+)\s*:", _css()))
+    usados: set[str] = set()
+    for archivo in ("base.css", "components.css"):
+        texto = (ESTILOS / archivo).read_text(encoding="utf-8")
+        usados |= set(re.findall(r"var\((--[\w-]+)", texto))
+
+    faltan = sorted(usados - definidos - {"--c"})
+    assert not faltan, (
+        f"estos tokens se usan y no están definidos en tokens.css: {faltan}. "
+        "El navegador descarta la declaración sin avisar."
+    )

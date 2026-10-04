@@ -163,6 +163,28 @@ Toda la profundidad sale de dos clases. **No se inventan variantes.**
 }
 ```
 
+## 3.1 · Las dos barras de navegación: vidrio al mínimo
+
+`.topbar` y `.botnav` son `.shell`, **pero no llevan el vidrio de una tarjeta.** Tienen texto chico y pasan por delante de todo el contenido al hacer scroll: con 52% de opacidad y 22 px de desenfoque, las letras se mezclan con lo que pasa por detrás y dejan de leerse.
+
+```css
+--glass-bar-bg: rgba(255,255,255,.94);   /* casi opaco */
+--glass-bar-blur: 10px;                   /* el mínimo que da profundidad */
+--glass-bar-fallback: rgba(255,255,255,.985);
+```
+
+Y **se anula el brillo diagonal** (`.topbar::before { content: none }`): es un degradado blanco encima del contenido, y sobre una etiqueta de 9,5 px es la diferencia entre leerla y no.
+
+Esto no es opcional ni estético: con el vidrio de tarjeta, el contraste de la etiqueta de la barra inferior no llega al mínimo del sistema. `tests/unit/test_barras_vidrio.py` lo calcula.
+
+## 3.2 · Un `var()` sin definir no avisa
+
+Si un `var(--x)` no existe, el navegador **descarta la declaración entera en silencio** y el elemento se queda sin ese estilo. No hay error en consola ni nada que se vea al leer el CSS.
+
+Pasó en este proyecto: ocho tokens que se creían agregados nunca entraron a `tokens.css`, y la barra inferior, el botón flotante y la hoja estuvieron en producción con las esquinas cuadradas desde F01-T06. Las pruebas no lo vieron porque comprobaban que el CSS *usara* `var(--radius-*)`, nunca que el token existiera.
+
+**Al agregar un token: comprobar que quedó en el archivo, no que el reemplazo «se ejecutó».** `test_todo_var_usado_existe_de_verdad` lo cubre de acá en adelante.
+
 ## 4 · Tipografía
 
 `Outfit` para cifras y títulos (`letter-spacing:-.015em`), `Inter` para todo lo demás. Base **16,5 px / 1,55**. Las cifras llevan `font-variant-numeric:tabular-nums` **siempre**, para que no bailen al actualizarse.
@@ -421,6 +443,24 @@ pintarTarjetas(contenedor, [ ...tarjetas ])   // escribe y arranca las barras
 - **`pintarTarjetas` escribe todas de una vez.** Con siete asignaciones a `innerHTML` el navegador recalcula el layout siete veces y en un teléfono se ve el salto.
 
 **La barra nace en 0 en el CSS y recibe su ancho en `requestAnimationFrame`.** Puesta directo, la transición no tiene de dónde partir y aparece ya llena. Y tiene que ser `requestAnimationFrame`: una microtarea corre antes del pintado, así que el ancho se junta con el primer render y tampoco se ve crecer. Ojo: **esa diferencia no se puede probar en jsdom**, los dos se ven iguales; por eso `tests/unit/test_kpi.py` la verifica leyendo el código y lo dice.
+
+#### Tarjeta teñida con silueta
+
+Las cuatro métricas del tablero se reconocen **sin leer la etiqueta**: cada una se tiñe de su color y lleva una silueta de fondo. Las dos cosas van juntas y las pide una sola clase (`marca` en el componente → `.kpi-color` + `.kpi-marca`): una silueta sobre el vidrio neutro se ve como una mancha, y un fondo de color sin silueta no identifica nada.
+
+```text
+Ingresos    verde   · pesos + flecha arriba
+Egresos     rojo    · pesos + flecha abajo
+Gasto de hoy ámbar  · pesos + calendario
+Patrimonio  acento  · pesos + caja fuerte
+```
+
+- **El tinte del fondo es del 16% y no más.** Más fuerte, el fondo compite con la cifra, que es justo lo que no tiene que pasar.
+- **Sobre una tarjeta teñida, la etiqueta y el subtítulo usan `--color-ink-2`, no `--ink-3`.** `--ink-3` da exactamente 4,5:1 sobre el vidrio neutro; con el fondo teñido cae a 3,89:1, por debajo del mínimo del propio sistema. Con `--ink-2` queda en 6,13:1.
+- La silueta va en un lienzo de **48×32** —el doble de ancho, porque combina dos figuras que en un cuadrado se pisarían—, anclada abajo a la derecha con `preserveAspectRatio="xMaxYMax"` para que al recortarse se pierda la parte de arriba y no el centro.
+- Opacidad por `--marca-op`: **13% en claro y 20% en oscuro.** Un trazo al 13% sobre un fondo casi negro no se ve.
+- Trazo simple y abierto: dibujado muy traslúcido y agrandado, un trazo con detalle se ve como una mancha sucia.
+- Va **primera en el DOM** y con `pointer-events: none`: pintada después taparía la cifra, y sin eso se come los clics.
 
 ### Rejilla y entrada escalonada
 

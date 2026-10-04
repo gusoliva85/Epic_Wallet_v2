@@ -16,7 +16,7 @@
    categoría que escribió el usuario— y acá se escapa también. */
 
 import { esc } from "../format.js";
-import { icono } from "../iconos.js";
+import { icono, marca } from "../iconos.js";
 
 /* Los colores que puede pedir una tarjeta. Lista cerrada a propósito:
    el valor termina dentro de un atributo `style`, y la política de
@@ -43,8 +43,12 @@ function color(nombre) {
 /**
  * Tarjeta de métrica: etiqueta, icono, cifra y subtítulo.
  *
+ * Con `marca`, la tarjeta se tiñe del color y lleva esa silueta de
+ * fondo: es lo que las hace identificables de un vistazo sin leer la
+ * etiqueta.
+ *
  * @param {{etiqueta: string, cifra: string, sub?: string,
- *          color?: string, icono?: string}} datos
+ *          color?: string, icono?: string, marca?: string}} datos
  */
 export function tarjetaMetrica({
   etiqueta,
@@ -52,9 +56,25 @@ export function tarjetaMetrica({
   sub = "",
   color: c,
   icono: ico,
+  marca: silueta,
 }) {
+  // Con marca de agua, la tarjeta además se tiñe entera del color. Las
+  // dos cosas van juntas y por eso las pide una sola clase: una
+  // silueta sobre el vidrio neutro se ve como una mancha, y un fondo
+  // de color sin silueta no identifica nada.
+  const trazo = silueta ? marca(silueta) : "";
+
   return (
-    `<article class="kpi kpi-metric shell" style="--c:${color(c)}">` +
+    `<article class="kpi kpi-metric shell${trazo ? " kpi-color" : ""}" ` +
+    `style="--c:${color(c)}">` +
+    (trazo
+      ? // El lienzo mide 48×32 y se agranda mucho.
+        // `preserveAspectRatio="xMaxYMax"` lo ancla abajo a la derecha:
+        // al recortarse contra el borde de la tarjeta se pierde la
+        // parte de arriba y no el centro de la figura.
+        '<svg class="kpi-marca" viewBox="0 0 48 32" aria-hidden="true" ' +
+        `preserveAspectRatio="xMaxYMax meet">${trazo}</svg>`
+      : "") +
     '<div class="kpi-top">' +
     `<div class="kpi-label">${esc(etiqueta)}</div>` +
     (ico
