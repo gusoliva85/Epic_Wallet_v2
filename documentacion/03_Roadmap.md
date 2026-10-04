@@ -165,7 +165,7 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **Hacer:** `base.css` con los lavados radiales, `background-attachment: fixed`, la capa de ruido SVG en `::before`, la escala tipográfica de la sección 13.4 con base 16,5 px, Outfit para cifras y títulos, `tabular-nums` en todo lo numérico.
   **Aceptación:** · la escala coincide con la tabla del documento técnico · las cifras no cambian de ancho al actualizarse · el fondo no se repite ni corta al hacer scroll.
 
-- [~] **F01-T03 · Las dos capas de vidrio**
+- [x] **F01-T03 · Las dos capas de vidrio**
   **Tipo:** Frontend · **Ref:** Técnico §13.3
   **Hacer:** `components.css` con `.shell` (desenfoque 22 px, saturación, brillo diagonal en `::before`, sombra interior) y `.cg` (desenfoque 7 px); bloque `@supports not (backdrop-filter)` con los fondos opacos de respaldo.
   **Aceptación:** · se distingue la jerarquía entre contenedor y contenido · con el desenfoque desactivado el texto sigue legible · funciona en Chrome de Android y en Safari de iOS.
@@ -1377,7 +1377,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 | Fase | Tareas | Aprobadas | Estado |
 |---|---|---|---|
 | 0 · Puesta en marcha y producción | 12 | **12** | ✅ **Cerrada** el 03/10/2026 |
-| 1 · Sistema de estilo y esqueleto | 14 | 2 | **En curso** · F01-T03 esperando prueba |
+| 1 · Sistema de estilo y esqueleto | 14 | 3 | **En curso** · próxima: F01-T04 |
 | 2 · Cuentas y autenticación | 15 | 0 | Pendiente |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
 | 4 · Movimientos | 15 | 0 | Pendiente |
@@ -1394,7 +1394,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 | 15 · PWA | 9 | 0 | Pendiente |
 | 16 · Seguridad, cierre y correo | 16 | 0 | Pendiente |
 | 17 · Integraciones futuras | 7 | 0 | Pendiente |
-| **Total** | **214** | **14** | — |
+| **Total** | **214** | **15** | — |
 
 Este cuadro se actualiza al cerrar cada tarea.
 
