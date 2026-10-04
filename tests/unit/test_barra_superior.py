@@ -59,14 +59,6 @@ def test_la_barra_se_pinta_por_encima_del_contenido() -> None:
     assert re.search(r"z-index:\s*\d+", _regla(".topbar")), "falta z-index"
 
 
-@pytest.mark.unit
-def test_hay_contenido_suficiente_para_probar_el_scroll() -> None:
-    """Si la página no pasa del alto de la pantalla, no hay forma de
-    comprobar en el teléfono que la barra se queda pegada."""
-    assert "relleno-scroll" in _html()
-    assert re.search(r"height:\s*1[0-9]{2}vh", _regla(".relleno-scroll"))
-
-
 # ------------------------------------------------------------- no desborda
 
 

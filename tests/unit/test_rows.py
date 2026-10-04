@@ -148,14 +148,25 @@ def test_las_listas_de_inicio_estan_y_van_vacias() -> None:
 
 
 @pytest.mark.unit
-def test_cada_panel_de_lista_tiene_nombre() -> None:
-    """Dos listas seguidas sin nombre no se distinguen al navegar por
-    regiones con un lector de pantalla."""
+def test_cada_panel_se_puede_identificar() -> None:
+    """Dos paneles seguidos sin nada que los nombre no se distinguen al
+    recorrer la página con un lector de pantalla.
+
+    Vale cualquiera de las dos formas: un `aria-labelledby` o un título
+    visible adentro. Exigir el atributo a un panel que ya muestra su
+    `<h2>` sería marcado de más que repite lo que ya está.
+    """
     html = INDEX.read_text(encoding="utf-8")
-    paneles = re.findall(r"<section class=\"shell panel\"[^>]*>", html, re.S)
-    assert len(paneles) >= 2, f"se esperaban dos paneles de lista, hay {len(paneles)}"
-    sin_nombre = [p for p in paneles if "aria-labelledby" not in p and "aria-label" not in p]
-    assert not sin_nombre, f"paneles sin nombre: {sin_nombre}"
+    paneles = re.findall(r"<article class=\"card shell\"[^>]*>(.*?)</article>", html, re.S)
+    assert len(paneles) >= 8, f"se esperaban los paneles de las siete vistas: {len(paneles)}"
+
+    aperturas = re.findall(r"<article class=\"card shell\"[^>]*>", html, re.S)
+    anonimos = [
+        a
+        for a, cuerpo in zip(aperturas, paneles, strict=True)
+        if "aria-label" not in a and not re.search(r"<h[23][^>]*>", cuerpo)
+    ]
+    assert not anonimos, f"paneles sin título ni nombre: {anonimos}"
 
 
 @pytest.mark.unit

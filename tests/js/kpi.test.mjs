@@ -350,21 +350,35 @@ describe("tarjetas de indicador", () => {
   // ------------------------------------------------------- la muestra
 
   test("las tarjetas de muestra de inicio se pintan todas", async () => {
-    const { dom, rejilla } = await montar();
-    rejilla.id = "kpis-inicio";
-    const { MUESTRA } = await import(modulo(["views", "inicio.js"]));
-    await esperar(dom);
-    assert.equal(MUESTRA.length, 5, "una héroe y cuatro métricas");
-    assert.equal(rejilla.querySelectorAll(".kpi").length, 5);
+    const { rejilla } = await inicio();
+    assert.equal(
+      rejilla.querySelectorAll(".kpi").length,
+      5,
+      "una héroe y cuatro métricas",
+    );
     assert.equal(rejilla.querySelectorAll(".kpi--hero").length, 1);
   });
 
   // --------------------------------- las cuatro métricas identificables
 
+  /** Monta la vista de inicio: las vistas pintan en varios
+      contenedores, así que hay que darle todos los que toca. */
   async function inicio() {
     const b = await montar();
     b.rejilla.id = "kpis-inicio";
-    await import(modulo(["views", "inicio.js"]));
+    for (const id of [
+      "pie-diario",
+      "pie-seis",
+      "categorias-inicio",
+      "movimientos-inicio",
+      "avisos-inicio",
+    ]) {
+      const d = b.dom.window.document.createElement("div");
+      d.id = id;
+      b.dom.window.document.body.append(d);
+    }
+    const vistas = await import(modulo(["views", "vistas.js"]));
+    vistas.pintarVistas();
     await esperar(b.dom);
     return b;
   }

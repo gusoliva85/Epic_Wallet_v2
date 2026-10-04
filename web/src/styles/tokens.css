@@ -79,6 +79,8 @@
   --color-crit: #bc313e;
 
   /* ---- radios ---- */
+  --radius-linea: 2px; /* el trazo de línea de una leyenda */
+  --radius-enlace: 8px; /* foco de un botón de enlace */
   --radius-tilde: 7px; /* icono dentro de la notificación breve */
   --radius-ico: 9px; /* cuadradito de icono dentro de una tarjeta */
   --radius-aviso: 10px; /* icono de un aviso */
@@ -122,6 +124,9 @@
   --text-marca: 14px; /* iniciales en la marca de una fila */
   --text-badge: 9.5px; /* contador de alertas */
   --text-nav: 9.5px; /* etiquetas de la barra inferior */
+  /* 16 px es el mínimo que iOS acepta sin hacer zoom al enfocar un
+     campo. Con menos, la pantalla se corre al tocar el buscador. */
+  --text-campo-movil: 16px;
   --text-peso: 104px; /* signo pesos de fondo, teléfono */
   --text-peso-sm: 92px; /* el mismo, con la rejilla de 4 y 6 columnas */
   --text-label: 10.5px; /* etiqueta de indicador, separador de día */

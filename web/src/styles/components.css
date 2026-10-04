@@ -1472,22 +1472,6 @@
   transition: width 0.9s var(--ease);
 }
 
-/* ---- panel ----
-   La superficie que contiene una lista. Mínima a propósito: la
-   estructura final de cada vista, con sus cabeceras, conmutadores y
-   pies de cifras, es de F01-T13. Acá sólo hace falta algo que
-   contenga las filas. */
-
-.panel {
-  border-radius: var(--radius-card);
-  padding: 2px 0 0;
-}
-
-.panel-titulo {
-  padding: 14px 13px 2px;
-  font-size: var(--text-section);
-}
-
 /* ---- separador de día ---- */
 
 .day-sep {
@@ -1707,6 +1691,616 @@
   .toast {
     bottom: 28px;
   }
+}
+
+/* ============================================================
+   ESTRUCTURA DE LAS VISTAS · F01-T13
+   Referencia: mockup 01 · General §48
+
+   Lo que comparten las siete pantallas: el panel con su cabecera, el
+   conmutador de vistas, la rejilla de dos columnas, las tablas y los
+   cuatro estados.
+   ============================================================ */
+
+/* ---- panel ----
+   Reemplaza al `.panel` mínimo de F01-T10. Un panel es una superficie
+   de vidrio con cabecera: título, bajada y, a la derecha, el
+   conmutador o un enlace. */
+
+.card {
+  border-radius: var(--radius-card);
+}
+
+.card-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 14px 2px;
+}
+
+/* Desde 720 px la cabecera entra en una fila (Técnico §13.5). Más
+   angosto, el conmutador al lado del título deja el título en dos
+   líneas. */
+@media (min-width: 720px) {
+  .card-head {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+  }
+}
+
+.card-head h2 {
+  font-size: var(--text-panel);
+}
+
+.card-head p {
+  margin-top: 3px;
+  font-size: var(--text-sub);
+  color: var(--color-ink-3);
+}
+
+/* Cabecera de sección, fuera de un panel. */
+.sec-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 18px 2px 10px;
+}
+
+.sec-head h2 {
+  font-size: var(--text-section);
+}
+
+.sec-head p {
+  margin-top: 3px;
+  font-size: var(--text-sub);
+  color: var(--color-ink-3);
+}
+
+.link-btn {
+  padding: 4px 2px;
+  border: 0;
+  border-radius: var(--radius-enlace);
+  background: transparent;
+  color: var(--color-accent-2);
+  font-size: var(--text-sub);
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: opacity 0.2s var(--ease);
+}
+
+.link-btn:hover {
+  opacity: 0.7;
+}
+
+/* ---- conmutador de vistas ----
+   Píldoras dentro de un surco hundido, igual que las pestañas de la
+   barra superior. */
+
+.view-switch {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 99px;
+  background: var(--groove-bg);
+  box-shadow: var(--groove-in);
+  /* En el teléfono, cuatro modos no entran: se desplaza en lugar de
+     apilarse, que rompería el alto de la cabecera. */
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.view-switch::-webkit-scrollbar {
+  display: none;
+}
+
+.view-switch button {
+  position: relative;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 99px;
+  background: transparent;
+  color: var(--color-ink-3);
+  font-size: var(--text-sub);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 0.2s var(--ease),
+    background 0.2s var(--ease);
+}
+
+/* Área táctil de 44 px sin agrandar la píldora. */
+.view-switch button::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 44px;
+  transform: translateY(-50%);
+}
+
+.view-switch button:hover {
+  color: var(--color-ink-2);
+}
+
+.view-switch button.activa {
+  background: var(--glass-content-bg);
+  color: var(--color-accent-2);
+  box-shadow: var(--glass-in), var(--sh-sm);
+}
+
+/* ---- rejilla de dos columnas ----
+   Desde 960 px, según la tabla de cortes. */
+
+.grid-2 {
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 960px) {
+  .grid-2 {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+/* ---- tabla ----
+   La ÚNICA cosa con scroll horizontal a propósito: seis columnas de
+   números no entran en 390 px, y partirlas en dos líneas hace
+   ilegible la comparación entre meses, que es para lo que está. */
+
+.tbl-wrap {
+  overflow-x: auto;
+  padding: 4px 0 2px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tbl-wrap table {
+  width: 100%;
+  min-width: 540px;
+  border-collapse: collapse;
+  font-size: var(--text-sub);
+}
+
+.tbl-wrap th {
+  position: sticky;
+  top: 0;
+  padding: 9px 13px;
+  text-align: right;
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+  white-space: nowrap;
+  border-bottom: 1px solid var(--line-2);
+}
+
+.tbl-wrap td {
+  padding: 10px 13px;
+  text-align: right;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--line-2);
+  color: var(--color-ink-2);
+}
+
+/* La primera columna es el nombre: va a la izquierda y con más peso. */
+.tbl-wrap th:first-child,
+.tbl-wrap td:first-child {
+  text-align: left;
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+.tbl-wrap tr:last-child td {
+  border-bottom: 0;
+}
+
+.tbl-wrap tbody tr {
+  transition: background 0.18s var(--ease);
+}
+
+.tbl-wrap tbody tr:hover {
+  background: color-mix(in srgb, var(--color-accent) 7%, transparent);
+}
+
+/* ---- campo de texto y selector ---- */
+
+.inp {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--glass-content-bg);
+  box-shadow: var(--glass-in);
+  color: var(--color-ink);
+  font-size: var(--text-row);
+  /* 16 px mínimo en móvil, o iOS hace zoom al enfocar el campo y la
+     pantalla queda corrida. `--text-row` son 15,5: se sube acá. */
+  transition: border-color 0.2s var(--ease);
+}
+
+@media (max-width: 639px) {
+  .inp {
+    font-size: var(--text-campo-movil);
+  }
+}
+
+.inp::placeholder {
+  color: var(--color-ink-4);
+}
+
+.inp:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow:
+    0 0 0 4px var(--accent-ring),
+    var(--glass-in);
+}
+
+.filtros {
+  display: grid;
+  gap: 9px;
+  padding: 13px 14px 0;
+}
+
+@media (min-width: 720px) {
+  .filtros {
+    grid-template-columns: 1fr 240px;
+  }
+}
+
+/* ---- leyenda y pie de cifras de un gráfico ---- */
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  padding: 10px 14px 0;
+  font-size: var(--text-pill);
+  color: var(--color-ink-3);
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dot {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dot--linea {
+  width: 16px;
+  height: 3px;
+  border-radius: var(--radius-linea);
+}
+
+.chart-foot {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  padding: 12px 14px 14px;
+}
+
+@media (min-width: 640px) {
+  .chart-foot {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .chart-foot {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+/* Celda de cifra del pie. El gráfico nunca reemplaza los números: todo
+   panel con gráfico lleva su pie (regla 4 del sistema). */
+.mini {
+  display: grid;
+  gap: 2px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+}
+
+.mini span {
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+
+.mini b {
+  font-family: var(--font-display);
+  font-size: var(--text-kv);
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+/* ---- nota de regla de negocio ---- */
+
+.ghost-note {
+  margin: 12px 2px 0;
+  padding: 12px 14px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sub);
+  line-height: 1.5;
+  color: var(--color-ink-3);
+}
+
+.ghost-note b {
+  color: var(--color-ink-2);
+}
+
+/* ---- ficha de dato: la ecuación del patrimonio ---- */
+
+.kv-grid {
+  display: grid;
+  gap: 8px;
+  padding: 6px 14px 16px;
+}
+
+@media (min-width: 640px) {
+  .kv-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.kv {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 12px;
+  border-radius: var(--radius-sm);
+}
+
+.kv span {
+  font-size: var(--text-sub);
+  color: var(--color-ink-3);
+}
+
+.kv b {
+  font-family: var(--font-display);
+  font-size: var(--text-kv);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* La fila del total: ocupa el ancho y pesa más. */
+.kv--total {
+  grid-column: 1 / -1;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 30%, var(--line));
+}
+
+.kv--total b {
+  font-size: var(--text-kpi-sm);
+  color: var(--color-accent-2);
+}
+
+/* ---- fila de preferencia con interruptor ---- */
+
+.cfg-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 12px;
+  border-radius: var(--radius-sm);
+}
+
+.cfg-row div {
+  min-width: 0;
+}
+
+.cfg-row b {
+  display: block;
+  font-size: var(--text-row);
+  font-weight: 600;
+}
+
+.cfg-row span {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--text-sub);
+  color: var(--color-ink-3);
+}
+
+.toggle {
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  background: var(--groove-bg);
+  box-shadow: var(--groove-in);
+  cursor: pointer;
+  transition: background 0.22s var(--ease);
+}
+
+.toggle::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--mix-tint);
+  box-shadow: var(--sh-sm);
+  transition: transform 0.22s var(--ease);
+}
+
+.toggle[aria-checked="true"] {
+  background: linear-gradient(
+    155deg,
+    var(--color-accent),
+    var(--color-accent-2)
+  );
+  border-color: transparent;
+}
+
+.toggle[aria-checked="true"]::before {
+  transform: translateX(18px);
+}
+
+/* ============================================================
+   LOS CUATRO ESTADOS · F01-T13
+   Maquetados aunque todavía no se disparen. Ninguna vista muestra
+   una pantalla en blanco (Técnico §12.6).
+   ============================================================ */
+
+/* ---- cargando: esqueletos con la FORMA del contenido final ----
+   Mismas alturas que lo que viene después: si el esqueleto fuera más
+   bajo, al llegar los datos la página salta y se pierde el lugar. */
+
+.esqueleto {
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--groove-bg) 25%,
+    color-mix(in srgb, var(--mix-tint) 40%, var(--groove-bg)) 37%,
+    var(--groove-bg) 50%
+  );
+  background-size: 400% 100%;
+  animation: brillo-esqueleto 1.4s ease-in-out infinite;
+}
+
+@keyframes brillo-esqueleto {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+.esqueleto--fila {
+  height: 56px;
+  margin-bottom: 7px;
+}
+
+.esqueleto--tarjeta {
+  height: 96px;
+}
+
+.esqueleto--grafico {
+  height: 180px;
+  margin: 12px 14px;
+}
+
+/* ---- error, vacío y mes consolidado ---- */
+
+.estado {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 26px 18px;
+  text-align: center;
+}
+
+.estado-ico {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-aviso);
+  background: color-mix(
+    in srgb,
+    var(--c, var(--color-accent)) 15%,
+    var(--mix-tint)
+  );
+  color: color-mix(in srgb, var(--c, var(--color-accent)) 70%, var(--mix-ink));
+}
+
+.estado-ico svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.estado b {
+  font-size: var(--text-row);
+  font-weight: 700;
+}
+
+.estado p {
+  max-width: 34ch;
+  font-size: var(--text-sub);
+  line-height: 1.5;
+  color: var(--color-ink-3);
+}
+
+.estado--error {
+  --c: var(--color-crit);
+}
+
+/* Vacío va en gris: no es un problema —no hay nada que mostrar— y
+   pintarlo del acento lo haría parecer un aviso. */
+.estado--vacio {
+  --c: var(--color-ink-3);
+}
+
+/* Consolidado SÍ va del acento: no es que falte algo, es una regla de
+   negocio que conviene que se note. */
+.estado--consolidado {
+  --c: var(--color-accent);
+}
+
+/* ---- sin conexión: banda arriba de todo ---- */
+
+.banda-offline {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-pend) 16%, var(--mix-tint));
+  color: color-mix(in srgb, var(--color-pend) 60%, var(--mix-ink));
+  font-size: var(--text-sub);
+  font-weight: 600;
+  text-align: center;
+}
+
+.banda-offline svg {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+}
+
+/* Oculta mientras haya conexión. El atributo lo pone el JavaScript. */
+.banda-offline[hidden] {
+  display: none;
 }
 
 /* ============================================================

@@ -599,20 +599,40 @@ Separador de miles con punto y decimal con coma (es-AR). **Tasa de ahorro con in
 
 ## 11 · Estados
 
-Cada vista implementa los cuatro. **Nunca una pantalla en blanco.**
+Cada vista implementa los cuatro, con `components/estados.js`. **Nunca una pantalla en blanco.**
 
 | Estado | Tratamiento |
 |---|---|
-| Cargando | Esqueletos con la forma del contenido final (mismas alturas, sin salto de layout) |
-| Error | Tarjeta con el mensaje y botón "Reintentar" |
-| Vacío | Texto explicativo útil, no ceros secos |
-| Cuenta nueva | El dashboard de una cuenta recién creada está vacío a propósito: invita a cargar el primer movimiento, no muestra ceros secos |
-| Esperando confirmación | Tras registrarse: "revisá tu correo", con la dirección a la que se envió y un botón de reenviar |
-| Enlace vencido | En `#/nueva-clave`, si el enlace ya se usó o venció: explica el problema y ofrece pedir otro |
-| Mes consolidado | Texto específico: "Información histórica consolidada" |
-| Sin conexión | Banda superior y lectura desde el caché |
+| Cargando | Esqueletos con la **forma** del contenido final: mismas alturas. Más bajos, la página salta al llegar los datos y se pierde el lugar. Van con `aria-busy` y un texto para lector: un esqueleto no dice nada, y sin eso parece que la sección está vacía. |
+| Error | Qué pasó **y un botón para reintentar**. Nunca un callejón sin salida. |
+| Vacío | Texto que explica, no un cero seco. En gris, no en acento: no es un problema. |
+| Mes consolidado | Texto propio. **No se reusa el vacío**: decir «no hay movimientos» de un mes consolidado es falso — los movimientos existieron, lo que se guarda son los totales (regla 4). |
+| Sin conexión | Banda arriba de todo, fuera de las vistas. Se escuchan `online`/`offline` **y además se consulta `navigator.onLine` al arrancar**: abriendo la aplicación ya sin conexión, el evento `offline` nunca llega porque no hubo transición. |
 
-**El caso del mes consolidado es una regla de negocio, no un detalle visual:** cuando la API devuelve `transactions: null`, la interfaz dice que el mes es consolidado y **no muestra lista vacía ni inventa movimientos** (Regla 4 del documento general).
+## 11.1 · Estructura de una vista
+
+```text
+.sec-head      cabecera fuera de un panel: título, bajada y acción
+.card.shell    panel; su .card-head pasa a una fila desde 720 px
+.view-switch   conmutador de modos, píldoras en un surco
+.grid-2        dos columnas desde 960 px
+.tbl-wrap      tabla
+.kv-grid       fichas de dato (la ecuación del patrimonio, las métricas)
+.cfg-row       fila de preferencia con su .toggle
+.ghost-note    una regla de negocio que conviene que esté a la vista
+```
+
+**La tabla es lo ÚNICO con scroll horizontal, y es a propósito.** Seis columnas de números no entran en 390 px, y partirlas en dos líneas hace ilegible la comparación entre meses, que es para lo que está. Lleva `tabindex="0"` y nombre: una región con scroll que no recibe foco no se puede desplazar sin mouse y lo de la derecha queda inalcanzable. En ningún otro lado puede haber `overflow-x` ni un `min-width` grande — es la causa más común de scroll horizontal en el teléfono, y hay una prueba que lo vigila.
+
+**El interruptor de ajustes es un `<button role="switch" aria-checked>`**, no un `div` con clase: un div no se alcanza con teclado ni dice si está activado.
+
+## 11.2 · Los datos de ejemplo
+
+Todos en `web/src/js/datos-muestra.js`, **ninguna vista inventa un número**. Si una escribiera un importe propio, al conectar la API quedaría un número fijo en medio de los reales y nadie se daría cuenta; hay una prueba que lo impide.
+
+Los importes son **strings ya formateados**, como los va a mandar el backend. Con números, las vistas se acostumbrarían a hacer cuentas y después habría que sacarlas: el frontend sólo formatea, nunca calcula.
+
+Y la pantalla **dice que son de muestra**: una cifra creíble sin aclaración se puede tomar por un dato real.
 
 ## 12 · Accesibilidad
 

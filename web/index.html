@@ -187,155 +187,426 @@
         </div>
       </section>
 
-      <!-- ======================= LAS SIETE VISTAS · F01-T07 =======================
-         Una sola está activa; las demás van con `hidden` para que no
-         las lea el lector ni las recorra el tabulador. El enrutador
-         decide cuál, según el hash.
+      <!-- ======================= LAS SIETE VISTAS · F01-T13 =======================
+         Estructura final con datos de ejemplo. Una sola está activa;
+         las demás van con `hidden` para que no las lea el lector ni
+         las recorra el tabulador.
 
-         El contenido de cada una lo llenan las tareas de su fase. Por
-         ahora, una tarjeta que dice qué va a haber: así se puede
-         navegar entre las siete en el teléfono y ver que el «atrás»
-         funciona. -->
+         Lo que es estructura va acá; lo que sale de datos lo pintan
+         los módulos de web/src/js/views/, que leen de
+         web/src/js/datos-muestra.js. Cuando exista la API, se cambia
+         de dónde leen y nada más. -->
       <main>
+        <!-- Sin conexión: la banda va arriba de todo y aplica a las
+           siete vistas, así que vive fuera de ellas. -->
+        <div class="banda-offline" id="banda-offline" role="status" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 3l18 18" />
+            <path d="M8.5 16.4a5 5 0 017 0" />
+            <path d="M5 13a10 10 0 014.2-2.5M19 13a10 10 0 00-3.3-2.3" />
+            <path d="M2 9.5a15 15 0 015.5-3.2M22 9.5a15 15 0 00-9.6-3.4" />
+          </svg>
+          Sin conexión — se muestran los últimos datos guardados
+        </div>
+
+        <!-- ---------------------------------------------------- INICIO -->
         <section
           class="view"
           data-vista="inicio"
           aria-labelledby="t-inicio"
           hidden
         >
-          <!-- Las tarjetas las pinta views/inicio.js con datos de muestra
-               (F01-T09). Los de verdad llegan en la fase 3. -->
+          <h2 id="t-inicio" class="solo-lector">Inicio</h2>
+
+          <p class="ghost-note" style="margin-top: 0">
+            <b>Cifras de muestra.</b> Todo lo que se ve en las siete pantallas
+            son datos de ejemplo fijos, para poder revisar la maqueta. Los datos
+            reales llegan cuando exista la API, en la fase 3.
+          </p>
+
           <div class="kpi-grid stagger" id="kpis-inicio"></div>
 
-          <article class="nota shell">
-            <h2 id="t-inicio">Inicio</h2>
-            <p>
-              Las tarjetas y las listas de esta pantalla son del catálogo, con
-              <b>cifras de muestra</b>. Acá va también el gráfico de
-              comportamiento diario con la línea del ahorro acumulado.
-            </p>
-            <p class="nota-pie">Fase 3 · tableros e indicadores.</p>
+          <article class="card shell">
+            <div class="card-head">
+              <div>
+                <h2>Comportamiento diario</h2>
+                <p>
+                  Barras de ingresos y egresos por día, con la línea del ahorro
+                  acumulado del mes.
+                </p>
+              </div>
+              <div
+                class="view-switch"
+                role="group"
+                aria-label="Modo del gráfico diario"
+              >
+                <button type="button" class="activa">Ambos</button>
+                <button type="button">Egresos</button>
+                <button type="button">Ingresos</button>
+                <button type="button">Acumulado</button>
+              </div>
+            </div>
+            <div class="legend">
+              <span
+                ><i class="dot" style="background: var(--color-inc)"></i
+                >Ingresos</span
+              >
+              <span
+                ><i class="dot" style="background: var(--color-egr)"></i
+                >Egresos</span
+              >
+              <span>
+                <i
+                  class="dot dot--linea"
+                  style="background: var(--color-sav)"
+                ></i>
+                Ahorro acumulado del mes (eje derecho)
+              </span>
+            </div>
+            <!-- Marcador de posición: el gráfico es de la fase 3. -->
+            <div
+              class="esqueleto esqueleto--grafico"
+              id="grafico-diario"
+              aria-hidden="true"
+            ></div>
+            <div class="chart-foot" id="pie-diario"></div>
           </article>
 
-          <!-- Avisos y píldoras de muestra (F01-T12). Los de verdad
-               salen de las reglas de alerta, en la fase 8. -->
-          <section class="shell panel" aria-labelledby="t-avisos">
-            <h3 id="t-avisos" class="panel-titulo">Alertas</h3>
-            <div class="rows" id="avisos-inicio"></div>
-          </section>
+          <article class="card shell">
+            <div class="card-head">
+              <div>
+                <h2>Últimos seis meses</h2>
+                <p>Ingresos, egresos y ahorro en contexto.</p>
+              </div>
+              <div
+                class="view-switch"
+                role="group"
+                aria-label="Modo del gráfico de seis meses"
+              >
+                <button type="button" class="activa">Barras</button>
+                <button type="button">Ahorro</button>
+                <button type="button">Tasa de ahorro</button>
+              </div>
+            </div>
+            <div
+              class="esqueleto esqueleto--grafico"
+              id="grafico-seis"
+              aria-hidden="true"
+            ></div>
+            <div class="chart-foot" id="pie-seis"></div>
+          </article>
 
-          <!-- Las filas las pinta views/inicio.js (F01-T10). -->
-          <section class="shell panel" aria-labelledby="t-ultimos">
-            <h3 id="t-ultimos" class="panel-titulo">Últimos movimientos</h3>
-            <div class="rows" id="movimientos-inicio"></div>
-          </section>
+          <div class="grid-2">
+            <article class="card shell" aria-labelledby="t-categorias">
+              <div class="card-head">
+                <div>
+                  <h2 id="t-categorias">Gastos por categoría</h2>
+                  <p>Tocá una categoría para ver sus movimientos.</p>
+                </div>
+                <div
+                  class="view-switch"
+                  role="group"
+                  aria-label="Orden de las categorías"
+                >
+                  <button type="button" class="activa">Mayor gasto</button>
+                  <button type="button">A–Z</button>
+                </div>
+              </div>
+              <div class="rows" id="categorias-inicio"></div>
+            </article>
 
-          <section class="shell panel" aria-labelledby="t-categorias">
-            <h3 id="t-categorias" class="panel-titulo">Gastos por categoría</h3>
-            <div class="rows" id="categorias-inicio"></div>
-          </section>
+            <article class="card shell" aria-labelledby="t-ultimos">
+              <div class="card-head">
+                <div>
+                  <h2 id="t-ultimos">Últimos movimientos</h2>
+                  <p>Del más reciente al más antiguo.</p>
+                </div>
+                <button class="link-btn" type="button" data-ir="movimientos">
+                  Ver todos →
+                </button>
+              </div>
+              <div class="rows" id="movimientos-inicio"></div>
+            </article>
+          </div>
 
-          <!-- Relleno alto a propósito: sin contenido que desborde la
-             pantalla no se puede comprobar que la barra superior queda
-             pegada ni que al cambiar de vista se vuelve arriba. Se va
-             cuando entre el tablero de verdad. -->
-          <div class="relleno-scroll" aria-hidden="true"></div>
+          <div class="sec-head">
+            <div>
+              <h2 id="t-avisos">Alertas analíticas</h2>
+              <p>Sin presupuestos: sólo comportamiento observado.</p>
+            </div>
+          </div>
+          <div class="rows" id="avisos-inicio" style="padding: 0"></div>
         </section>
 
+        <!-- ----------------------------------------------- MOVIMIENTOS -->
         <section
           class="view"
           data-vista="movimientos"
-          aria-labelledby="t-movimientos"
+          aria-labelledby="t-mov"
           hidden
         >
-          <article class="nota shell">
-            <h2 id="t-movimientos">Movimientos</h2>
-            <p>
-              La lista del mes agrupada por día, con filtros de ingresos y
-              egresos, y el alta desde el botón flotante.
-            </p>
-            <p class="nota-pie">Fase 4 · movimientos del mes.</p>
+          <article class="card shell">
+            <div class="card-head">
+              <div>
+                <h2 id="t-mov">Movimientos del mes</h2>
+                <p>Listado filtrable del mes en pantalla.</p>
+              </div>
+              <div
+                class="view-switch"
+                role="group"
+                aria-label="Filtro por tipo"
+              >
+                <button type="button" class="activa">Todos</button>
+                <button type="button">Egresos</button>
+                <button type="button">Ingresos</button>
+              </div>
+            </div>
+            <div class="filtros">
+              <label class="solo-lector" for="mov-buscar">Buscar</label>
+              <input
+                class="inp"
+                id="mov-buscar"
+                type="search"
+                placeholder="Buscar por descripción o categoría…"
+              />
+              <label class="solo-lector" for="mov-categoria">Categoría</label>
+              <select class="inp" id="mov-categoria"></select>
+            </div>
+            <div class="rows" id="movimientos-lista"></div>
           </article>
         </section>
 
+        <!-- -------------------------------------------------- HISTORIAL -->
         <section
           class="view"
           data-vista="historial"
-          aria-labelledby="t-historial"
+          aria-labelledby="t-hist"
           hidden
         >
-          <article class="nota shell">
-            <h2 id="t-historial">Historial</h2>
-            <p>
-              Los meses cerrados, con sus totales consolidados y la evolución
-              del ahorro.
-            </p>
-            <p class="nota-pie">Fase 5 · historial y meses consolidados.</p>
+          <div class="sec-head">
+            <div>
+              <h2 id="t-hist">Historial mensual</h2>
+              <p>Los meses cerrados se conservan consolidados.</p>
+            </div>
+            <button class="link-btn" type="button">
+              + Cargar mes histórico
+            </button>
+          </div>
+
+          <article class="card shell" aria-labelledby="t-hist">
+            <div
+              class="tbl-wrap"
+              tabindex="0"
+              role="region"
+              aria-label="Tabla de meses"
+            >
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Mes</th>
+                    <th scope="col">Ingresos</th>
+                    <th scope="col">Egresos</th>
+                    <th scope="col">Ahorro</th>
+                    <th scope="col">Tasa</th>
+                    <th scope="col">Tipo</th>
+                  </tr>
+                </thead>
+                <tbody id="historial-tabla"></tbody>
+              </table>
+            </div>
           </article>
+
+          <article class="card shell">
+            <div class="card-head">
+              <div>
+                <h2>Evolución del ahorro acumulado</h2>
+                <p>Saldo inicial más los ahorros de cada mes.</p>
+              </div>
+            </div>
+            <div class="esqueleto esqueleto--grafico" aria-hidden="true"></div>
+          </article>
+
+          <p class="ghost-note">
+            <b>Regla estructural.</b> El mes en curso es transaccional: se
+            alimenta de movimientos individuales. Los meses históricos pueden
+            ser consolidados, y entonces se conservan como totales: no se
+            inventan movimientos para ellos.
+          </p>
         </section>
 
+        <!-- --------------------------------------------------- CARTERA -->
         <section
           class="view"
           data-vista="inversiones"
-          aria-labelledby="t-inversiones"
+          aria-labelledby="t-inv"
           hidden
         >
-          <article class="nota shell">
-            <h2 id="t-inversiones">Cartera</h2>
-            <p>
-              Las inversiones con su valuación, el rendimiento de cada una y el
-              total de la cartera.
-            </p>
-            <p class="nota-pie">Fase 6 · inversiones.</p>
+          <h2 id="t-inv" class="solo-lector">Cartera</h2>
+          <div class="kpi-grid stagger" id="kpis-cartera"></div>
+
+          <article class="card shell">
+            <div class="card-head">
+              <div>
+                <h2>Cartera actual</h2>
+                <p>Última actualización de cotizaciones: hoy 09:12</p>
+              </div>
+              <div style="display: flex; gap: 8px">
+                <button class="chip" type="button">Actualizar</button>
+                <button class="chip solid" type="button">+ Inversión</button>
+              </div>
+            </div>
+            <div
+              class="tbl-wrap"
+              tabindex="0"
+              role="region"
+              aria-label="Tabla de posiciones"
+            >
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Posición</th>
+                    <th scope="col">Nominales</th>
+                    <th scope="col">Valor inicial</th>
+                    <th scope="col">Valor actual</th>
+                    <th scope="col">Rendimiento</th>
+                    <th scope="col">Fuente</th>
+                  </tr>
+                </thead>
+                <tbody id="cartera-tabla"></tbody>
+              </table>
+            </div>
           </article>
+
+          <p class="ghost-note">
+            <b>Cartera, no bitácora.</b> No hay historial de compras y ventas.
+            Comprar una inversión es una transferencia patrimonial —del ahorro a
+            la cartera—, no un gasto de consumo. Vender devuelve el importe al
+            ahorro.
+          </p>
         </section>
 
+        <!-- ------------------------------------------------ PATRIMONIO -->
         <section
           class="view"
           data-vista="patrimonio"
-          aria-labelledby="t-patrimonio"
+          aria-labelledby="t-pat"
           hidden
         >
-          <article class="nota shell">
-            <h2 id="t-patrimonio">Patrimonio</h2>
-            <p>
-              La composición del patrimonio entre ahorro e inversiones, y su
-              evolución.
-            </p>
-            <p class="nota-pie">Fase 7 · patrimonio.</p>
+          <article class="card shell">
+            <div class="card-head">
+              <div>
+                <h2 id="t-pat">Patrimonio neto</h2>
+                <p>Ahorros más inversiones, menos pasivos.</p>
+              </div>
+            </div>
+            <div class="kv-grid" id="patrimonio-ecuacion"></div>
+          </article>
+
+          <article class="card shell">
+            <div class="card-head">
+              <div>
+                <h2>Composición</h2>
+                <p>
+                  Qué parte del patrimonio es líquida y qué parte está
+                  invertida.
+                </p>
+              </div>
+            </div>
+            <div class="esqueleto esqueleto--grafico" aria-hidden="true"></div>
+            <div class="chart-foot" id="patrimonio-pie"></div>
           </article>
         </section>
 
+        <!-- --------------------------------------------------- ANÁLISIS -->
         <section
           class="view"
           data-vista="analisis"
-          aria-labelledby="t-analisis"
+          aria-labelledby="t-an"
           hidden
         >
-          <article class="nota shell">
-            <h2 id="t-analisis">Análisis</h2>
-            <p>
-              Los gastos por categoría, los últimos seis meses, la tasa de
-              ahorro y la evolución salarial.
-            </p>
-            <p class="nota-pie">Fase 8 · análisis.</p>
-          </article>
+          <h2 id="t-an" class="solo-lector">Análisis</h2>
+          <div class="grid-2">
+            <article class="card shell">
+              <div class="card-head">
+                <div>
+                  <h2>Evolución salarial</h2>
+                  <p>Independiente de los movimientos del mes.</p>
+                </div>
+              </div>
+              <div
+                class="esqueleto esqueleto--grafico"
+                aria-hidden="true"
+              ></div>
+              <div class="rows" id="analisis-salarios"></div>
+            </article>
+
+            <article class="card shell">
+              <div class="card-head">
+                <div>
+                  <h2>Métricas históricas</h2>
+                  <p>Promedios y extremos de los meses registrados.</p>
+                </div>
+              </div>
+              <div class="kv-grid" id="analisis-metricas"></div>
+            </article>
+          </div>
         </section>
 
+        <!-- ---------------------------------------------------- AJUSTES -->
         <section
           class="view"
           data-vista="config"
-          aria-labelledby="t-config"
+          aria-labelledby="t-cfg"
           hidden
         >
-          <article class="nota shell">
-            <h2 id="t-config">Ajustes</h2>
-            <p>
-              Las categorías, el tema, la cuenta y las preferencias de la
-              aplicación.
-            </p>
-            <p class="nota-pie">Fase 9 · configuración.</p>
-          </article>
+          <h2 id="t-cfg" class="solo-lector">Ajustes</h2>
+          <div class="grid-2">
+            <article class="card shell">
+              <div class="card-head">
+                <div>
+                  <h2>Categorías</h2>
+                  <p>Se desactivan, nunca se borran si tienen histórico.</p>
+                </div>
+                <button class="link-btn" type="button">+ Nueva</button>
+              </div>
+              <div class="rows" id="config-categorias"></div>
+            </article>
+
+            <div class="grid-2" style="grid-template-columns: 1fr">
+              <article class="card shell">
+                <div class="card-head">
+                  <div>
+                    <h2>Preferencias</h2>
+                    <p>Alertas, cotizaciones y resúmenes.</p>
+                  </div>
+                </div>
+                <div class="rows" id="config-preferencias"></div>
+              </article>
+
+              <article class="card shell">
+                <div class="card-head">
+                  <div>
+                    <h2>Datos laborales</h2>
+                    <p>Sueldo vigente y punto de partida del sistema.</p>
+                  </div>
+                </div>
+                <div class="kv-grid" id="config-laborales"></div>
+              </article>
+
+              <article class="card shell">
+                <div class="card-head">
+                  <div>
+                    <h2>Copia de seguridad</h2>
+                    <p>Todo lo cargado, en un archivo.</p>
+                  </div>
+                </div>
+                <div class="filtros" style="padding-bottom: 14px">
+                  <button class="chip" type="button">Exportar datos</button>
+                  <button class="chip" type="button">Importar</button>
+                </div>
+              </article>
+            </div>
+          </div>
         </section>
       </main>
     </div>
@@ -450,7 +721,7 @@
     <script type="module" src="/src/js/barra-inferior.js"></script>
     <script type="module" src="/src/js/boton-tema.js"></script>
     <script type="module" src="/src/js/barra-mes.js"></script>
-    <script type="module" src="/src/js/views/inicio.js"></script>
+    <script type="module" src="/src/js/views/vistas.js"></script>
     <script type="module" src="/src/js/app.js"></script>
     <script type="module" src="/src/js/registrar-sw.js"></script>
   </body>
