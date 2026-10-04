@@ -60,7 +60,9 @@
 /* DEGRADACIÓN OBLIGATORIA.
    Sin esto, donde no hay soporte de backdrop-filter el texto queda
    sobre un fondo semitransparente sin desenfocar: ilegible. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
   .shell {
     background: var(--glass-shell-fallback);
   }
@@ -70,30 +72,292 @@
 }
 
 /* ============================================================
-   PANTALLA DE PRESENTACIÓN · F00-T10
-   Única pieza de layout de esta tarea: sirve para comprobar que el
-   vidrio, el fondo y las fuentes funcionan en producción y en el
-   celular. F01-T05 en adelante la reemplaza por la aplicación real.
+   ARMAZÓN DE LA APLICACIÓN · F01-T05
+
+   El ancho máximo y los márgenes laterales. El relleno de abajo deja
+   el hueco de la barra inferior y del botón flotante (F01-T06), más
+   la franja de gestos del teléfono.
    ============================================================ */
 
-.pantalla {
-  min-height: 100vh;
-  min-height: 100dvh;
+.app {
+  position: relative;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 14px max(13px, env(safe-area-inset-left))
+    calc(104px + env(safe-area-inset-bottom))
+    max(13px, env(safe-area-inset-right));
+}
+
+/* ============================================================
+   BARRA SUPERIOR
+   Referencia: mockup 01, .topbar · SKILL.md §3 y §4
+   ============================================================ */
+
+.topbar {
+  position: sticky;
+  /* No va a 0: los 8 px dejan ver el fondo por encima del vidrio, que
+     es lo que hace que la barra se lea como una pieza flotante y no
+     como una franja pegada al borde. */
+  top: 8px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 13px;
+  border-radius: var(--radius-lg);
+}
+
+/* ---- la marca ---- */
+
+.marca-app {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0; /* para que el nombre pueda recortarse y no desborde */
+}
+
+.marca-sello {
+  position: relative;
+  overflow: hidden;
+  flex: none;
   display: grid;
   place-items: center;
-  padding: 24px max(16px, env(safe-area-inset-left))
-    max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right));
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-btn);
+  color: var(--color-on-accent);
+  background: linear-gradient(
+    155deg,
+    var(--color-accent),
+    var(--color-accent-2)
+  );
+  box-shadow:
+    var(--glass-in),
+    0 6px 16px -4px rgba(var(--shadow-rgb), 0.35);
 }
 
-.tarjeta {
-  width: 100%;
-  max-width: 400px;
-  border-radius: var(--radius-lg);
-  padding: 32px 26px 28px;
-  text-align: center;
-  animation: entrada 0.6s var(--ease) both;
+.marca-sello::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--solid-sheen);
 }
 
+.marca-sello svg {
+  position: relative;
+  width: 19px;
+  height: 19px;
+}
+
+.marca-texto {
+  min-width: 0;
+}
+
+.marca-texto b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--text-section);
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--color-ink);
+  /* En 320 px el nombre y las tres acciones compiten por el ancho:
+     antes de desbordar, el nombre se recorta. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.marca-texto span {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- las acciones de la derecha ---- */
+
+.acciones {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+}
+
+/* Botón de sólo icono. El recuadro visible mide 37 px, pero el área
+   táctil llega a los 44 px que pide la skill §5 por el ::after
+   invisible: agrandar el recuadro desarmaría la proporción de la barra
+   y dejar 37 px reales haría que se falle el toque en el teléfono. */
+.boton-icono {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 37px;
+  height: 37px;
+  border-radius: var(--radius-btn);
+  border: 1px solid var(--line);
+  background: var(--glass-content-bg);
+  box-shadow: var(--glass-in);
+  color: var(--color-ink-2);
+  cursor: pointer;
+  /* Visible, no `hidden`: el contador de alertas asoma fuera del
+     botón y con recorte se vería cortado por la mitad. */
+  overflow: visible;
+  transition:
+    transform 0.18s var(--ease),
+    color 0.18s var(--ease);
+}
+
+.boton-icono::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
+
+.boton-icono:hover {
+  transform: translateY(-2px);
+  color: var(--color-accent-2);
+}
+
+.boton-icono:active {
+  transform: translateY(0) scale(0.95);
+}
+
+.boton-icono svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Contador de alertas. El borde del color del fondo lo separa del
+   icono sin necesidad de una sombra. */
+.contador {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 99px;
+  border: 2px solid var(--color-bg-1);
+  background: var(--color-crit);
+  color: var(--color-on-accent);
+  font-size: var(--text-badge);
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Sin alertas no se muestra el globo: un cero rojo alarma sin motivo. */
+.contador[hidden] {
+  display: none;
+}
+
+/* El acceso a configuración, con las iniciales. Es un botón, no un
+   div con title: se alcanza con teclado y lo anuncia el lector. */
+.avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 37px;
+  height: 37px;
+  flex: none;
+  border: 0;
+  border-radius: var(--radius-btn);
+  background: linear-gradient(
+    155deg,
+    var(--color-avatar-1),
+    var(--color-avatar-2)
+  );
+  box-shadow: var(--glass-in);
+  color: var(--color-on-accent);
+  font-size: var(--text-avatar);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 0.18s var(--ease);
+}
+
+.avatar::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
+
+.avatar:hover {
+  transform: translateY(-2px);
+}
+
+.avatar:active {
+  transform: translateY(0) scale(0.95);
+}
+
+/* ---- pestañas de escritorio ----
+   Ocultas por debajo de 960 px: ahí manda la barra inferior (F01-T06).
+   Se ocultan con `display:none` y no con visibilidad para que los
+   botones queden fuera del orden de tabulación en el teléfono. */
+
+.nav-escritorio {
+  display: none;
+  gap: 3px;
+  padding: 4px;
+  border-radius: 99px;
+  /* Surco hundido: el mismo recurso que el conmutador de vistas. */
+  background: var(--groove-bg);
+  box-shadow: var(--groove-in);
+}
+
+.nav-escritorio button {
+  border: 0;
+  background: transparent;
+  padding: 8px 14px;
+  border-radius: 99px;
+  font-size: var(--text-row);
+  font-weight: 600;
+  color: var(--color-ink-3);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 0.2s var(--ease),
+    background 0.2s var(--ease);
+}
+
+.nav-escritorio button:hover {
+  color: var(--color-ink-2);
+}
+
+.nav-escritorio button.activa {
+  background: var(--glass-content-bg);
+  color: var(--color-accent-2);
+  box-shadow: var(--glass-in), var(--sh-sm);
+}
+
+@media (min-width: 960px) {
+  .nav-escritorio {
+    display: flex;
+  }
+}
+
+/* La animación de entrada: la usan la nota de estado y, desde
+   F01-T09, las tarjetas del catálogo. */
 @keyframes entrada {
   from {
     opacity: 0;
@@ -105,123 +369,6 @@
   }
 }
 
-.marca {
-  display: grid;
-  place-items: center;
-  width: 60px;
-  height: 60px;
-  margin: 0 auto 18px;
-  border-radius: var(--radius-card);
-  position: relative;
-  overflow: hidden;
-  color: var(--color-on-accent);
-  background: linear-gradient(155deg, var(--color-accent), var(--color-accent-2));
-  box-shadow: var(--glass-in), 0 10px 24px -8px rgba(var(--shadow-rgb), 0.45);
-}
-
-/* El mismo reflejo que el mockup le da a la marca. */
-.marca::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--solid-sheen);
-}
-
-.marca svg {
-  width: 28px;
-  height: 28px;
-  position: relative;
-}
-
-.bajada {
-  margin-top: 6px;
-  font-size: var(--text-sub);
-  color: var(--color-ink-3);
-}
-
-.regla {
-  width: 70px;
-  height: 5px;
-  margin: 20px auto;
-  border-radius: 99px;
-  background: linear-gradient(90deg, var(--color-accent), var(--color-accent-2));
-}
-
-.fichas {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.ficha {
-  border-radius: var(--radius-sm);
-  padding: 12px 10px;
-}
-
-.ficha span {
-  display: block;
-  font-size: var(--text-label);
-  font-weight: 700;
-  letter-spacing: var(--tracking-caps);
-  text-transform: uppercase;
-  color: var(--color-ink-3);
-}
-
-.ficha b {
-  display: block;
-  margin-top: 4px;
-  font-family: var(--font-display);
-  font-size: var(--text-kv);
-  font-weight: 700;
-  color: var(--color-ink);
-}
-
-.pie {
-  font-size: var(--text-sub);
-  line-height: 1.7;
-  color: var(--color-ink-4);
-}
-
-.pie code {
-  font-family: ui-monospace, "Cascadia Code", monospace;
-  font-size: var(--text-pill);
-  color: var(--color-accent-2);
-}
-
-/* ---- interruptor de tema ----
-   Provisorio en esta pantalla: cuando exista la barra superior
-   (F01-T05) se muda ahí. Cualquier elemento con [data-tema] funciona,
-   así que mudarlo no toca JavaScript. */
-.boton-tema {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  margin: 0 auto 20px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--line);
-  color: var(--color-ink-2);
-  cursor: pointer;
-  transition:
-    transform 0.2s var(--ease),
-    color 0.2s var(--ease);
-}
-
-.boton-tema:hover {
-  transform: translateY(-2px);
-  color: var(--color-accent-2);
-}
-
-.boton-tema:active {
-  transform: translateY(0) scale(0.94);
-}
-
-.boton-tema svg {
-  width: 19px;
-  height: 19px;
-}
-
 /* La transición entre temas: un fundido, no un barrido.
    Un barrido en una pantalla llena de vidrio se ve sucio. */
 @media (prefers-reduced-motion: no-preference) {
@@ -230,4 +377,32 @@
     animation-duration: 0.32s;
     animation-timing-function: var(--ease);
   }
+}
+
+/* ============================================================
+   NOTA DE ESTADO · provisoria
+   Ocupa el lugar de las vistas hasta F01-T07. Se borra entonces.
+   ============================================================ */
+
+.nota {
+  margin-top: 12px;
+  border-radius: var(--radius-card);
+  padding: 22px 20px;
+  animation: entrada 0.6s var(--ease) both;
+}
+
+.nota p {
+  margin-top: 8px;
+  color: var(--color-ink-2);
+}
+
+.nota-pie {
+  font-size: var(--text-sub);
+  color: var(--color-ink-3);
+}
+
+/* Altura suficiente para que la página pase del alto de la pantalla y
+   se pueda comprobar que la barra superior queda pegada. */
+.relleno-scroll {
+  height: 140vh;
 }

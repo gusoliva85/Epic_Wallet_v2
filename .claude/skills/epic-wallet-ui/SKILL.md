@@ -54,6 +54,12 @@ Van en `web/src/styles/tokens.css` y se registran en Tailwind con `@theme`.
   --navy:#11181f;
   --accent:#47799c; --accent-2:#335c78; --accent-soft:#dfeaf0; --accent-ring:rgba(71,121,156,.28);
 
+  /* avatar de la cuenta: grafito neutro, lo único de la barra que no es acento */
+  --avatar-1:#5c6469; --avatar-2:#33383c;
+
+  /* surco hundido: conmutador de pestañas y de vistas */
+  --groove-bg:rgba(20,22,25,.06); --groove-in:inset 0 1px 3px rgba(0,0,0,.08);
+
   /* semántica financiera */
   --inc:#26886a;  /* ingresos */
   --egr:#bc313e;  /* egresos  */
@@ -70,6 +76,7 @@ Van en `web/src/styles/tokens.css` y se registran en Tailwind con `@theme`.
   --sh-lg:0 4px 16px rgba(var(--shadow-rgb),.09),0 34px 70px -26px rgba(var(--shadow-rgb),.32);
 
   /* radios y curva */
+  --r-btn:13px;   /* botones de icono, avatar, sello de la marca */
   --r-sm:12px; --r-card:20px; --r-lg:24px;
   --ease:cubic-bezier(.32,.72,0,1);
 }
@@ -83,6 +90,8 @@ html[data-theme="dark"]{
   --glass-sheen:linear-gradient(120deg,rgba(255,255,255,.07),transparent 45%);
   --navy:#040608;
   --accent:#72a6c6; --accent-2:#93c2dc; --accent-soft:#111f27; --accent-ring:rgba(114,166,198,.3);
+  --avatar-1:#474f54; --avatar-2:#2a2e32;
+  --groove-bg:rgba(0,0,0,.26); --groove-in:inset 0 1px 3px rgba(0,0,0,.45);
   --inc:#3cb087; --egr:#d8596a; --sav:#72a6c6;
   --ok:#3cb087; --warn:#daa932; --pend:#dc8642; --crit:#d8596a;
   --mix-tint:#181b1e; --mix-ink:#f2f4f5;
@@ -276,6 +285,22 @@ Reglas de los campos de contraseña:
   </div>
 </div>`
 ```
+
+### Barra superior
+
+`.topbar` es un `.shell` **pegajoso a 8 px del borde**, no a 0: el hueco deja ver el fondo por encima del vidrio y es lo que la hace leer como pieza flotante. Lleva `z-index` o el contenido le pasa por arriba al hacer scroll.
+
+```text
+.marca-app      sello + nombre · min-width:0 y ellipsis, o desborda en 320 px
+.nav-escritorio pestañas, display:none hasta 960 px (abajo manda .botnav)
+.acciones       alertas con .contador · [data-tema] · .avatar → configuración
+```
+
+El recuadro de `.boton-icono` y `.avatar` mide 37 px para no desarmar la proporción de la barra; el área táctil llega a los 44 px con un `::after` centrado e invisible. **Si se borra ese `::after`, el botón queda en 37 px** y se falla el toque en el teléfono.
+
+El contador de alertas va `aria-hidden`: la cuenta ya está en el `aria-label` del botón ("Alertas: 4 sin leer"), y si no se oculta el lector la dice dos veces. Con cero alertas el globo se esconde con `[hidden]` — un cero rojo alarma sin motivo.
+
+Las pestañas **se generan desde `SECCIONES` de `web/src/js/nav.js`**, nunca a mano en el HTML: la barra superior, la inferior y el enrutador leen de la misma lista y así no pueden discrepar. Son un `tablist`: una sola pestaña en el orden de tabulación y el resto con las flechas.
 
 ### Otros
 

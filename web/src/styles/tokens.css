@@ -24,10 +24,10 @@
      y 3:1 (ink-4, que sólo se usa en ejes y deshabilitados) SOBRE EL
      FONDO OPACO DE RESPALDO DEL VIDRIO, que es el peor caso. Si se
      tocan, tests/unit/test_contraste.py lo detecta. */
-  --color-ink: #1c2024;    /* títulos y cifras */
-  --color-ink-2: #4b5157;  /* texto normal */
-  --color-ink-3: #70757c;  /* secundario y etiquetas */
-  --color-ink-4: #8f9398;  /* deshabilitado y ejes */
+  --color-ink: #1c2024; /* títulos y cifras */
+  --color-ink-2: #4b5157; /* texto normal */
+  --color-ink-3: #70757c; /* secundario y etiquetas */
+  --color-ink-4: #8f9398; /* deshabilitado y ejes */
 
   /* ---- acento: azul grafito ---- */
   --color-navy: #11181f;
@@ -38,10 +38,16 @@
      temas: el acento siempre es lo bastante oscuro. */
   --color-on-accent: #ffffff;
 
+  /* ---- avatar de la cuenta ----
+     Grafito neutro a propósito: es lo único de la barra que no es
+     acento, así se distingue del resto de los botones. */
+  --color-avatar-1: #5c6469;
+  --color-avatar-2: #33383c;
+
   /* ---- semántica financiera ---- */
-  --color-inc: #26886a;  /* ingresos */
-  --color-egr: #bc313e;  /* egresos  */
-  --color-sav: #47799c;  /* ahorro   */
+  --color-inc: #26886a; /* ingresos */
+  --color-egr: #bc313e; /* egresos  */
+  --color-sav: #47799c; /* ahorro   */
 
   /* ---- severidad de alertas ---- */
   --color-ok: #26886a;
@@ -50,6 +56,7 @@
   --color-crit: #bc313e;
 
   /* ---- radios ---- */
+  --radius-btn: 13px; /* botones de icono, avatar, sello de la marca */
   --radius-sm: 12px;
   --radius-card: 20px;
   --radius-lg: 24px;
@@ -63,23 +70,25 @@
      "cifra de KPI" y no "27,5 px", y la escala se puede ajustar
      en un solo lugar. Los valores salen de la tabla de la skill §4,
      que a su vez sale del mockup aprobado. */
-  --text-hero: 35px;        /* ahorro del mes, patrimonio */
-  --text-amount: 33px;      /* el importe en el formulario de alta */
-  --text-kpi: 27.5px;       /* cifra de indicador */
-  --text-kpi-sm: 23px;      /* cifra de indicador secundario */
-  --text-sheet: 21.5px;     /* título de hoja */
-  --text-panel: 20px;       /* título de panel */
-  --text-section: 19px;     /* título de sección */
-  --text-kv: 16.5px;        /* cifra en ficha */
-  --text-base: 16.5px;      /* texto corriente */
-  --text-amount-row: 16px;  /* importe en una fila */
-  --text-row: 15.5px;       /* nombre en una fila */
+  --text-hero: 35px; /* ahorro del mes, patrimonio */
+  --text-amount: 33px; /* el importe en el formulario de alta */
+  --text-kpi: 27.5px; /* cifra de indicador */
+  --text-kpi-sm: 23px; /* cifra de indicador secundario */
+  --text-sheet: 21.5px; /* título de hoja */
+  --text-panel: 20px; /* título de panel */
+  --text-section: 19px; /* título de sección */
+  --text-kv: 16.5px; /* cifra en ficha */
+  --text-base: 16.5px; /* texto corriente */
+  --text-amount-row: 16px; /* importe en una fila */
+  --text-row: 15.5px; /* nombre en una fila */
   --text-button: 15.5px;
-  --text-sub: 12px;         /* secundario de fila, subtítulo de indicador */
+  --text-sub: 12px; /* secundario de fila, subtítulo de indicador */
   --text-pill: 11px;
-  --text-label: 10.5px;     /* etiqueta de indicador, separador de día */
-  --text-axis: 10px;        /* valores de los ejes */
-  --text-axis-sm: 9.5px;    /* días de los ejes */
+  --text-avatar: 12.5px; /* iniciales en el avatar de la barra */
+  --text-badge: 9.5px; /* contador de alertas */
+  --text-label: 10.5px; /* etiqueta de indicador, separador de día */
+  --text-axis: 10px; /* valores de los ejes */
+  --text-axis-sm: 9.5px; /* días de los ejes */
 
   /* ---- interletrado de las etiquetas en mayúsculas ---- */
   --tracking-label: 0.05em;
@@ -105,12 +114,21 @@
   --glass-content-bg: rgba(255, 255, 255, 0.68);
   --glass-content-blur: 7px;
   --glass-content-fallback: rgba(255, 255, 255, 0.94);
-  --glass-in: inset 0 1px 0 rgba(255, 255, 255, 0.85),
+  --glass-in:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
     inset 0 0 0 1px rgba(255, 255, 255, 0.45);
-  --glass-sheen: linear-gradient(120deg, rgba(255, 255, 255, 0.55), transparent 45%);
+  --glass-sheen: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.55),
+    transparent 45%
+  );
   /* Reflejo de las superficies sólidas (la marca, los botones de acento),
      más inclinado y más corto que el del vidrio. */
-  --solid-sheen: linear-gradient(125deg, rgba(255, 255, 255, 0.55), transparent 50%);
+  --solid-sheen: linear-gradient(
+    125deg,
+    rgba(255, 255, 255, 0.55),
+    transparent 50%
+  );
 
   --accent-ring: rgba(71, 121, 156, 0.28);
 
@@ -120,12 +138,20 @@
   --mix-ink: #1c2024;
 
   --shadow-rgb: 20, 22, 25;
-  --sh-sm: 0 1px 2px rgba(var(--shadow-rgb), 0.06),
+  --sh-sm:
+    0 1px 2px rgba(var(--shadow-rgb), 0.06),
     0 4px 12px -4px rgba(var(--shadow-rgb), 0.12);
-  --sh-md: 0 2px 6px rgba(var(--shadow-rgb), 0.07),
+  --sh-md:
+    0 2px 6px rgba(var(--shadow-rgb), 0.07),
     0 16px 34px -16px rgba(var(--shadow-rgb), 0.22);
-  --sh-lg: 0 4px 16px rgba(var(--shadow-rgb), 0.09),
+  --sh-lg:
+    0 4px 16px rgba(var(--shadow-rgb), 0.09),
     0 34px 70px -26px rgba(var(--shadow-rgb), 0.32);
+
+  /* Surco hundido: el fondo y la sombra interior del conmutador de
+     pestañas y, desde F01-T11, del conmutador de vistas. */
+  --groove-bg: rgba(20, 22, 25, 0.06);
+  --groove-in: inset 0 1px 3px rgba(0, 0, 0, 0.08);
 
   --ease: cubic-bezier(0.32, 0.72, 0, 1);
 }
@@ -151,6 +177,9 @@ html[data-theme="dark"] {
   --color-accent-soft: #111f27;
   --color-on-accent: #0c0d0e;
 
+  --color-avatar-1: #474f54;
+  --color-avatar-2: #2a2e32;
+
   --color-inc: #3cb087;
   --color-egr: #d8596a;
   --color-sav: #72a6c6;
@@ -168,15 +197,27 @@ html[data-theme="dark"] {
   --glass-shell-fallback: rgba(13, 15, 17, 0.94);
   --glass-content-bg: rgba(22, 25, 28, 0.72);
   --glass-content-fallback: rgba(13, 15, 17, 0.96);
-  --glass-in: inset 0 1px 0 rgba(255, 255, 255, 0.07),
+  --glass-in:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
     inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-  --glass-sheen: linear-gradient(120deg, rgba(255, 255, 255, 0.07), transparent 45%);
-  --solid-sheen: linear-gradient(125deg, rgba(255, 255, 255, 0.34), transparent 50%);
+  --glass-sheen: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.07),
+    transparent 45%
+  );
+  --solid-sheen: linear-gradient(
+    125deg,
+    rgba(255, 255, 255, 0.34),
+    transparent 50%
+  );
 
   --accent-ring: rgba(114, 166, 198, 0.3);
 
   --mix-tint: #181b1e;
   --mix-ink: #f2f4f5;
+
+  --groove-bg: rgba(0, 0, 0, 0.26);
+  --groove-in: inset 0 1px 3px rgba(0, 0, 0, 0.45);
 
   --shadow-rgb: 0, 0, 0;
   --sh-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 14px -4px rgba(0, 0, 0, 0.5);
@@ -204,6 +245,9 @@ html[data-theme="dark"] {
     --color-accent-soft: #111f27;
     --color-on-accent: #0c0d0e;
 
+    --color-avatar-1: #474f54;
+    --color-avatar-2: #2a2e32;
+
     --color-inc: #3cb087;
     --color-egr: #d8596a;
     --color-sav: #72a6c6;
@@ -221,19 +265,33 @@ html[data-theme="dark"] {
     --glass-shell-fallback: rgba(13, 15, 17, 0.94);
     --glass-content-bg: rgba(22, 25, 28, 0.72);
     --glass-content-fallback: rgba(13, 15, 17, 0.96);
-    --glass-in: inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    --glass-in:
+      inset 0 1px 0 rgba(255, 255, 255, 0.07),
       inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-    --glass-sheen: linear-gradient(120deg, rgba(255, 255, 255, 0.07), transparent 45%);
-    --solid-sheen: linear-gradient(125deg, rgba(255, 255, 255, 0.34), transparent 50%);
+    --glass-sheen: linear-gradient(
+      120deg,
+      rgba(255, 255, 255, 0.07),
+      transparent 45%
+    );
+    --solid-sheen: linear-gradient(
+      125deg,
+      rgba(255, 255, 255, 0.34),
+      transparent 50%
+    );
 
     --accent-ring: rgba(114, 166, 198, 0.3);
 
     --mix-tint: #181b1e;
     --mix-ink: #f2f4f5;
 
+    --groove-bg: rgba(0, 0, 0, 0.26);
+    --groove-in: inset 0 1px 3px rgba(0, 0, 0, 0.45);
+
     --shadow-rgb: 0, 0, 0;
     --sh-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 14px -4px rgba(0, 0, 0, 0.5);
-    --sh-md: 0 2px 8px rgba(0, 0, 0, 0.35), 0 18px 38px -16px rgba(0, 0, 0, 0.55);
-    --sh-lg: 0 4px 18px rgba(0, 0, 0, 0.4), 0 40px 80px -28px rgba(0, 0, 0, 0.65);
+    --sh-md:
+      0 2px 8px rgba(0, 0, 0, 0.35), 0 18px 38px -16px rgba(0, 0, 0, 0.55);
+    --sh-lg:
+      0 4px 18px rgba(0, 0, 0, 0.4), 0 40px 80px -28px rgba(0, 0, 0, 0.65);
   }
 }

@@ -1,89 +1,180 @@
 <!doctype html>
 <html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
 
-<!-- La barra de estado de Android acompaña al tema. -->
-<meta name="theme-color" content="#eff2f5" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0a0d10" media="(prefers-color-scheme: dark)">
+    <!-- La barra de estado de Android acompaña al tema. -->
+    <meta
+      name="theme-color"
+      content="#eff2f5"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#0a0d10"
+      media="(prefers-color-scheme: dark)"
+    />
 
-<title>Epic Wallet</title>
-<meta name="description" content="Aplicación personal de gestión financiera.">
-<meta name="color-scheme" content="light dark">
+    <title>Epic Wallet</title>
+    <meta
+      name="description"
+      content="Aplicación personal de gestión financiera."
+    />
+    <meta name="color-scheme" content="light dark" />
 
-<!-- Fuentes: preconnect para adelantar el handshake, display=swap para
+    <!-- Fuentes: preconnect para adelantar el handshake, display=swap para
      que el texto se vea desde el primer frame con la fuente del sistema. -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="style"
-  href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet"
-  href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+    />
 
-<!-- PWA: instalable en Android desde el navegador -->
-<link rel="manifest" href="/manifest.json">
-<link rel="icon" href="/icons/icon-192.png" sizes="192x192" type="image/png">
-<link rel="icon" href="/icons/icon-512.png" sizes="512x512" type="image/png">
-<link rel="apple-touch-icon" href="/icons/icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Epic Wallet">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="mobile-web-app-capable" content="yes">
+    <!-- PWA: instalable en Android desde el navegador -->
+    <link rel="manifest" href="/manifest.json" />
+    <link
+      rel="icon"
+      href="/icons/icon-192.png"
+      sizes="192x192"
+      type="image/png"
+    />
+    <link
+      rel="icon"
+      href="/icons/icon-512.png"
+      sizes="512x512"
+      type="image/png"
+    />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Epic Wallet" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="mobile-web-app-capable" content="yes" />
 
-<link rel="stylesheet" href="/public/app.css">
+    <link rel="stylesheet" href="/public/app.css" />
 
-<!-- Bloqueante y sin defer a propósito: aplica el tema antes del primer
+    <!-- Bloqueante y sin defer a propósito: aplica el tema antes del primer
      pintado para que no haya un fogonazo blanco al cargar en oscuro.
      En archivo aparte porque la política de contenido no admite
      scripts en línea. -->
-<script src="/src/js/tema.js"></script>
-</head>
-<body>
+    <script src="/src/js/tema.js"></script>
+  </head>
+  <body>
+    <div class="app">
+      <!-- ======================= BARRA SUPERIOR · F01-T05 ======================= -->
+      <header class="topbar shell">
+        <div class="marca-app">
+          <span class="marca-sello" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M3 8.5A2.5 2.5 0 015.5 6H19a2 2 0 012 2v9a2 2 0 01-2 2H5.5A2.5 2.5 0 013 16.5v-8z"
+              />
+              <path
+                d="M3 9.5h13.5a1.5 1.5 0 011.5 1.5v3a1.5 1.5 0 01-1.5 1.5H3"
+              />
+              <circle cx="7" cy="12.5" r="1.1" />
+            </svg>
+          </span>
+          <div class="marca-texto">
+            <b>Epic Wallet</b>
+            <span>Mes en curso</span>
+          </div>
+        </div>
 
-<main class="pantalla">
-  <section class="tarjeta shell">
-    <span class="marca" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-           stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 8.5A2.5 2.5 0 015.5 6H19a2 2 0 012 2v9a2 2 0 01-2 2H5.5A2.5 2.5 0 013 16.5v-8z"/>
-        <path d="M3 9.5h13.5a1.5 1.5 0 011.5 1.5v3a1.5 1.5 0 01-1.5 1.5H3"/>
-        <circle cx="7" cy="12.5" r="1.1"/>
-      </svg>
-    </span>
+        <!-- Las pestañas las pinta barra-superior.js desde nav.js, para que
+         no puedan discrepar de la barra inferior ni del enrutador.
+         Visibles desde 960 px; por debajo manda la barra inferior. -->
+        <nav
+          class="nav-escritorio"
+          id="nav-escritorio"
+          role="tablist"
+          aria-label="Secciones"
+        ></nav>
 
-    <h1 class="t-hero">Epic Wallet</h1>
-    <p class="bajada">Gestión financiera personal</p>
+        <div class="acciones">
+          <button
+            class="boton-icono"
+            type="button"
+            id="btn-alertas"
+            aria-label="Alertas: 4 sin leer"
+          >
+            <svg viewBox="0 0 24 24">
+              <path d="M6 8a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6" />
+              <path d="M10 20a2 2 0 004 0" />
+            </svg>
+            <!-- aria-hidden: la cuenta ya va en el aria-label del botón; si
+             no, el lector diría "Alertas: 4 sin leer, 4". -->
+            <span class="contador" id="contador-alertas" aria-hidden="true"
+              >4</span
+            >
+          </button>
 
-    <div class="regla" aria-hidden="true"></div>
+          <!-- El interruptor de tema, ahora en su lugar definitivo.
+           boton-tema.js conecta cualquier [data-tema] y le pone el
+           icono y el aria-label segun el tema vigente. -->
+          <button
+            class="boton-icono"
+            type="button"
+            data-tema
+            aria-label="Cambiar de tema"
+          >
+            <svg viewBox="0 0 24 24"></svg>
+          </button>
 
-    <button class="boton-tema cg" data-tema type="button" aria-label="Cambiar de tema">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-           stroke-linecap="round" stroke-linejoin="round"></svg>
-    </button>
+          <button
+            class="avatar"
+            type="button"
+            id="btn-config"
+            aria-label="Configuración de la cuenta"
+          >
+            GO
+          </button>
+        </div>
+      </header>
 
-    <div class="fichas">
-      <div class="ficha cg">
-        <span>Fase</span>
-        <b>0</b>
-      </div>
-      <div class="ficha cg">
-        <span>App</span>
-        <b>Instalable</b>
-      </div>
+      <!-- ======================= CONTENIDO =======================
+       Las siete vistas y su enrutador llegan en F01-T07. Hasta
+       entonces, una nota de estado: así se puede probar en el
+       teléfono que la barra queda pegada al hacer scroll. -->
+      <main>
+        <section class="nota shell">
+          <h2>Armazón en construcción</h2>
+          <p>
+            La barra superior ya está en su lugar. Las siete secciones, la barra
+            inferior y el enrutador llegan en las próximas tareas.
+          </p>
+          <p class="nota-pie">
+            Desde 960 px de ancho aparecen las pestañas en la barra.
+          </p>
+        </section>
+
+        <!-- Relleno alto a propósito: sin contenido que desborde la
+         pantalla no hay forma de comprobar que la barra se queda
+         pegada. Se va cuando entren las vistas de verdad. -->
+        <div class="relleno-scroll" aria-hidden="true"></div>
+      </main>
     </div>
 
-    <p class="pie">
-      La aplicación está en construcción.<br>
-      Podés instalarla desde el menú del navegador.
-    </p>
-  </section>
-</main>
-
-<!-- En archivo aparte, no en línea: así la política de contenido
+    <!-- En archivo aparte, no en línea: así la política de contenido
      mantiene script-src 'self' sin unsafe-inline. -->
-<script type="module" src="/src/js/boton-tema.js"></script>
-<script type="module" src="/src/js/registrar-sw.js"></script>
-
-</body>
+    <script type="module" src="/src/js/barra-superior.js"></script>
+    <script type="module" src="/src/js/boton-tema.js"></script>
+    <script type="module" src="/src/js/registrar-sw.js"></script>
+  </body>
 </html>
