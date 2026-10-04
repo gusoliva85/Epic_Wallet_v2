@@ -38,9 +38,21 @@ body::after {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 52% 34% at 10% -6%, var(--color-wash-a), transparent 62%),
-    radial-gradient(ellipse 42% 28% at 106% 6%, var(--color-wash-b), transparent 58%),
-    radial-gradient(ellipse 38% 26% at 50% 104%, var(--color-wash-a), transparent 66%),
+    radial-gradient(
+      ellipse 52% 34% at 10% -6%,
+      var(--color-wash-a),
+      transparent 62%
+    ),
+    radial-gradient(
+      ellipse 42% 28% at 106% 6%,
+      var(--color-wash-b),
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 38% 26% at 50% 104%,
+      var(--color-wash-a),
+      transparent 66%
+    ),
     linear-gradient(180deg, var(--color-bg-1), var(--color-bg-2));
 }
 
@@ -76,10 +88,18 @@ h4,
   font-weight: 700;
 }
 
-h1 { font-size: var(--text-hero); }
-h2 { font-size: var(--text-panel); }
-h3 { font-size: var(--text-section); }
-h4 { font-size: var(--text-kv); }
+h1 {
+  font-size: var(--text-hero);
+}
+h2 {
+  font-size: var(--text-panel);
+}
+h3 {
+  font-size: var(--text-section);
+}
+h4 {
+  font-size: var(--text-kv);
+}
 
 p {
   margin: 0;

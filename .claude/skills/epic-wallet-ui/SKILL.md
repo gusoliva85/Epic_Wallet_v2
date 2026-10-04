@@ -60,6 +60,10 @@ Van en `web/src/styles/tokens.css` y se registran en Tailwind con `@theme`.
   /* surco hundido: conmutador de pestañas y de vistas */
   --groove-bg:rgba(20,22,25,.06); --groove-in:inset 0 1px 3px rgba(0,0,0,.08);
 
+  /* velo del fondo con una hoja abierta. El transparente NUNCA es transparent:
+     Chrome lo interpola pasando por negro y parpadea al abrir */
+  --scrim-0:rgba(10,12,14,0); --scrim:rgba(10,12,14,.34);
+
   /* semántica financiera */
   --inc:#26886a;  /* ingresos */
   --egr:#bc313e;  /* egresos  */
@@ -77,6 +81,7 @@ Van en `web/src/styles/tokens.css` y se registran en Tailwind con `@theme`.
 
   /* radios y curva */
   --r-btn:13px;   /* botones de icono, avatar, sello de la marca */
+  --r-nav:14px; --r-fab:19px; --r-bar:22px; --r-sheet:26px;
   --r-sm:12px; --r-card:20px; --r-lg:24px;
   --ease:cubic-bezier(.32,.72,0,1);
 }
@@ -92,6 +97,7 @@ html[data-theme="dark"]{
   --accent:#72a6c6; --accent-2:#93c2dc; --accent-soft:#111f27; --accent-ring:rgba(114,166,198,.3);
   --avatar-1:#474f54; --avatar-2:#2a2e32;
   --groove-bg:rgba(0,0,0,.26); --groove-in:inset 0 1px 3px rgba(0,0,0,.45);
+  --scrim-0:rgba(0,0,0,0); --scrim:rgba(0,0,0,.52);
   --inc:#3cb087; --egr:#d8596a; --sav:#72a6c6;
   --ok:#3cb087; --warn:#daa932; --pend:#dc8642; --crit:#d8596a;
   --mix-tint:#181b1e; --mix-ink:#f2f4f5;
@@ -301,6 +307,36 @@ El recuadro de `.boton-icono` y `.avatar` mide 37 px para no desarmar la proporc
 El contador de alertas va `aria-hidden`: la cuenta ya está en el `aria-label` del botón ("Alertas: 4 sin leer"), y si no se oculta el lector la dice dos veces. Con cero alertas el globo se esconde con `[hidden]` — un cero rojo alarma sin motivo.
 
 Las pestañas **se generan desde `SECCIONES` de `web/src/js/nav.js`**, nunca a mano en el HTML: la barra superior, la inferior y el enrutador leen de la misma lista y así no pueden discrepar. Son un `tablist`: una sola pestaña en el orden de tabulación y el resto con las flechas.
+
+### Navegación del teléfono
+
+`.botnav` es un `.shell` **fijo** abajo, con cinco posiciones en rejilla. Siete no entran: en 390 px darían 53 px cada una y las etiquetas no se leen, así que tres secciones se mudan a la hoja de «Más». El reparto lo decide `en_barra_inferior` en `web/src/js/nav.js`, nunca el HTML.
+
+```text
+bottom: calc(10px + env(safe-area-inset-bottom))   ← sin el inset, la fila
+                                                     queda bajo la barra
+                                                     de gestos y no se toca
+min-height: 44px en cada posición                  ← skill §5
+.botnav button.activa → color Y fondo              ← el color solo no alcanza
+aria-current="page", no aria-selected              ← es navegación, no pestañas
+```
+
+La etiqueta usa `corta` ("Movim."), no `label`: con el nombre largo se recorta. Y lleva `nowrap`, porque partida en dos líneas desparejaría las cinco alturas.
+
+`.fab` va abajo a la derecha, **encima** de la barra (`bottom: calc(84px + inset)`): es el alcance natural del pulgar. Desde 960 px la barra inferior desaparece —dos navegaciones serían dos posiciones activas que mantener de acuerdo— pero el botón de alta se queda y sólo baja de altura, porque cargar un movimiento es la acción principal en cualquier tamaño.
+
+**El `.app` lleva 104 px de relleno abajo.** La barra es `fixed`: sin ese hueco tapa las últimas filas y nunca se llega al final de una lista.
+
+### Hoja inferior
+
+El componente completo es de F01-T11. Lo que una hoja necesita para no ser una trampa:
+
+- **Tres formas de cerrar**: toque en el velo, Escape y botón. El listener de Escape va en `document`, no en la hoja: con el foco afuera la hoja no recibe la tecla.
+- **`visibility: hidden` cuando está cerrada.** Correrla con `transform` no basta: el tabulador sigue entrando en sus botones invisibles y el foco desaparece de la pantalla. La visibilidad se demora lo que dura la transición (`visibility 0s linear .38s`) o la salida no se ve.
+- **El velo cerrado lleva `pointer-events: none`.** Es una capa a pantalla completa: sin eso deja la aplicación entera sin reaccionar.
+- **El velo transparente se declara con el mismo color y alfa cero** (`--scrim-0`), nunca `transparent`: animado desde `transparent`, Chrome interpola pasando por negro y se ve un parpadeo oscuro al abrir.
+- **Al abrir, el foco entra en el primer accionable; al cerrar, vuelve de donde vino.** Si no, queda en un botón que se acaba de esconder.
+- `max-height: 88vh` y `overscroll-behavior: contain`: queda fondo visible —lo que indica que se cierra tocando afuera— y el scroll no arrastra la página de atrás.
 
 ### Otros
 

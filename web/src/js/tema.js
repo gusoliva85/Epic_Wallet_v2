@@ -111,7 +111,8 @@
     var alCambiar = function () {
       if (!guardado()) aplicar(delSistema());
     };
-    if (consulta.addEventListener) consulta.addEventListener("change", alCambiar);
+    if (consulta.addEventListener)
+      consulta.addEventListener("change", alCambiar);
     else if (consulta.addListener) consulta.addListener(alCambiar);
   }
 })();
