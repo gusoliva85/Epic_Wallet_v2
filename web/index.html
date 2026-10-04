@@ -32,6 +32,12 @@
 <meta name="mobile-web-app-capable" content="yes">
 
 <link rel="stylesheet" href="/public/app.css">
+
+<!-- Bloqueante y sin defer a propósito: aplica el tema antes del primer
+     pintado para que no haya un fogonazo blanco al cargar en oscuro.
+     En archivo aparte porque la política de contenido no admite
+     scripts en línea. -->
+<script src="/src/js/tema.js"></script>
 </head>
 <body>
 
@@ -50,6 +56,11 @@
     <p class="bajada">Gestión financiera personal</p>
 
     <div class="regla" aria-hidden="true"></div>
+
+    <button class="boton-tema cg" data-tema type="button" aria-label="Cambiar de tema">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+           stroke-linecap="round" stroke-linejoin="round"></svg>
+    </button>
 
     <div class="fichas">
       <div class="ficha cg">
@@ -71,6 +82,7 @@
 
 <!-- En archivo aparte, no en línea: así la política de contenido
      mantiene script-src 'self' sin unsafe-inline. -->
+<script type="module" src="/src/js/boton-tema.js"></script>
 <script type="module" src="/src/js/registrar-sw.js"></script>
 
 </body>
