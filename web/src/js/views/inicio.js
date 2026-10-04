@@ -15,6 +15,8 @@ import {
   pintarTarjetas,
 } from "../components/kpi.js";
 import { crearHoja } from "../components/sheet.js";
+import { aviso } from "../components/avisos.js";
+import { toast } from "../components/toast.js";
 import {
   filaMovimiento,
   filaCategoria,
@@ -175,11 +177,61 @@ function conectarDetalle() {
   });
 }
 
+/* ---- avisos de muestra (F01-T12) ----
+   Los de verdad salen de las reglas de alerta, en la fase 8. Están las
+   cinco severidades para poder compararlas de un vistazo en los dos
+   temas, que es el criterio de la tarea. */
+
+const AVISOS = [
+  aviso({
+    severidad: "crit",
+    titulo: "Gastaste más de lo que ingresaste",
+    texto:
+      "En lo que va del mes los egresos superan a los ingresos por $31.400.",
+  }),
+  aviso({
+    severidad: "warn",
+    titulo: "Supermercado va camino a duplicarse",
+    texto: "Lleva $193.200 contra $104.900 del mes pasado a esta altura.",
+  }),
+  aviso({
+    severidad: "pend",
+    titulo: "Falta cargar el alquiler",
+    texto: "Se carga todos los meses alrededor del día 1 y todavía no está.",
+  }),
+  aviso({
+    severidad: "ok",
+    titulo: "Vas mejor que el mes pasado",
+    texto: "La tasa de ahorro subió 8,4 puntos respecto de septiembre.",
+  }),
+  aviso({
+    severidad: "info",
+    titulo: "Octubre todavía está abierto",
+    texto: "Los totales van a cambiar hasta que termine el mes.",
+  }),
+];
+
+function conectarAvisos() {
+  const caja = document.getElementById("avisos-inicio");
+  if (caja) caja.innerHTML = AVISOS.join("");
+}
+
 function conectar() {
   pintarTarjetas(document.getElementById("kpis-inicio"), MUESTRA);
   pintarFilas(document.getElementById("movimientos-inicio"), MOVIMIENTOS);
   pintarFilas(document.getElementById("categorias-inicio"), CATEGORIAS);
   conectarDetalle();
+  conectarAvisos();
+
+  // Al abrir un detalle se avisa con un mensaje breve. Es provisorio:
+  // sirve para probar en el teléfono que dos mensajes seguidos hacen
+  // cola en lugar de pisarse. En la fase 4 lo reemplazan los avisos de
+  // guardado y de error.
+  document.addEventListener("click", (ev) => {
+    const fila = ev.target.closest("[data-movimiento], [data-categoria]");
+    if (fila)
+      toast(fila.querySelector(".row-main b")?.textContent ?? "Detalle");
+  });
 }
 
 if (document.readyState === "loading") {

@@ -504,6 +504,32 @@ Una tarjeta de color **no lleva además el cuadradito de icono**: la composició
 
 **El bloque de `prefers-reduced-motion` de `base.css` anula la duración, no el retardo.** Sin anularlo aparte, con movimiento reducido las tarjetas siguen apareciendo de a una, sólo que de golpe.
 
+### Avisos, píldoras y notificaciones
+
+```javascript
+aviso({ severidad: "ok"|"warn"|"pend"|"crit"|"info", titulo, texto })
+pildora({ texto, tipo })          // las cinco + "neutral"
+toast("Movimiento guardado")      // components/toast.js
+toast("No se pudo guardar", { severidad: "crit" })
+```
+
+**Las mezclas de color NO son las del mockup.** Ahí el texto iba al 80% del color: en tema claro el ámbar daba 3,51:1 y el naranja 4,29:1, los dos por debajo del mínimo. Acá el texto va al **60%** y el fondo al **15%**, con lo que el peor caso de las cinco severidades en los dos temas queda en 4,98:1. El icono del aviso sí conserva el 80%, porque es un gráfico y su mínimo es 3:1.
+
+#### El ámbar y el naranja son parecidos, y no se arregla con CSS
+
+Medido: entre `warn` y `pend`, la distancia de color es **7 sobre 765** en el fondo de la píldora y sólo **31** en el texto. Ninguna proporción los separa, y subirla rompe el contraste.
+
+Por eso la regla no es «que los colores se distingan» sino que **el color no sea el único portador**: cada severidad lleva su icono y su nombre (`aria-label` en el icono, no `aria-hidden`). Dos severidades de color parecido tienen que llevar iconos distintos — `warn` y `crit` comparten el triángulo porque sus colores están lejos (81 contra 31).
+
+#### Notificación breve
+
+Dos cosas la definen y las dos son fáciles de hacer mal:
+
+1. **La región viva tiene que existir ANTES del mensaje.** Un lector anuncia los *cambios* dentro de una región `aria-live`; si la región se crea junto con el texto, no hay cambio que anunciar y el mensaje pasa en silencio. Por eso el `<div id="toast">` está en el HTML, vacío, desde que carga la página — y por eso vacío se achica con `padding: 0` y no con `display: none`, que lo sacaría del árbol y dejaría de observarse.
+2. **Dos mensajes seguidos hacen cola, no se pisan.** Reemplazar es más simple, pero acá los mensajes son «movimiento guardado» o «no se pudo guardar»: perder uno es perder información. El siguiente espera a que el anterior **termine de irse** (`SALIDA`), o los dos se cruzan en pantalla durante la transición. **`SALIDA` tiene que ser ≥ la duración del CSS**; hay una prueba que compara los dos números.
+
+2600 ms en pantalla. El toast va arriba de la barra inferior y del botón flotante, y baja desde 960 px cuando esos ya no están.
+
 ### Otros
 
 - **`.pill`** en cinco variantes: `ok`, `warn`, `pend`, `crit`, `neutral`.

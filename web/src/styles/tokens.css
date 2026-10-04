@@ -79,7 +79,10 @@
   --color-crit: #bc313e;
 
   /* ---- radios ---- */
+  --radius-tilde: 7px; /* icono dentro de la notificación breve */
   --radius-ico: 9px; /* cuadradito de icono dentro de una tarjeta */
+  --radius-aviso: 10px; /* icono de un aviso */
+  --radius-toast: 16px; /* la notificación breve */
   --radius-sm: 12px;
   --radius-btn: 13px; /* botones de icono, avatar, sello de la marca */
   --radius-nav: 14px; /* posición de la barra inferior */
@@ -109,6 +112,7 @@
   --text-kv: 16.5px; /* cifra en ficha */
   --text-base: 16.5px; /* texto corriente */
   --text-amount-row: 16px; /* importe en una fila */
+  --text-aviso: 14.5px; /* título de un aviso */
   --text-row: 15.5px; /* nombre en una fila */
   --text-button: 15.5px;
   --text-sub: 12px; /* secundario de fila, subtítulo de indicador */
