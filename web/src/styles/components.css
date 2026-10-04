@@ -1097,6 +1097,200 @@
 }
 
 /* ============================================================
+   FILAS DE LISTA · F01-T10
+   Referencia: mockup 01, .row · SKILL.md §8
+   ============================================================ */
+
+.rows {
+  display: grid;
+  gap: 7px;
+  padding: 6px 11px 14px;
+}
+
+/* La fila es un botón: se abre para ver el detalle. */
+.row {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-row);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.18s var(--ease),
+    box-shadow 0.18s var(--ease),
+    border-color 0.18s var(--ease);
+}
+
+.row:hover {
+  transform: translateX(3px);
+  box-shadow: var(--glass-in), var(--sh-sm);
+  border-color: var(--line);
+}
+
+.row:active {
+  transform: translateX(1px) scale(0.995);
+}
+
+/* El foco tiene que ganarle al hover.
+   `:focus-visible` en base.css pone el halo con un selector de menor
+   especificidad que `.row:hover`, así que al pasar el dedo por una
+   fila enfocada el halo desaparecía. Acá se declara con la misma
+   especificidad y con las dos sombras, para que el halo se vea
+   también mientras está en hover. */
+.row:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 4px var(--accent-ring),
+    var(--glass-in);
+  border-color: var(--line);
+}
+
+/* Marca de la fila: la flecha de dirección o las iniciales de la
+   categoría. El color sale de `--c`, que pone cada fila. */
+.row-ico {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-display);
+  font-size: var(--text-marca);
+  font-weight: 700;
+  background: color-mix(
+    in srgb,
+    var(--c, var(--color-accent)) 15%,
+    var(--mix-tint)
+  );
+  color: color-mix(in srgb, var(--c, var(--color-accent)) 82%, var(--mix-ink));
+}
+
+.row-ico svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.row-main {
+  /* Para que el nombre largo de una categoría se recorte en lugar de
+     empujar el importe fuera de la fila. */
+  min-width: 0;
+}
+
+.row-main b {
+  display: block;
+  font-size: var(--text-row);
+  font-weight: 600;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row-main > span {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--text-sub);
+  color: var(--color-ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row-val {
+  text-align: right;
+  /* El importe nunca se encoge: es el dato de la fila. */
+  flex: none;
+}
+
+.row-val b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--text-amount-row);
+  font-weight: 700;
+}
+
+.row-val > span {
+  display: block;
+  margin-top: 1px;
+  font-size: var(--text-pill);
+  color: var(--color-ink-3);
+}
+
+/* Importes. El color se mezcla con la tinta y no se usa puro: el verde
+   y el rojo puros sobre vidrio quedan por debajo del contraste mínimo.
+   El signo y la flecha son los que llevan la información; el color
+   acompaña. */
+.amt-in {
+  color: color-mix(in srgb, var(--color-inc) 86%, var(--mix-ink));
+}
+
+.amt-out {
+  color: color-mix(in srgb, var(--color-egr) 82%, var(--mix-ink));
+}
+
+/* ---- barra de participación de la fila de categoría ---- */
+
+.cat-track {
+  display: block;
+  height: 5px;
+  margin-top: 6px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: var(--groove-bg);
+}
+
+.cat-fill {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  /* Nace en cero; el ancho lo pone animarParticipacion() al frame
+     siguiente. */
+  width: 0;
+  background: linear-gradient(
+    90deg,
+    var(--color-accent-2),
+    var(--color-accent)
+  );
+  transition: width 0.9s var(--ease);
+}
+
+/* ---- panel ----
+   La superficie que contiene una lista. Mínima a propósito: la
+   estructura final de cada vista, con sus cabeceras, conmutadores y
+   pies de cifras, es de F01-T13. Acá sólo hace falta algo que
+   contenga las filas. */
+
+.panel {
+  border-radius: var(--radius-card);
+  padding: 2px 0 0;
+}
+
+.panel-titulo {
+  padding: 14px 13px 2px;
+  font-size: var(--text-section);
+}
+
+/* ---- separador de día ---- */
+
+.day-sep {
+  padding: 8px 4px 2px;
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--color-ink-4);
+}
+
+/* ============================================================
    ENTRADA ESCALONADA
 
    En CSS y no con `style` en línea desde JavaScript: así el retardo
