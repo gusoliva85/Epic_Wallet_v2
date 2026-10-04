@@ -9,9 +9,12 @@
   "id": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#f1f2f3",
-  "theme_color": "#f1f2f3",
-  "categories": ["finance", "productivity"],
+  "background_color": "#eff2f5",
+  "theme_color": "#eff2f5",
+  "categories": [
+    "finance",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "/icons/icon-192.png",
