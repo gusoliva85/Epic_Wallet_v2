@@ -31,12 +31,38 @@ def _verificar_arranque() -> None:
     """Lo que no puede pasar, frena la aplicación acá y no en producción.
 
     Es la misma protección que `migrations/env.py` aplica a las
-    migraciones (§4.1.1): desarrollo nunca debe tocar el esquema real.
+    migraciones (§4.1.1): nada que no sea producción debe poder tocar
+    el esquema real.
     """
-    if settings.APP_ENV == "development" and settings.esquema == "public":
+    # 1. DB_SCHEMA vacío sobre Postgres es el caso MÁS peligroso, y es el
+    #    que se dio en F00-T09 con una preview mal configurada: sin
+    #    esquema no se fija el search_path, y las consultas caen en el
+    #    que Postgres tenga por defecto, que suele ser 'public'. O sea,
+    #    los datos reales, sin que nada lo avise.
+    if not settings.es_sqlite and not settings.esquema:
         log.critical(
-            "APP_ENV=development apuntando al esquema 'public'. "
-            "Eso trabajaría sobre los datos reales. Usá DB_SCHEMA=dev."
+            "DB_SCHEMA no está definida. Sin esquema, las consultas caerían "
+            "en el que Postgres tenga por defecto, que suele ser 'public': "
+            "los datos reales. Definí DB_SCHEMA=dev o DB_SCHEMA=public."
+        )
+        sys.exit(1)
+
+    # 2. Desarrollo o preview apuntando al esquema real.
+    if settings.APP_ENV != "production" and settings.esquema == "public":
+        log.critical(
+            "APP_ENV=%s apuntando al esquema 'public'. Eso trabajaría sobre "
+            "los datos reales. Usá DB_SCHEMA=dev.",
+            settings.APP_ENV,
+        )
+        sys.exit(1)
+
+    # 3. Producción apuntando a un esquema de prueba: no es destructivo,
+    #    pero significaría que nadie ve sus datos. Mejor no arrancar.
+    if settings.APP_ENV == "production" and settings.esquema != "public":
+        log.critical(
+            "APP_ENV=production con el esquema '%s'. Producción tiene que "
+            "usar 'public' o nadie vería sus datos.",
+            settings.esquema,
         )
         sys.exit(1)
 

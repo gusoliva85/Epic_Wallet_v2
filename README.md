@@ -176,12 +176,42 @@ El roadmap manda. Una tarea a la vez, y cada tarea se implementa en este orden:
 ```text
 rama feat/F04-T03-alta-movimiento
    │
-   ├─ push → Vercel construye la preview
+   ├─ push → Vercel construye la preview automáticamente
    ├─ se prueba en el celular con la URL de preview
    │
    ├─ aprobada  → merge a main → producción → se marca [x] en el roadmap
    └─ rechazada → se corrige en la misma rama y vuelve a preview
 ```
+
+### La URL de cada preview
+
+Vercel la arma con un patrón predecible a partir del nombre de la rama:
+
+```text
+https://epic-wallet-v2-git-<rama-normalizada>-gusoliva85s-projects.vercel.app
+```
+
+La rama se normaliza a minúsculas y con los `/` y `_` convertidos en `-`. Por ejemplo, la rama `feat/F04-T03-alta-movimiento` queda:
+
+```text
+https://epic-wallet-v2-git-feat-f04-t03-alta-movimiento-gusoliva85s-projects.vercel.app
+```
+
+Si el nombre resulta muy largo, Vercel lo trunca y agrega un hash, así que ante la duda la URL exacta está en el panel del despliegue.
+
+**Cómo distinguir una preview de producción de un vistazo:** `/api/health` informa el esquema activo.
+
+```bash
+curl -s https://epic-wallet-v2.vercel.app/api/health | grep db_schema
+#   "db_schema":"public"    ← producción, datos reales
+
+curl -s https://epic-wallet-v2-git-<rama>-gusoliva85s-projects.vercel.app/api/health | grep db_schema
+#   "db_schema":"dev"       ← preview, datos de prueba
+```
+
+Esa diferencia la dan las variables de entorno de Vercel: `DB_SCHEMA` vale `public` sólo en Production y `dev` en Preview y Development. Es lo que garantiza que probar una tarea no pueda tocar los datos reales.
+
+**Protección de las previews:** está desactivada (Settings → Deployment Protection → Vercel Authentication → Disabled) para poder abrirlas en el celular sin iniciar sesión en Vercel. Las previews quedan accesibles para quien tenga la URL exacta; usan el esquema `dev` con datos de prueba y las claves viven en variables de entorno del servidor, así que no exponen nada real. Si alguna vez se quiere volver a protegerlas, alcanza con reactivar esa opción.
 
 Nada se da por terminado sin probarlo. Nada se implementa junto. Al cerrar todas las tareas de una fase se escribe su documento en `docs/`.
 
