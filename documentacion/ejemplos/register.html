@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Epic Wallet - Registro</title>
+    <meta name="author" content="Gustavo A Oliva">
+    <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        sidebar: '#0f172a',
+                        primary: '#6366f1',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-slide-up {
+            animation: slideUp 0.6s ease-out forwards;
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        body {
+            background: radial-gradient(circle at bottom left, #1e293b, #0f172a);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-6">
+
+    <div class="absolute top-[-5%] right-[-5%] w-96 h-96 bg-primary/10 rounded-full blur-[120px]"></div>
+
+    <!-- Contenedor -->
+    <div class="w-full max-w-[500px] animate-slide-up">
+        <div class="glass-card rounded-[2rem] p-10 shadow-2xl">
+
+            <!-- titulo -->
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-white tracking-tight text-center">Crear <span
+                        class="text-primary">Cuenta</span></h1>
+                <p class="text-gray-400 text-sm mt-2 text-center">Únete a la gestión financiera inteligente</p>
+            </div>
+
+            <form id="registerForm" class="grid grid-cols-2 gap-4">
+                <div class="col-span-1">
+                    <label
+                        class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Nombre</label>
+                    <input type="text" id="nombre" required
+                        class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-primary/50 transition-all outline-none">
+                </div>
+                <div class="col-span-1">
+                    <label
+                        class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Apellido</label>
+                    <input type="text" id="apellido" required
+                        class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-primary/50 transition-all outline-none">
+                </div>
+                <div class="col-span-2">
+                    <label
+                        class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Usuario</label>
+                    <input type="text" id="usuario" placeholder="Mínimo 6 caracteres" required
+                        class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-primary/50 transition-all outline-none">
+                </div>
+                <div class="col-span-2">
+                    <label
+                        class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Email</label>
+                    <input type="email" id="mail" placeholder="ejemplo@correo.com" required
+                        class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-primary/50 transition-all outline-none">
+                </div>
+                <div class="col-span-2">
+                    <label
+                        class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Contraseña</label>
+                    <input type="password" id="password" required
+                        class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-primary/50 transition-all outline-none">
+                </div>
+
+                <div id="errorMessage"
+                    class="col-span-2 hidden bg-red-500/10 border border-red-500/20 text-red-400 text-xs py-3 rounded-xl text-center">
+                </div>
+
+                <button type="submit" id="btnRegister"
+                    class="col-span-2 mt-4 bg-primary hover:bg-indigo-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-primary/20 transform active:scale-[0.98]">
+                    COMENZAR AHORA
+                </button>
+            </form>
+
+            <div class="mt-8 text-center">
+                <p class="text-gray-500 text-sm">
+                    ¿Ya tienes cuenta?
+                    <a href="login.html" class="text-primary hover:underline font-medium">Inicia sesión</a>
+                </p>
+            </div>
+
+        </div>
+
+        <footer class="mt-6 text-center border-t border-white/5 pt-4">
+            <p class="text-gray-500 text-[9px] uppercase tracking-[0.2em]">© 2026 Epic Wallet — Desarrollado por <span
+                    class="text-gray-600">Gustavo A Oliva</span></p>
+        </footer>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/register.js"></script>
+</body>
+
+</html>

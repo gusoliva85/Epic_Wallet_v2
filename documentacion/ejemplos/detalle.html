@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle Mensual - Epic Wallet</title>
+    <meta name="author" content="Gustavo A Oliva">
+    <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        sidebar: '#0f172a',
+                        primary: '#6366f1',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body class="bg-gray-100 font-sans">
+    <div class="block lg:flex min-h-screen">
+
+        <!-- Sidebar (Reused from Index) -->
+        <aside id="sidebar"
+            class="fixed inset-y-0 left-0 z-50 w-64 bg-sidebar text-gray-200 transform -translate-x-full lg:translate-x-0 lg:sticky lg:top-0 h-screen transition-transform duration-300 ease-in-out flex flex-col shadow-xl lg:shadow-none">
+            <div class="p-6 border-b border-white/10">
+                <h1 class="text-2xl font-semibold tracking-wide">Epic Wallet</h1>
+                <p class="text-sm text-gray-400">control de gastos</p>
+            </div>
+            <nav class="flex-1 mt-4 space-y-1">
+                <a href="index.html"
+                    class="group flex items-center gap-4 px-6 py-3 text-gray-400 hover:bg-white/5 hover:text-white transition">
+                    <i class="bi bi-house-door"></i> Home
+                </a>
+                <a href="detalle.html"
+                    class="group flex items-center gap-4 px-6 py-3 bg-white/10 border-l-4 border-primary text-white transition">
+                    <i class="bi bi-calendar-event"></i> Detalle mensual
+                </a>
+                <div class="group flex items-center gap-4 px-6 py-3 text-gray-400 cursor-not-allowed">
+                    <i class="bi bi-gear"></i> Configuración
+                </div>
+            </nav>
+            <div class="p-6 border-t border-white/10 mt-auto">
+                <button id="btnLogOut" class="flex items-center gap-4 text-gray-400 hover:text-red-500 w-full">
+                    <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                </button>
+            </div>
+        </aside>
+
+        <!-- Mobile Header -->
+        <div class="lg:hidden bg-sidebar p-4 flex items-center justify-between text-white fixed top-0 w-full z-40">
+            <h1 class="text-xl font-bold">Epic Wallet</h1>
+            <button id="btnAbrirMenu" class="p-2 text-2xl"><i class="bi bi-list"></i></button>
+        </div>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 lg:p-8 mt-16 lg:mt-0 overflow-y-auto">
+
+            <!-- Header & Navigation -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+                <div class="flex flex-col gap-1">
+                    <h4 class="text-xl font-semibold tracking-wide text-gray-400">
+                        <span class="text-indigo-500">Hola </span><span id="nombreUsuarioDetalle"
+                            class="text-gray-800">Invitado</span>
+                    </h4>
+                    <h2 class="text-4xl font-black text-gray-900 tracking-tight">Historial Comparativo</h2>
+                    <div class="flex items-center gap-3 mt-1">
+                        <span class="h-1.5 w-16 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></span>
+                        <p class="text-gray-500 text-sm font-medium tracking-wide">Analizá la evolución de tus gastos
+                            semestrales</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 bg-white p-3 rounded-[2rem] shadow-sm border border-gray-100">
+                    <button id="btnPeriodoAnterior"
+                        class="p-2 hover:bg-gray-100 rounded-xl text-indigo-600 transition-all active:scale-95"
+                        title="Mes anterior">
+                        <i class="bi bi-chevron-left text-xl"></i>
+                    </button>
+                    <div class="flex flex-col items-center min-w-[120px]">
+                        <span id="labelPeriodo"
+                            class="text-sm font-bold text-gray-400 uppercase tracking-widest leading-none">Período</span>
+                        <span id="rangoMeses" class="text-lg font-bold text-gray-800 mt-1">...</span>
+                    </div>
+                    <button id="btnPeriodoSiguiente"
+                        class="p-2 hover:bg-gray-100 rounded-xl text-indigo-600 transition-all active:scale-95"
+                        title="Mes siguiente">
+                        <i class="bi bi-chevron-right text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bento Grid 2x2 -->
+            <div id="gridMeses" class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+                <!-- Los 4 bloques mensuales se inyectan dinámicamente vía JS -->
+            </div>
+
+            <footer class="mt-12 py-4 text-center border-t border-gray-200/50">
+                <p class="text-gray-400 text-[10px] uppercase tracking-[0.2em]">© 2026 Epic Wallet — Desarrollado por
+                    <span class="text-gray-300">Gustavo A Oliva</span>
+                </p>
+            </footer>
+
+        </main>
+    </div>
+
+    <!-- Edit Modal (Simplified) -->
+    <div id="modalEditar"
+        class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center hidden backdrop-blur-md transition-all duration-300">
+        <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm p-10 transform scale-100">
+            <div class="text-center mb-8">
+                <div
+                    class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <i class="bi bi-pencil-square text-2xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-800">Editar Monto</h3>
+                <p class="text-gray-400 text-sm mt-1">Ajustá el valor de la transacción</p>
+            </div>
+
+            <input type="hidden" id="editId">
+
+            <div class="space-y-1">
+                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Concepto /
+                    Categoría</label>
+                <div class="relative">
+                    <select id="editMotivo"
+                        class="w-full bg-gray-50 border-2 border-transparent focus:border-indigo-500 rounded-2xl px-5 py-4 text-gray-800 font-bold focus:outline-none appearance-none transition-all">
+                        <!-- Motivos cargados dinámicamente -->
+                    </select>
+                    <div class="absolute inset-y-0 right-5 flex items-center pointer-events-none text-gray-400">
+                        <i class="bi bi-chevron-down text-sm"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-1 mb-8">
+                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Monto</label>
+                <div class="relative group">
+                    <span
+                        class="absolute inset-y-0 left-5 flex items-center text-gray-400 text-2xl font-bold group-focus-within:text-indigo-500 transition-colors">$</span>
+                    <input type="text" id="editMonto"
+                        class="w-full bg-gray-50 border-2 border-transparent focus:border-indigo-500 rounded-2xl pl-12 pr-6 py-4 font-bold text-3xl text-gray-800 focus:outline-none transition-all placeholder-gray-300"
+                        placeholder="0">
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <button onclick="guardarEdicion()"
+                    class="w-full py-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-xl shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all active:translate-y-0">
+                    Guardar Cambios
+                </button>
+                <button onclick="cerrarModalEditar()"
+                    class="w-full py-3 rounded-2xl text-gray-400 font-bold hover:bg-gray-50 transition-colors">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Movement Modal -->
+    <div id="modalNuevo"
+        class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center hidden backdrop-blur-md transition-all duration-300">
+        <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm p-10 transform scale-100">
+            <div class="text-center mb-8">
+                <div
+                    class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <i class="bi bi-plus-circle text-2xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-800">Nuevo Movimiento</h3>
+                <p class="text-gray-400 text-sm mt-1" id="nuevoModalPeriodo">Cargando...</p>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Concepto /
+                    Categoría</label>
+                <div class="relative">
+                    <select id="nuevoMotivo"
+                        class="w-full bg-gray-50 border-2 border-transparent focus:border-indigo-500 rounded-2xl px-5 py-4 text-gray-800 font-bold focus:outline-none appearance-none transition-all">
+                        <!-- Motivos cargados dinámicamente -->
+                    </select>
+                    <div class="absolute inset-y-0 right-5 flex items-center pointer-events-none text-gray-400">
+                        <i class="bi bi-chevron-down text-sm"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fields for Custom Motif (Hidden by default) -->
+            <div id="wrapperNuevoMotivo" class="space-y-4 hidden mt-4 animate-fade-in">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Nombre del nuevo
+                        motivo</label>
+                    <input type="text" id="nuevoMotivoManual" placeholder="Ej: Gimnasio, Regalo..."
+                        class="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 rounded-2xl px-5 py-3 text-gray-800 font-bold focus:outline-none transition-all">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Tipo de
+                        movimiento</label>
+                    <div class="grid grid-cols-2 gap-3 p-1 bg-gray-100 rounded-2xl">
+                        <button type="button" id="btnNuevoTipoSuma" onclick="seleccionarNuevoTipo('suma')"
+                            class="py-2 rounded-xl text-xs font-black uppercase transition-all bg-white shadow-sm text-emerald-600">
+                            Ingreso
+                        </button>
+                        <button type="button" id="btnNuevoTipoResta" onclick="seleccionarNuevoTipo('resta')"
+                            class="py-2 rounded-xl text-xs font-black uppercase transition-all text-gray-400 hover:bg-gray-200">
+                            Gasto
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-1 mb-6 mt-4">
+                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Monto</label>
+                <div class="relative group">
+                    <span
+                        class="absolute inset-y-0 left-5 flex items-center text-gray-400 text-2xl font-bold group-focus-within:text-indigo-500 transition-colors">$</span>
+                    <input type="text" id="nuevoMonto"
+                        class="w-full bg-gray-50 border-2 border-transparent focus:border-indigo-500 rounded-2xl pl-12 pr-6 py-4 font-bold text-3xl text-gray-800 focus:outline-none transition-all placeholder-gray-300"
+                        placeholder="0">
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <button onclick="guardarNuevoMovimiento()"
+                    class="w-full py-4 bg-emerald-600 text-white font-bold rounded-2xl shadow-xl shadow-emerald-200 hover:bg-emerald-700 hover:-translate-y-0.5 transition-all active:translate-y-0">
+                    Guardar Movimiento
+                </button>
+                <button onclick="cerrarModalNuevo()"
+                    class="w-full py-3 rounded-2xl text-gray-400 font-bold hover:bg-gray-50 transition-colors">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script de Chart.js necesario para los donuts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script src="js/api.js"></script>
+    <script src="js/detalle.js"></script>
+</body>
+
+</html>
