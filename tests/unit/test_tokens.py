@@ -246,3 +246,45 @@ def test_el_fondo_no_usa_background_attachment_fixed() -> None:
     )
     assert "body::after" in texto, "falta la capa del fondo"
     assert "z-index: -1" in texto, "la capa del fondo tiene que ir detrás del contenido"
+
+
+# ==================================================================
+#  Las dos capas de vidrio (F01-T03)
+# ==================================================================
+@pytest.mark.unit
+def test_los_hijos_del_vidrio_van_sobre_el_brillo() -> None:
+    """El ::before del brillo se pinta después de los hijos del flujo.
+
+    Sin posicionarlos, el velo les pasa por arriba y el contenido de
+    cualquier `.shell` nuevo se ve lavado. Resolverlo una vez acá evita
+    que el error reaparezca con cada tarjeta que se agregue.
+    """
+    texto = (ESTILOS / "components.css").read_text(encoding="utf-8")
+    assert ".shell > *" in texto, "falta posicionar los hijos directos de .shell"
+
+
+@pytest.mark.unit
+def test_las_dos_capas_tienen_desenfoques_distintos() -> None:
+    """La jerarquía entre contenedor y contenido es la diferencia de blur.
+
+    Si fueran iguales, `.cg` dentro de `.shell` no se distinguiría y se
+    perdería la profundidad que da todo el sistema.
+    """
+    css = _css()
+    shell = re.search(r"--glass-shell-blur:\s*(\d+)px", css)
+    contenido = re.search(r"--glass-content-blur:\s*(\d+)px", css)
+    assert shell and contenido
+    assert int(shell.group(1)) > int(contenido.group(1)), (
+        "el contenedor tiene que desenfocar más que el contenido"
+    )
+
+
+@pytest.mark.unit
+def test_el_vidrio_lleva_el_prefijo_de_safari() -> None:
+    """Safari necesita -webkit-backdrop-filter; sin él no desenfoca."""
+    texto = (ESTILOS / "components.css").read_text(encoding="utf-8")
+    normales = texto.count("backdrop-filter:") - texto.count("-webkit-backdrop-filter:")
+    prefijadas = texto.count("-webkit-backdrop-filter:")
+    assert prefijadas >= normales, (
+        f"hay {normales} backdrop-filter y sólo {prefijadas} con prefijo de Safari"
+    )

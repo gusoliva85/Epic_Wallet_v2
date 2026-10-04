@@ -28,6 +28,26 @@
   z-index: 0;
 }
 
+/* Los hijos directos se pintan POR ENCIMA del brillo.
+   Sin esto, un ::before posicionado se pinta después de los hijos que
+   están en el flujo normal y les pasa el velo por arriba: el contenido
+   de cualquier .shell nuevo se vería lavado sin que se entienda por
+   qué. Resolverlo acá y no en cada componente evita que el error se
+   repita cada vez que se agrega una tarjeta. */
+.shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Contener el repintado: `backdrop-filter` es caro y el dashboard
+   llega a tener una decena de superficies a la vez. Con esto el
+   navegador no recalcula el desenfoque de una tarjeta cuando cambia
+   otra. */
+.shell,
+.cg {
+  contain: paint;
+}
+
 /* Contenido dentro de un .shell: filas, fichas, campos. */
 .cg {
   background: var(--glass-content-bg);
@@ -72,12 +92,6 @@
   padding: 32px 26px 28px;
   text-align: center;
   animation: entrada 0.6s var(--ease) both;
-}
-
-/* Todo el contenido por encima del brillo del ::before. */
-.tarjeta > * {
-  position: relative;
-  z-index: 1;
 }
 
 @keyframes entrada {
