@@ -17,6 +17,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.unit.ayudas_html import botones_mudos
+
 RAIZ = Path(__file__).resolve().parents[2]
 WEB = RAIZ / "web"
 INDEX = WEB / "index.html"
@@ -236,13 +238,12 @@ def test_la_posicion_activa_se_anuncia() -> None:
 
 @pytest.mark.unit
 def test_todo_boton_de_la_navegacion_se_anuncia() -> None:
-    """Los iconos de la barra y el `+` flotante no dicen nada solos."""
-    sin_etiqueta = []
-    for tag in re.findall(r"<button\b[^>]*>", _html()):
-        if "aria-label" not in tag:
-            clase = re.search(r'class="([^"]*)"', tag)
-            sin_etiqueta.append(clase.group(1) if clase else tag)
-    assert not sin_etiqueta, f"botones sin aria-label: {sin_etiqueta}"
+    """Los iconos de la barra y el `+` flotante no dicen nada solos.
+
+    Los botones con texto visible quedan afuera: no lo necesitan.
+    """
+    mudos = botones_mudos(_html())
+    assert not mudos, f"botones que no dicen nada: {mudos}"
     # Los que pinta el JS también.
     js = _js()
     assert js.count("aria-label") >= 2, "las posiciones y el acceso a la hoja necesitan aria-label"

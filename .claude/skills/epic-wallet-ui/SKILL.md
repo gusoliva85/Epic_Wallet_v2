@@ -361,6 +361,30 @@ El componente completo es de F01-T11. Lo que una hoja necesita para no ser una t
 - **Al abrir, el foco entra en el primer accionable; al cerrar, vuelve de donde vino.** Si no, queda en un botón que se acaba de esconder.
 - `max-height: 88vh` y `overscroll-behavior: contain`: queda fondo visible —lo que indica que se cierra tocando afuera— y el scroll no arrastra la página de atrás.
 
+### Barra de mes
+
+`.monthbar` es un `.shell` arriba de las vistas: es la cabecera del mes en pantalla y aplica a todas.
+
+```text
+‹   Octubre 2026              Hoy  ›
+    MES ABIERTO · TRANSACCIONAL
+```
+
+Dos reglas de negocio viven acá, no sólo estilo:
+
+- **No hay meses futuros** (General §12.1). En el mes actual la flecha de siguiente va `disabled`, y «Hoy» también, porque no lleva a ninguna parte. Apagado **de verdad**, no mudo: un botón que se ve activo y no responde parece que la aplicación se colgó. Hay además un tope dentro de `mover()`, por si alguien la llama desde otro lado.
+- **El subtítulo dice si el mes es transaccional o consolidado** (Regla 4), porque de eso depende lo que se puede hacer en la pantalla.
+
+**El nombre del mes se calcula, nunca se escribe.** Un texto fijo sería mentira el mes que viene. Y se calcula en `America/Argentina/Buenos_Aires`: con la zona del dispositivo, el día 1 o el 31 el título muestra el mes equivocado. Para formatear se pide **sólo el mes** y el año se pega aparte — pidiendo los dos juntos, `es-AR` devuelve «octubre de 2026» y el «de» ocupa lugar en una pantalla angosta.
+
+El título va en una región `aria-live="polite"`: quien no ve la pantalla toca la flecha y, sin eso, no se entera de a qué mes pasó.
+
+### Píldora de acción · `.chip`
+
+Botón chico de acción: las flechas de mes, «Hoy» y, desde F01-T12, los filtros. Variante `.chip.solid` cuando es la acción principal.
+
+El recuadro mide unos 33 px, así que el área táctil llega a 44 con un `::after` centrado. **En `:disabled` ese `::after` se saca** (`content: none`): si se mantuviera, un toque al lado de un botón apagado caería en el apagado y no pasaría nada. El `:hover` y el `:active` llevan `:not(:disabled)`, o un botón apagado se levanta al pasarle el dedo y parece tocable.
+
 ### Otros
 
 - **`.pill`** en cinco variantes: `ok`, `warn`, `pend`, `crit`, `neutral`.

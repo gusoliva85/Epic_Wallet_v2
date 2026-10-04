@@ -729,6 +729,147 @@
 }
 
 /* ============================================================
+   BARRA DE MES · F01-T08
+   Referencia: mockup 01, .monthbar · General §12.1
+
+   Mes anterior, mes siguiente y vuelta al mes actual. La navegación
+   entre meses de verdad es de la fase 3; acá está la barra y los
+   estados.
+   ============================================================ */
+
+.monthbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 9px 11px;
+  border-radius: var(--radius-card);
+}
+
+.mb-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.mb-title {
+  min-width: 0; /* para que el título pueda recortarse y no desborde */
+  text-align: center;
+}
+
+.mb-title b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--text-section);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+  /* En 320 px, con las dos flechas y el botón «Hoy» a los costados,
+     «Septiembre 2026» queda justo. Antes de desbordar, se recorta. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mb-title span {
+  display: block;
+  margin-top: 1px;
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- píldora de acción ----
+   La usan la barra de mes y, desde F01-T12, los filtros. */
+
+.chip {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  background: var(--glass-content-bg);
+  box-shadow: var(--glass-in);
+  color: var(--color-ink-2);
+  font-size: var(--text-chip);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    transform 0.18s var(--ease),
+    color 0.18s var(--ease),
+    opacity 0.18s var(--ease);
+}
+
+/* La píldora mide unos 33 px de alto por proporción; el área táctil
+   llega a los 44 px de la skill §5 con el mismo recurso que los
+   botones de la barra superior. Vale sobre todo para las flechas, que
+   son las más chicas de la aplicación. */
+.chip::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  min-width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
+
+.chip:hover:not(:disabled) {
+  transform: translateY(-1px);
+  color: var(--color-accent-2);
+}
+
+.chip:active:not(:disabled) {
+  transform: translateY(0) scale(0.96);
+}
+
+/* Deshabilitado visible, que es criterio de la tarea: el mes siguiente
+   no existe todavía (General §12.1) y «Hoy» no lleva a ninguna parte
+   cuando ya se está en el mes actual.
+
+   El área táctil ampliada se saca: si no, un toque al lado de un botón
+   apagado se la come y no llega al que sí está activo. */
+.chip:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.chip:disabled::after {
+  content: none;
+}
+
+.chip svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Variante sólida, para cuando la píldora es la acción principal. */
+.chip.solid {
+  border-color: transparent;
+  background: linear-gradient(
+    155deg,
+    var(--color-accent),
+    var(--color-accent-2)
+  );
+  color: var(--color-on-accent);
+}
+
+/* ============================================================
    LAS VISTAS · F01-T07
    Referencia: SKILL.md §6 (entrada de vista: 420 ms)
 

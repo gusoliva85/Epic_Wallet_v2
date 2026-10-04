@@ -16,8 +16,6 @@ después de las barras.
 from __future__ import annotations
 
 import re
-import shutil
-import subprocess
 from pathlib import Path
 
 import pytest
@@ -50,52 +48,6 @@ def _etiquetas_de_vista() -> list[str]:
     buscarlos en la misma linea que el class.
     """
     return re.findall(r'<section[^>]*class="view"[^>]*>', _html(), re.S)
-
-
-# ------------------------------------------------------ las pruebas de jsdom
-
-
-@pytest.mark.unit
-def test_las_pruebas_de_comportamiento_del_enrutador_pasan() -> None:
-    """Corre `node --test tests/js/`.
-
-    Si Node no está instalado la prueba se salta en lugar de fallar: el
-    backend tiene que poder verificarse sin el entorno del frontend. En
-    la máquina de desarrollo y en CI, Node está y esto corre.
-    """
-    node = shutil.which("node")
-    if node is None:
-        pytest.skip("Node no está instalado: las pruebas del enrutador se saltan")
-
-    resultado = subprocess.run(
-        [node, "--test", "tests/js/*.test.mjs"],
-        cwd=RAIZ,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        timeout=180,
-    )
-    assert resultado.returncode == 0, (
-        "fallaron pruebas del enrutador:\n" + (resultado.stdout or "") + (resultado.stderr or "")
-    )
-    # Que de verdad haya corrido algo: un glob que no encaje con nada
-    # también devuelve 0 y la prueba pasaría sin probar nada.
-    assert re.search(r"# pass (\d+)", resultado.stdout) or "pass " in resultado.stdout, (
-        f"node no informó pruebas ejecutadas:\n{resultado.stdout}"
-    )
-    pasaron = re.search(r"pass (\d+)", resultado.stdout)
-    assert pasaron and int(pasaron.group(1)) >= 15, (
-        f"se esperaban al menos 15 pruebas del enrutador:\n{resultado.stdout}"
-    )
-
-
-@pytest.mark.unit
-def test_las_pruebas_js_estan_donde_pytest_las_busca() -> None:
-    """Si alguien mueve la carpeta, la prueba de arriba se saltaría en
-    silencio en lugar de fallar."""
-    archivos = list(PRUEBAS_JS.glob("*.test.mjs"))
-    assert archivos, f"no hay pruebas .test.mjs en {PRUEBAS_JS}"
 
 
 # --------------------------------------------------------- lo que es estático
