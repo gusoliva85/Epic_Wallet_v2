@@ -103,7 +103,6 @@
         <nav
           class="nav-escritorio"
           id="nav-escritorio"
-          role="tablist"
           aria-label="Secciones"
         ></nav>
 
@@ -148,26 +147,134 @@
         </div>
       </header>
 
-      <!-- ======================= CONTENIDO =======================
-       Las siete vistas y su enrutador llegan en F01-T07. Hasta
-       entonces, una nota de estado: así se puede probar en el
-       teléfono que la barra queda pegada al hacer scroll. -->
+      <!-- ======================= LAS SIETE VISTAS · F01-T07 =======================
+         Una sola está activa; las demás van con `hidden` para que no
+         las lea el lector ni las recorra el tabulador. El enrutador
+         decide cuál, según el hash.
+
+         El contenido de cada una lo llenan las tareas de su fase. Por
+         ahora, una tarjeta que dice qué va a haber: así se puede
+         navegar entre las siete en el teléfono y ver que el «atrás»
+         funciona. -->
       <main>
-        <section class="nota shell">
-          <h2>Armazón en construcción</h2>
-          <p>
-            La barra superior ya está en su lugar. Las siete secciones, la barra
-            inferior y el enrutador llegan en las próximas tareas.
-          </p>
-          <p class="nota-pie">
-            Desde 960 px de ancho aparecen las pestañas en la barra.
-          </p>
+        <section
+          class="view"
+          data-vista="inicio"
+          aria-labelledby="t-inicio"
+          hidden
+        >
+          <article class="nota shell">
+            <h2 id="t-inicio">Inicio</h2>
+            <p>
+              Acá van los indicadores del mes, el gráfico de comportamiento
+              diario con la línea del ahorro acumulado y los últimos
+              movimientos.
+            </p>
+            <p class="nota-pie">Fase 3 · tableros e indicadores.</p>
+          </article>
+
+          <!-- Relleno alto a propósito: sin contenido que desborde la
+             pantalla no se puede comprobar que la barra superior queda
+             pegada ni que al cambiar de vista se vuelve arriba. Se va
+             cuando entre el tablero de verdad. -->
+          <div class="relleno-scroll" aria-hidden="true"></div>
         </section>
 
-        <!-- Relleno alto a propósito: sin contenido que desborde la
-         pantalla no hay forma de comprobar que la barra se queda
-         pegada. Se va cuando entren las vistas de verdad. -->
-        <div class="relleno-scroll" aria-hidden="true"></div>
+        <section
+          class="view"
+          data-vista="movimientos"
+          aria-labelledby="t-movimientos"
+          hidden
+        >
+          <article class="nota shell">
+            <h2 id="t-movimientos">Movimientos</h2>
+            <p>
+              La lista del mes agrupada por día, con filtros de ingresos y
+              egresos, y el alta desde el botón flotante.
+            </p>
+            <p class="nota-pie">Fase 4 · movimientos del mes.</p>
+          </article>
+        </section>
+
+        <section
+          class="view"
+          data-vista="historial"
+          aria-labelledby="t-historial"
+          hidden
+        >
+          <article class="nota shell">
+            <h2 id="t-historial">Historial</h2>
+            <p>
+              Los meses cerrados, con sus totales consolidados y la evolución
+              del ahorro.
+            </p>
+            <p class="nota-pie">Fase 5 · historial y meses consolidados.</p>
+          </article>
+        </section>
+
+        <section
+          class="view"
+          data-vista="inversiones"
+          aria-labelledby="t-inversiones"
+          hidden
+        >
+          <article class="nota shell">
+            <h2 id="t-inversiones">Cartera</h2>
+            <p>
+              Las inversiones con su valuación, el rendimiento de cada una y el
+              total de la cartera.
+            </p>
+            <p class="nota-pie">Fase 6 · inversiones.</p>
+          </article>
+        </section>
+
+        <section
+          class="view"
+          data-vista="patrimonio"
+          aria-labelledby="t-patrimonio"
+          hidden
+        >
+          <article class="nota shell">
+            <h2 id="t-patrimonio">Patrimonio</h2>
+            <p>
+              La composición del patrimonio entre ahorro e inversiones, y su
+              evolución.
+            </p>
+            <p class="nota-pie">Fase 7 · patrimonio.</p>
+          </article>
+        </section>
+
+        <section
+          class="view"
+          data-vista="analisis"
+          aria-labelledby="t-analisis"
+          hidden
+        >
+          <article class="nota shell">
+            <h2 id="t-analisis">Análisis</h2>
+            <p>
+              Los gastos por categoría, los últimos seis meses, la tasa de
+              ahorro y la evolución salarial.
+            </p>
+            <p class="nota-pie">Fase 8 · análisis.</p>
+          </article>
+        </section>
+
+        <section
+          class="view"
+          data-vista="config"
+          aria-labelledby="t-config"
+          hidden
+        >
+          <article class="nota shell">
+            <h2 id="t-config">Ajustes</h2>
+            <p>
+              Las categorías, el tema, la cuenta y las preferencias de la
+              aplicación.
+            </p>
+            <p class="nota-pie">Fase 9 · configuración.</p>
+          </article>
+        </section>
       </main>
     </div>
 
@@ -228,6 +335,7 @@
     <script type="module" src="/src/js/barra-superior.js"></script>
     <script type="module" src="/src/js/barra-inferior.js"></script>
     <script type="module" src="/src/js/boton-tema.js"></script>
+    <script type="module" src="/src/js/app.js"></script>
     <script type="module" src="/src/js/registrar-sw.js"></script>
   </body>
 </html>

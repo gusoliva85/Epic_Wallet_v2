@@ -217,7 +217,30 @@ Toda la profundidad sale de dos clases. **No se inventan variantes.**
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 ```
 
-## 7 · Componentes
+## 7 · Navegación y vistas
+
+Una sola página con siete `<section class="view" data-vista="...">`. **`web/src/js/router.js` es el único que decide cuál está activa.**
+
+```text
+#/inicio  #/movimientos  #/historial  #/inversiones
+#/patrimonio  #/analisis  #/config
+```
+
+Reglas:
+
+- **Nadie lee la ruta del DOM ni del hash.** Se escucha el evento `epic:ruta` (`import { EVENTO } from "./router.js"`), que llega con `detail.id`. Así las barras no se ponen de acuerdo entre ellas sino cada una con el enrutador, y quedan bien también cuando se llega por «atrás» o por recarga.
+- **Para ir a una sección se llama `navegar(id)`**, nunca se toca `location.hash` a mano. `navegar` valida: una ruta que no existe cae en inicio sin dejar entrada en el historial.
+- **Las vistas inactivas llevan `hidden`,** que lo pone el enrutador. No alcanza una clase: sin `hidden`, el lector de pantalla lee las siete secciones seguidas y el tabulador recorre los botones de las que no se ven.
+- **Hash, no rutas reales.** Con `/movimientos` el servidor tiene que devolver `index.html` en cada ruta o una recarga da 404; el hash ya da historial, «atrás» y enlaces que se pueden guardar.
+- **Sólo `hashchange`.** Todas las entradas que crea el enrutador son de hash y el navegador emite `hashchange` tanto al cambiarlo como al recorrer el historial. Agregar `popstate` no cubre ningún caso más: es una línea que nunca se ejecuta sola.
+- Al cambiar de vista **se vuelve arriba con `behavior: "instant"`.** Suave, un desplazamiento de miles de píxeles tarda segundos y parece que la aplicación se colgó.
+- Una ruta inválida se corrige **reemplazando** la entrada (`replaceState`), no empujando otra: si no, «atrás» vuelve a la ruta mala y de ahí otra vez a inicio, un bucle del que no se sale.
+
+**Las dos barras son navegación, no pestañas.** Marcan con `aria-current="page"`, nunca con `role="tab"` ni `aria-selected`: cambian la URL y el historial, y anunciarlas como un grupo de pestañas le miente a quien usa un lector sobre lo que va a pasar al activarlas.
+
+El comportamiento del enrutador se prueba con jsdom en `tests/js/router.test.mjs` (`npm test`, y también desde `pytest`). Las pruebas que leen el código fuente no sirven acá: recargar en una ruta, volver con «atrás» y caer en inicio son comportamientos, no texto.
+
+## 8 · Componentes
 
 Funciones que reciben datos y devuelven HTML. Sin ciclo de vida, sin estado interno.
 
@@ -306,7 +329,7 @@ El recuadro de `.boton-icono` y `.avatar` mide 37 px para no desarmar la proporc
 
 El contador de alertas va `aria-hidden`: la cuenta ya está en el `aria-label` del botón ("Alertas: 4 sin leer"), y si no se oculta el lector la dice dos veces. Con cero alertas el globo se esconde con `[hidden]` — un cero rojo alarma sin motivo.
 
-Las pestañas **se generan desde `SECCIONES` de `web/src/js/nav.js`**, nunca a mano en el HTML: la barra superior, la inferior y el enrutador leen de la misma lista y así no pueden discrepar. Son un `tablist`: una sola pestaña en el orden de tabulación y el resto con las flechas.
+Las pestañas **se generan desde `SECCIONES` de `web/src/js/nav.js`**, nunca a mano en el HTML: la barra superior, la inferior y el enrutador leen de la misma lista y así no pueden discrepar. Son navegación, no un `tablist`: ver §7.0.
 
 ### Navegación del teléfono
 
@@ -347,7 +370,7 @@ El componente completo es de F01-T11. Lo que una hoja necesita para no ser una t
 - **`.toast`** con `aria-live="polite"`, cierre automático a 2,6 s.
 - **`.toggle`**, **`.cfg-row`**, **`.kv`**, **`.mini`**, **`.ghost-note`**.
 
-## 8 · Gráficos
+## 9 · Gráficos
 
 SVG generado por JavaScript, `viewBox` para escalar, colores por **variable CSS** (`fill="var(--inc)"`) para heredar el tema sin redibujar. Ningún gráfico tiene sentido sin su pie de cifras.
 
@@ -392,7 +415,7 @@ for(let i=0;i<n;i++){ acc+=inc[i]-exp[i]; sav.push(acc) }
 - En móvil `min-width:520px` con scroll horizontal; desde 720 px se ajusta al ancho.
 - `role="img"` y `<title>` con el resumen en texto.
 
-## 9 · Formato de importes
+## 10 · Formato de importes
 
 El backend manda strings decimales. El frontend **sólo formatea, nunca calcula**.
 
@@ -405,7 +428,7 @@ pct(31.7)       // "+31,7%"  · null → "N/A"
 
 Separador de miles con punto y decimal con coma (es-AR). **Tasa de ahorro con ingresos en cero devuelve `N/A`, nunca 0 % ni error.**
 
-## 10 · Estados
+## 11 · Estados
 
 Cada vista implementa los cuatro. **Nunca una pantalla en blanco.**
 
@@ -422,14 +445,14 @@ Cada vista implementa los cuatro. **Nunca una pantalla en blanco.**
 
 **El caso del mes consolidado es una regla de negocio, no un detalle visual:** cuando la API devuelve `transactions: null`, la interfaz dice que el mes es consolidado y **no muestra lista vacía ni inventa movimientos** (Regla 4 del documento general).
 
-## 11 · Accesibilidad
+## 12 · Accesibilidad
 
 - Contraste mínimo 4,5:1 en ambos temas.
 - `aria-label` en todo botón de sólo icono; `aria-live="polite"` en el toast; `aria-expanded` en lo que se expande.
 - Foco visible: `box-shadow:0 0 0 4px var(--accent-ring)`.
 - Navegación completa por teclado; foco atrapado dentro de una hoja abierta.
 
-## 12 · Qué NO hacer
+## 13 · Qué NO hacer
 
 - No agregar librerías de UI ni de gráficos.
 - No escribir colores, sombras ni radios fuera de los tokens.

@@ -1,24 +1,25 @@
-/* Barra superior · F01-T05
+/* Barra superior · F01-T05, navegación real desde F01-T07
 
-   Pinta las pestañas de escritorio dentro de `#nav-escritorio` y mantiene
-   marcada la que corresponde a la sección abierta.
+   Pinta las posiciones de escritorio dentro de `#nav-escritorio` y
+   mantiene marcada la de la ruta activa.
 
-   Las pestañas se generan desde `SECCIONES` en lugar de escribirlas en
-   el HTML para que la barra superior, la inferior y el enrutador no
-   puedan desincronizarse.
+   Se generan desde `SECCIONES` en lugar de escribirlas en el HTML para
+   que la barra superior, la inferior y el enrutador no puedan
+   desincronizarse.
 
-   Qué NO hace todavía: navegar. El enrutador llega en F01-T07; hasta
-   entonces un clic sólo marca la pestaña, que es lo que permite ver
-   los estados en el teléfono. Cuando exista, `marcar()` se llama desde
-   el evento de cambio de ruta y el `click` pasa a cambiar el hash. */
+   Nota sobre semántica: hasta F01-T06 esto era un `tablist`. Dejó de
+   serlo en F01-T07: cambian la URL y el historial del navegador, y eso
+   es navegación. Un grupo de pestañas no se puede marcar, ni volver
+   atrás con el botón del navegador. Por eso ahora es un `nav` con
+   `aria-current` y se recorre con el tabulador, como cualquier
+   navegación. */
 
-import { SECCIONES, INICIO } from "./nav.js";
+import { SECCIONES } from "./nav.js";
+import { navegar, rutaActual, EVENTO } from "./router.js";
 
-function pestanas(contenedor) {
+function posiciones(contenedor) {
   contenedor.innerHTML = SECCIONES.map(
-    (s) =>
-      `<button type="button" role="tab" data-ir="${s.id}" ` +
-      `aria-selected="false" tabindex="-1">${s.label}</button>`,
+    (s) => `<button type="button" data-ir="${s.id}">${s.label}</button>`,
   ).join("");
 }
 
@@ -26,11 +27,8 @@ function marcar(contenedor, id) {
   contenedor.querySelectorAll("[data-ir]").forEach((b) => {
     const activa = b.dataset.ir === id;
     b.classList.toggle("activa", activa);
-    b.setAttribute("aria-selected", String(activa));
-    // Una sola pestaña entra en el orden de tabulación: desde ella se
-    // recorre el resto con las flechas. Es el patrón de `tablist`, y
-    // evita que haya que pasar por siete botones para salir de la barra.
-    b.tabIndex = activa ? 0 : -1;
+    if (activa) b.setAttribute("aria-current", "page");
+    else b.removeAttribute("aria-current");
   });
 }
 
@@ -38,26 +36,18 @@ function conectar() {
   const contenedor = document.getElementById("nav-escritorio");
   if (!contenedor) return;
 
-  pestanas(contenedor);
-  marcar(contenedor, INICIO);
+  posiciones(contenedor);
+  marcar(contenedor, rutaActual());
 
   contenedor.addEventListener("click", (ev) => {
     const boton = ev.target.closest("[data-ir]");
-    if (boton) marcar(contenedor, boton.dataset.ir);
+    if (boton) navegar(boton.dataset.ir);
   });
 
-  // Flechas entre pestañas, como pide el patrón de `tablist`.
-  contenedor.addEventListener("keydown", (ev) => {
-    const paso = { ArrowRight: 1, ArrowLeft: -1 }[ev.key];
-    if (!paso) return;
-    const botones = [...contenedor.querySelectorAll("[data-ir]")];
-    const actual = botones.findIndex((b) => b.tabIndex === 0);
-    const siguiente =
-      botones[(actual + paso + botones.length) % botones.length];
-    marcar(contenedor, siguiente.dataset.ir);
-    siguiente.focus();
-    ev.preventDefault();
-  });
+  // La marca la decide el enrutador y no el clic: así queda bien
+  // también cuando se llega por «atrás», por recarga o desde la otra
+  // barra.
+  document.addEventListener(EVENTO, (ev) => marcar(contenedor, ev.detail.id));
 }
 
 if (document.readyState === "loading") {

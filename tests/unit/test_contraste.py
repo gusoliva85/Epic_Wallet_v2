@@ -1,7 +1,7 @@
 """Verifica el contraste de la tinta sobre las superficies de vidrio.
 
 Corresponde a F01-T03. El sistema exige 4,5:1 para texto normal y 3:1
-para elementos gráficos, en los dos temas (SKILL §11).
+para elementos gráficos, en los dos temas (SKILL §12).
 
 Se mide contra el **fondo opaco de respaldo** del vidrio, que es el peor
 caso: cuando el navegador no soporta `backdrop-filter`, la superficie

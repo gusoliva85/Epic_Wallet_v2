@@ -207,7 +207,7 @@ a {
   text-underline-offset: 2px;
 }
 
-/* ---- foco visible, obligatorio (SKILL §11) ---- */
+/* ---- foco visible, obligatorio (SKILL §12) ---- */
 :focus-visible {
   outline: none;
   box-shadow: 0 0 0 4px var(--accent-ring);

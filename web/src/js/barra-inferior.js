@@ -19,7 +19,8 @@
    lo necesario para que no sea una trampa: cierre por toque afuera,
    por Escape y por botón, y devolución del foco al salir. */
 
-import { SECCIONES, INICIO, seccion } from "./nav.js";
+import { SECCIONES, seccion } from "./nav.js";
+import { navegar, rutaActual, EVENTO } from "./router.js";
 
 const FLECHA = '<path d="M9 6l6 6-6 6"/>';
 const MAS =
@@ -133,21 +134,31 @@ function conectar() {
   if (!barra || !hoja || !fondo) return;
 
   posiciones(barra);
-  marcar(barra, INICIO);
+  marcar(barra, rutaActual());
   opciones(hoja.querySelector(".hoja-cuerpo"));
 
   const control = crearHoja(hoja, fondo, barra.querySelector("[data-hoja]"));
 
   barra.addEventListener("click", (ev) => {
     const boton = ev.target.closest("[data-ir]");
-    if (boton) marcar(barra, boton.dataset.ir);
+    if (boton) navegar(boton.dataset.ir);
   });
 
   // Elegir una sección en la hoja la cierra: dejarla abierta taparía
   // la sección que se acaba de abrir.
   hoja.addEventListener("click", (ev) => {
-    if (ev.target.closest("[data-ir]")) control.cerrar();
+    const boton = ev.target.closest("[data-ir]");
+    if (!boton) return;
+    control.cerrar();
+    navegar(boton.dataset.ir);
   });
+
+  // La marca la decide el enrutador y no el clic: así queda bien
+  // también cuando se llega por «atrás», por recarga o desde la barra
+  // de escritorio. Las tres secciones de la hoja no tienen posición
+  // propia acá, así que ninguna queda marcada cuando están abiertas:
+  // es correcto, no están en la barra.
+  document.addEventListener(EVENTO, (ev) => marcar(barra, ev.detail.id));
 }
 
 if (document.readyState === "loading") {
