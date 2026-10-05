@@ -24,7 +24,9 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from sqlalchemy import Engine, create_engine, text
+from sqlalchemy import Engine, text
+
+from tests.api.ayudas_db import escritura, lectura, motor_de_pruebas
 
 RAIZ = Path(__file__).resolve().parents[2]
 
@@ -60,7 +62,7 @@ sin_base = pytest.mark.skipif(
 @pytest.fixture(scope="module")
 def motor() -> Engine:
     assert URL
-    return create_engine(URL)
+    return motor_de_pruebas(str(URL))
 
 
 @pytest.fixture
@@ -71,7 +73,7 @@ def dos_usuarios(motor: Engine) -> Iterator[tuple[str, str]]:
     foránea lo exige, y crear usuarios de Supabase desde SQL no es algo
     que haya que hacer desde una prueba.
     """
-    with motor.connect() as con:
+    with lectura(motor) as con:
         ids = [
             str(f[0])
             for f in con.execute(text("select id from auth.users order by created_at desc limit 2"))
@@ -81,7 +83,7 @@ def dos_usuarios(motor: Engine) -> Iterator[tuple[str, str]]:
 
     a, b = ids
     marca = uuid.uuid4().hex[:8]
-    with motor.begin() as con:
+    with escritura(motor) as con:
         for uid, nombre in ((a, f"rls_a_{marca}"), (b, f"rls_b_{marca}")):
             con.execute(
                 text(
@@ -93,7 +95,7 @@ def dos_usuarios(motor: Engine) -> Iterator[tuple[str, str]]:
 
     yield a, b
 
-    with motor.begin() as con:
+    with escritura(motor) as con:
         con.execute(
             text(f'delete from "{ESQUEMA}".profiles where id = any(:ids)'),
             {"ids": [a, b]},
@@ -118,7 +120,7 @@ def _como(con: Any, uid: str) -> None:
 
 @sin_base
 def test_la_tabla_existe_con_sus_columnas(motor: Engine) -> None:
-    with motor.connect() as con:
+    with lectura(motor) as con:
         columnas = {
             f[0]: f[1]
             for f in con.execute(
@@ -150,7 +152,7 @@ def test_la_tabla_existe_con_sus_columnas(motor: Engine) -> None:
 def test_borrar_la_cuenta_se_lleva_el_perfil(motor: Engine) -> None:
     """La cascada es lo que evita filas huérfanas apuntando a un usuario
     que ya no existe."""
-    with motor.connect() as con:
+    with lectura(motor) as con:
         regla = con.execute(
             text(
                 "select rc.delete_rule from information_schema.referential_constraints rc "
@@ -171,7 +173,7 @@ def test_cada_cuenta_ve_solo_su_perfil(motor: Engine, dos_usuarios: tuple[str, s
     """Criterio de aceptación de la tarea."""
     a, b = dos_usuarios
 
-    with motor.begin() as con:
+    with escritura(motor) as con:
         _como(con, a)
         filas = [str(f[0]) for f in con.execute(text(f'select id from "{ESQUEMA}".profiles'))]
 
@@ -192,7 +194,7 @@ def test_una_cuenta_no_puede_tocar_el_perfil_de_otra(
     """
     a, b = dos_usuarios
 
-    with motor.begin() as con:
+    with escritura(motor) as con:
         _como(con, a)
         resultado = con.execute(
             text(f'update "{ESQUEMA}".profiles set display_name = :n where id = :id'),
@@ -201,7 +203,7 @@ def test_una_cuenta_no_puede_tocar_el_perfil_de_otra(
         assert resultado.rowcount == 0, "pudo modificar el perfil de otra cuenta"
 
     # Y la fila de B quedó intacta.
-    with motor.connect() as con:
+    with lectura(motor) as con:
         nombre = con.execute(
             text(f'select display_name from "{ESQUEMA}".profiles where id = :id'),
             {"id": b},
@@ -218,7 +220,7 @@ def test_una_cuenta_no_puede_crear_un_perfil_ajeno(
     a, _b = dos_usuarios
     ajeno = str(uuid.uuid4())
 
-    with motor.begin() as con:
+    with escritura(motor) as con:
         _como(con, a)
         with pytest.raises(Exception) as caso:
             con.execute(
@@ -232,7 +234,7 @@ def test_una_cuenta_no_puede_crear_un_perfil_ajeno(
 def test_sin_token_no_se_ve_nada(motor: Engine, dos_usuarios: tuple[str, str]) -> None:
     """Una conexión autenticada sin `sub` no es nadie: no tiene que ver
     ninguna fila, en lugar de verlas todas."""
-    with motor.begin() as con:
+    with escritura(motor) as con:
         con.execute(text("set local role authenticated"))
         con.execute(text("select set_config('request.jwt.claims', :c, true)"), {"c": "{}"})
         filas = con.execute(text(f'select count(*) from "{ESQUEMA}".profiles')).scalar()
@@ -248,7 +250,7 @@ def test_rls_esta_activo_y_es_obligatorio(motor: Engine) -> None:
     """`enable` no alcanza: sin `force`, el dueño de la tabla se saltea
     la política y el aislamiento pasa a depender de con qué rol se
     conecte la aplicación."""
-    with motor.connect() as con:
+    with lectura(motor) as con:
         fila = con.execute(
             text(
                 "select relrowsecurity, relforcerowsecurity from pg_class c "
@@ -263,7 +265,7 @@ def test_rls_esta_activo_y_es_obligatorio(motor: Engine) -> None:
 
 @sin_base
 def test_la_politica_se_llama_own_profile_y_cubre_todo(motor: Engine) -> None:
-    with motor.connect() as con:
+    with lectura(motor) as con:
         filas = list(
             con.execute(
                 text(
@@ -288,19 +290,19 @@ def test_updated_at_se_actualiza_solo(motor: Engine, dos_usuarios: tuple[str, st
     una fila se toca desde SQL o desde el panel de Supabase."""
     a, _ = dos_usuarios
 
-    with motor.connect() as con:
+    with lectura(motor) as con:
         antes = con.execute(
             text(f'select updated_at from "{ESQUEMA}".profiles where id = :id'),
             {"id": a},
         ).scalar()
 
-    with motor.begin() as con:
+    with escritura(motor) as con:
         con.execute(
             text(f'update "{ESQUEMA}".profiles set display_name = :n where id = :id'),
             {"n": "cambiado", "id": a},
         )
 
-    with motor.connect() as con:
+    with lectura(motor) as con:
         despues = con.execute(
             text(f'select updated_at from "{ESQUEMA}".profiles where id = :id'),
             {"id": a},
@@ -317,7 +319,7 @@ def test_la_funcion_del_trigger_no_hereda_el_search_path(motor: Engine) -> None:
     que esté antes en el camino de búsqueda podría hacer que la función
     llame a SU código con esos permisos.
     """
-    with motor.connect() as con:
+    with lectura(motor) as con:
         config = con.execute(
             text(
                 "select proconfig from pg_proc p join pg_namespace n "

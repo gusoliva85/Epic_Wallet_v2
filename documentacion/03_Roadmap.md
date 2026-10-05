@@ -265,7 +265,7 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **Hacer:** migración con la función `crear_perfil_y_categorias()` y su trigger sobre `auth.users`, con `security definer` y `search_path` vacío; inserta la fila de `profiles` y las **21 categorías iniciales** del documento general en su orden; `username` derivado del email.
   **Aceptación:** · al crear una cuenta nueva aparecen solos su perfil y sus 21 categorías, **sin pasar por nuestra API** · los nombres coinciden exactamente con los del documento general · la cuenta arranca con saldo inicial en cero · `downgrade` elimina función y trigger.
 
-- [ ] **F02-T05 · Propagación del token a Postgres**
+- [x] **F02-T05 · Propagación del token a Postgres**
   **Tipo:** Backend · **Ref:** Técnico §6.5, §8.7
   **Hacer:** en `core/db.py`, abrir la sesión fijando el token del usuario para que `auth.uid()` funcione y RLS filtre; verificar que el pooler en modo transacción no arrastre el estado entre peticiones.
   **Aceptación:** · una consulta sin filtro explícito de `user_id` devuelve sólo las filas del usuario del token · dos peticiones consecutivas de usuarios distintos no se contaminan.
@@ -1384,7 +1384,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 |---|---|---|---|
 | 0 · Puesta en marcha y producción | 12 | **12** | ✅ **Cerrada** el 03/10/2026 |
 | 1 · Sistema de estilo y esqueleto | 14 | 14 | **Cerrada** el 05/10/2026 |
-| 2 · Cuentas y autenticación | 16 | 4 | **En curso** · próxima: F02-T05 |
+| 2 · Cuentas y autenticación | 16 | 5 | **En curso** · próxima: F02-T06 |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
 | 4 · Movimientos | 15 | 0 | Pendiente |
 | 5 · Cálculos y dashboard | 12 | 0 | Pendiente |

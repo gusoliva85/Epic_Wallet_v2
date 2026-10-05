@@ -23,7 +23,9 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from sqlalchemy import Engine, create_engine, text
+from sqlalchemy import Engine, text
+
+from tests.api.ayudas_db import escritura, lectura, motor_de_pruebas
 
 RAIZ = Path(__file__).resolve().parents[2]
 pytestmark = pytest.mark.api
@@ -79,7 +81,7 @@ sin_entorno = pytest.mark.skipif(
 @pytest.fixture(scope="module")
 def motor() -> Engine:
     assert URL_BASE
-    return create_engine(URL_BASE)
+    return motor_de_pruebas(str(URL_BASE))
 
 
 def _registrar(correo: str, clave: str) -> tuple[int, dict[str, Any]]:
@@ -119,7 +121,7 @@ def cuenta_nueva(motor: Engine) -> Iterator[str]:
 
     # Borrar de auth.users arrastra perfil y categorías por la cascada,
     # que de paso es lo que comprueba la última prueba.
-    with motor.begin() as con:
+    with escritura(motor) as con:
         con.execute(text("delete from auth.users where id = :id"), {"id": uid})
 
 
@@ -129,7 +131,7 @@ def cuenta_nueva(motor: Engine) -> Iterator[str]:
 @sin_entorno
 def test_la_cuenta_nueva_tiene_su_perfil(motor: Engine, cuenta_nueva: str) -> None:
     """Sin pasar por nuestra API: nadie llamó a ningún endpoint."""
-    with motor.connect() as con:
+    with lectura(motor) as con:
         fila = con.execute(
             text(
                 f"select username, opening_balance, timezone, active "
@@ -147,7 +149,7 @@ def test_la_cuenta_nueva_tiene_su_perfil(motor: Engine, cuenta_nueva: str) -> No
 
 @sin_entorno
 def test_el_username_sale_del_correo(motor: Engine, cuenta_nueva: str) -> None:
-    with motor.connect() as con:
+    with lectura(motor) as con:
         username = con.execute(
             text(f'select username from "{ESQUEMA}".profiles where id = :id'),
             {"id": cuenta_nueva},
@@ -166,7 +168,7 @@ def test_el_username_sale_del_correo(motor: Engine, cuenta_nueva: str) -> None:
 def test_la_cuenta_nueva_tiene_sus_21_categorias(motor: Engine, cuenta_nueva: str) -> None:
     """Criterio de aceptación: los nombres coinciden exactamente con los
     del documento general, y en su orden."""
-    with motor.connect() as con:
+    with lectura(motor) as con:
         filas = [
             (f[0], f[1])
             for f in con.execute(
@@ -187,7 +189,7 @@ def test_la_cuenta_nueva_tiene_sus_21_categorias(motor: Engine, cuenta_nueva: st
 
 @sin_entorno
 def test_las_categorias_arrancan_activas(motor: Engine, cuenta_nueva: str) -> None:
-    with motor.connect() as con:
+    with lectura(motor) as con:
         inactivas = con.execute(
             text(f'select count(*) from "{ESQUEMA}".categories where user_id = :id and not active'),
             {"id": cuenta_nueva},
@@ -200,7 +202,7 @@ def test_otros_existe_en_los_dos_tipos(motor: Engine, cuenta_nueva: str) -> None
     """La restricción única incluye el tipo justamente por esto. Si sólo
     fuera por nombre, la segunda «Otros» rompería el alta de la cuenta
     entera."""
-    with motor.connect() as con:
+    with lectura(motor) as con:
         tipos = {
             f[0]
             for f in con.execute(
@@ -240,7 +242,7 @@ def test_dos_cuentas_con_el_mismo_nombre_de_correo_conviven(motor: Engine) -> No
             uid = cuerpo.get("id") or cuerpo.get("user", {}).get("id")
             creadas.append(str(uid))
 
-        with motor.connect() as con:
+        with lectura(motor) as con:
             nombres = [
                 f[0]
                 for f in con.execute(
@@ -257,7 +259,7 @@ def test_dos_cuentas_con_el_mismo_nombre_de_correo_conviven(motor: Engine) -> No
         assert nombres[0] == base
     finally:
         if creadas:
-            with motor.begin() as con:
+            with escritura(motor) as con:
                 con.execute(
                     text("delete from auth.users where id = any(:ids)"),
                     {"ids": creadas},
@@ -281,10 +283,10 @@ def test_borrar_la_cuenta_se_lleva_perfil_y_categorias(motor: Engine) -> None:
 
     uid = str(cuerpo.get("id") or cuerpo.get("user", {}).get("id"))
 
-    with motor.begin() as con:
+    with escritura(motor) as con:
         con.execute(text("delete from auth.users where id = :id"), {"id": uid})
 
-    with motor.connect() as con:
+    with lectura(motor) as con:
         perfiles = con.execute(
             text(f'select count(*) from "{ESQUEMA}".profiles where id = :id'),
             {"id": uid},
@@ -307,7 +309,7 @@ def test_la_funcion_del_trigger_esta_blindada(motor: Engine) -> None:
     pueda crear una tabla en un esquema anterior en el camino de
     búsqueda haría que la función escriba en la suya con permisos de
     dueño."""
-    with motor.connect() as con:
+    with lectura(motor) as con:
         fila = con.execute(
             text(
                 "select p.prosecdef, p.proconfig from pg_proc p "
@@ -327,7 +329,7 @@ def test_el_trigger_lleva_el_esquema_en_el_nombre(motor: Engine) -> None:
     """`auth.users` la comparten los dos esquemas (§4.1.1): cuando
     `public` se migre va a haber dos triggers sobre la misma tabla y los
     nombres no pueden chocar."""
-    with motor.connect() as con:
+    with lectura(motor) as con:
         nombres = {
             f[0]
             for f in con.execute(
