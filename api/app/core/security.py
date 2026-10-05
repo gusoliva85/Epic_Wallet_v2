@@ -22,6 +22,7 @@ comprueba. Un secreto filtrado desde acá no permitiría entrar.
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from typing import Annotated, Final
 
 import jwt
@@ -40,6 +41,23 @@ AUDIENCIA: Final = "authenticated"
 # Cuánto se guardan las claves del JWKS. Una hora: Supabase no las rota
 # seguido, y si rotara, al vencer la caché se vuelven a pedir solas.
 VIDA_DE_LAS_CLAVES: Final = 3600
+
+# Tolerancia de reloj, en segundos.
+#
+# No es una comodidad: sin esto, un token recién emitido se rechaza si
+# el reloj del servidor está aunque sea una fracción de segundo
+# atrasado respecto del de Supabase. Medido en esta máquina: **0,2
+# segundos de desfase bastaban** para que la verificación fallara con
+# «The token is not yet valid (iat)».
+#
+# En producción eso se habría visto como un 401 intermitente justo
+# después de entrar, imposible de reproducir a voluntad y fácil de
+# atribuir a cualquier otra cosa.
+#
+# Treinta segundos es el valor habitual. El costo es que un token
+# también sigue valiendo treinta segundos después de vencer, lo que
+# sobre una hora de vigencia no cambia nada.
+TOLERANCIA_DE_RELOJ: Final = 30
 
 # `auto_error=False` a propósito: con `True`, FastAPI devuelve su propio
 # 401 sin pasar por el manejador de errores de la aplicación, y la
@@ -96,6 +114,7 @@ def verificar(token: str) -> dict[str, object]:
             clave.key,
             algorithms=[ALGORITMO],
             audience=AUDIENCIA,
+            leeway=TOLERANCIA_DE_RELOJ,
             options={"require": ["exp", "sub"]},
         )
     except jwt.ExpiredSignatureError:
@@ -120,26 +139,46 @@ def verificar(token: str) -> dict[str, object]:
     return payload
 
 
-async def current_user_id(
+@dataclass(frozen=True)
+class Usuario:
+    """Lo que el token dice del usuario de esta petición.
+
+    El correo viene del propio token y no de una consulta a la base: es
+    un dato firmado por Supabase, así que es tan confiable como el uuid
+    y no cuesta un viaje.
+    """
+
+    id: str
+    email: str | None = None
+
+
+async def current_user(
     credencial: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
     request: Request,
-) -> str:
-    """El uuid del usuario de la petición. La puerta de todo lo privado.
-
-    Devuelve `str` y no `UUID` porque es lo que viaja en el token y lo
-    que guarda la base; convertirlo acá obligaría a convertirlo de
-    vuelta en cada consulta.
-    """
+) -> Usuario:
+    """El usuario de la petición. La puerta de todo lo privado."""
     if credencial is None or not credencial.credentials.strip():
         raise _sin_sesion("Hace falta iniciar sesión.")
 
     payload = verificar(credencial.credentials)
     uid = str(payload["sub"])
+    correo = payload.get("email")
 
     # Queda en el `request` para que el registro de errores pueda decir
     # a qué usuario le pasó, sin tener que pedir la dependencia otra vez.
     request.state.user_id = uid
-    return uid
+    return Usuario(id=uid, email=str(correo) if correo else None)
+
+
+async def current_user_id(usuario: Annotated[Usuario, Depends(current_user)]) -> str:
+    """Sólo el uuid, que es lo que necesita casi todo.
+
+    Devuelve `str` y no `UUID` porque es lo que viaja en el token y lo
+    que guarda la base; convertirlo acá obligaría a convertirlo de
+    vuelta en cada consulta.
+    """
+    return usuario.id
 
 
 UsuarioActual = Annotated[str, Depends(current_user_id)]
+UsuarioDelToken = Annotated[Usuario, Depends(current_user)]

@@ -270,7 +270,7 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **Hacer:** en `core/db.py`, abrir la sesión fijando el token del usuario para que `auth.uid()` funcione y RLS filtre; verificar que el pooler en modo transacción no arrastre el estado entre peticiones.
   **Aceptación:** · una consulta sin filtro explícito de `user_id` devuelve sólo las filas del usuario del token · dos peticiones consecutivas de usuarios distintos no se contaminan.
 
-- [ ] **F02-T06 · `GET /api/me`, `PATCH /api/me` y `POST /api/me/bootstrap`**
+- [~] **F02-T06 · `GET /api/me`, `PATCH /api/me` y `POST /api/me/bootstrap`**
   **Tipo:** Backend · **Ref:** Técnico §9.1
   **Hacer:** esquemas Pydantic de entrada y salida; lectura del perfil; actualización de nombre visible y saldo inicial; y `bootstrap` como red de seguridad que crea perfil y categorías si el trigger no corrió (idempotente, por si una cuenta se creó desde el panel antes de que existiera el trigger).
   **Aceptación:** · sin token devuelve 401 · con token devuelve tu perfil · el saldo inicial se guarda y se lee · `bootstrap` dos veces seguidas no duplica nada · un texto en el saldo inicial devuelve 422.

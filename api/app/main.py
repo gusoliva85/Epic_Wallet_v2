@@ -18,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .core.config import settings
 from .core.errors import registrar_manejadores
-from .routers import health
+from .routers import health, me
 
 logging.basicConfig(
     level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO),
@@ -107,6 +107,8 @@ def crear_app() -> FastAPI:
 
     # Todas las rutas bajo /api. Vercel reescribe /api/* a esta función.
     app.include_router(health.router, prefix="/api")
+    #  ya trae su propio prefijo /api/me.
+    app.include_router(me.router)
 
     return app
 
