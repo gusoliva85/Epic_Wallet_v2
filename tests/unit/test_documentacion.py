@@ -222,30 +222,26 @@ def test_el_generador_del_cuadro_anda() -> None:
 
 
 @pytest.mark.unit
-def test_el_recuento_de_pruebas_del_documento_es_real() -> None:
-    """La primera versión decía 358 y eran 301.
+def test_el_recuento_de_pruebas_dice_a_qué_momento_corresponde() -> None:
+    """La primera versión del documento decía 358 pruebas y eran 301.
 
-    Un número inventado en la documentación es peor que no ponerlo:
-    hace dudar de todo lo demás. Se compara contra lo que la suite
-    declara de verdad.
+    La primera versión de ESTA prueba comparaba el número contra la
+    suite actual, y tenía un defecto: el documento de una fase cerrada
+    dice cuántas pruebas había **al cerrarla**, y ese número no vuelve a
+    cambiar. En cuanto la fase 2 agregara pruebas, la comparación
+    fallaría sin que hubiera nada mal.
+
+    Lo que sí se puede verificar siempre: que el documento diga a qué
+    momento corresponde el número, para que nadie lo lea como el estado
+    de hoy, y que la cuenta no sea cero.
     """
     doc = _doc()
     m = re.search(r"(\d+) de pytest y (\d+) de jsdom", doc)
     assert m, "el documento no dice cuántas pruebas hay"
-    dice_py, dice_js = int(m.group(1)), int(m.group(2))
+    assert int(m.group(1)) > 0 and int(m.group(2)) > 0
 
-    reales_py = sum(
-        len(re.findall(r"^def test_", f.read_text(encoding="utf-8"), re.M))
-        for f in (RAIZ / "tests").rglob("test_*.py")
+    contexto = doc[max(0, m.start() - 160) : m.end() + 160]
+    assert re.search(r"al cerrar", contexto, re.I), (
+        "el número de pruebas tiene que decir que es el del cierre de la "
+        "fase: leído como el estado de hoy, queda viejo en la tarea que viene"
     )
-    reales_js = sum(
-        len(re.findall(r"^\s*test\(", f.read_text(encoding="utf-8"), re.M))
-        for f in (RAIZ / "tests" / "js").glob("*.test.mjs")
-    )
-
-    # Las parametrizadas hacen que `pytest` cuente más que `def test_`,
-    # así que el documento puede decir más, nunca menos.
-    assert dice_py >= reales_py, (
-        f"el documento dice {dice_py} pruebas de pytest y hay al menos {reales_py}"
-    )
-    assert dice_js == reales_js, f"el documento dice {dice_js} pruebas de jsdom y hay {reales_js}"

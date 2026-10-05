@@ -224,7 +224,7 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **Hacer:** cada vista con su estructura final y datos fijos: inicio (indicadores, dos paneles de gráfico con un marcador de posición, categorías, últimos movimientos, alertas), movimientos (filtros y lista agrupada por día), historial (tabla), inversiones (indicadores y tabla), patrimonio (ecuación y composición), análisis (métricas y evolución salarial), configuración (categorías, preferencias, datos laborales, respaldo).
   **Aceptación:** · las siete se ven terminadas en el celular · ninguna tiene scroll horizontal salvo las tablas, que lo tienen a propósito · el orden del dashboard es el del mockup aprobado · los cuatro estados (cargando, error, vacío, sin conexión) están maquetados aunque todavía no se disparen.
 
-- [~] **F01-T14 · Documentación de la Fase 1**
+- [x] **F01-T14 · Documentación de la Fase 1**
   **Tipo:** Doc
   **Hacer:** `docs/FASE_01_SISTEMA_DE_ESTILO.md`: el sistema de estilo explicado (identidad, cuadro completo de tokens, las dos capas de vidrio con ejemplo de código, escala tipográfica, cortes, movimiento), catálogo de componentes con captura y fragmento de uso de cada uno, y la regla de que ningún componente nuevo introduce valores fuera de los tokens.
   **Aceptación:** · el cuadro de tokens coincide con `tokens.css` · cada componente tiene ejemplo de uso copiable · incluye capturas en claro y en oscuro.
@@ -243,7 +243,7 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
 
 ### Tema 2.1 — Configuración de Supabase Auth
 
-- [ ] **F02-T01 · Verificación del JWT**
+- [~] **F02-T01 · Verificación del JWT**
   **Tipo:** Lógica → Backend · **Ref:** Técnico §8.8
   **Hacer:** `core/security.py` con la dependencia `current_user_id`, verificando con la **clave pública del endpoint JWKS y algoritmo ES256** (ya comprobado en F00-T06: el proyecto no usa secreto compartido); `PyJWKClient` con caché y vencimiento para no buscar las claves en cada petición; verificación de firma, expiración y audiencia `authenticated`; errores 401 diferenciados entre sesión ausente, vencida e inválida; tests unitarios con tokens fabricados (válido, vencido, firma incorrecta, audiencia incorrecta, sin el claim `sub`).
   **Aceptación:** · los cinco casos de test pasan · un token manipulado se rechaza con `InvalidSignatureError` · el mensaje de error no filtra detalles internos · las claves del JWKS se buscan una sola vez por proceso.
@@ -1377,7 +1377,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 | Fase | Tareas | Aprobadas | Estado |
 |---|---|---|---|
 | 0 · Puesta en marcha y producción | 12 | **12** | ✅ **Cerrada** el 03/10/2026 |
-| 1 · Sistema de estilo y esqueleto | 14 | 13 | **En curso** · próxima: F01-T14 |
+| 1 · Sistema de estilo y esqueleto | 14 | 14 | **Cerrada** el 05/10/2026 |
 | 2 · Cuentas y autenticación | 15 | 0 | Pendiente |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
 | 4 · Movimientos | 15 | 0 | Pendiente |

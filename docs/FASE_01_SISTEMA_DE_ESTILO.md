@@ -29,7 +29,7 @@ Al terminar, Epic Wallet tiene sus siete pantallas con la estructura definitiva,
 | **Catálogo** | Tarjetas, filas, hojas, avisos, notificaciones, estados | `web/src/js/components/` |
 | **Vistas** | Las siete pantallas con datos de ejemplo | `web/src/js/views/vistas.js` |
 | **Datos de ejemplo** | Todos en un archivo, para reemplazarlos de una vez | `web/src/js/datos-muestra.js` |
-| **Pruebas** | 301 de pytest y 121 de jsdom | `tests/` |
+| **Pruebas** | Al cerrar la fase: 301 de pytest y 121 de jsdom | `tests/` |
 | **Capturas** | 34, en claro y oscuro, a ancho de teléfono y de escritorio | `docs/capturas/` |
 
 ---
@@ -557,7 +557,7 @@ Varias pruebas buscaban una cadena en un archivo y la encontraban **en su propio
 Dos suites, un solo comando.
 
 ```bash
-pytest                      # 301 pruebas, incluidas las de JavaScript
+pytest                      # al cerrar la fase: 301, incluidas las de JavaScript
 npm test                    # las 121 de jsdom, por separado
 ```
 
