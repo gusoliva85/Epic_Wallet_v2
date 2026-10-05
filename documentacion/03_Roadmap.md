@@ -270,15 +270,16 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **Hacer:** en `core/db.py`, abrir la sesión fijando el token del usuario para que `auth.uid()` funcione y RLS filtre; verificar que el pooler en modo transacción no arrastre el estado entre peticiones.
   **Aceptación:** · una consulta sin filtro explícito de `user_id` devuelve sólo las filas del usuario del token · dos peticiones consecutivas de usuarios distintos no se contaminan.
 
-- [~] **F02-T06 · `GET /api/me`, `PATCH /api/me` y `POST /api/me/bootstrap`**
+- [x] **F02-T06 · `GET /api/me`, `PATCH /api/me` y `POST /api/me/bootstrap`**
   **Tipo:** Backend · **Ref:** Técnico §9.1
   **Hacer:** esquemas Pydantic de entrada y salida; lectura del perfil; actualización de nombre visible y saldo inicial; y `bootstrap` como red de seguridad que crea perfil y categorías si el trigger no corrió (idempotente, por si una cuenta se creó desde el panel antes de que existiera el trigger).
   **Aceptación:** · sin token devuelve 401 · con token devuelve tu perfil · el saldo inicial se guarda y se lee · `bootstrap` dos veces seguidas no duplica nada · un texto en el saldo inicial devuelve 422.
 
-- [ ] **F02-T07 · Proteger toda la API**
+- [x] **F02-T07 · Proteger toda la API**
   **Tipo:** Backend · **Ref:** Técnico §8.8
   **Hacer:** aplicar la dependencia de autenticación a nivel de enrutador para que ninguna ruta nueva pueda nacer desprotegida por olvido; dejar `/api/health` como única excepción; test que recorre todas las rutas registradas y verifica que responden 401 sin token.
   **Aceptación:** · el test de barrido pasa · agregar una ruta nueva sin tocar nada queda protegida por defecto.
+  **Hecho:** `privado = APIRouter(prefix="/api", dependencies=[Depends(current_user_id)])` en `crear_app()`; `me.router` pasó a prefijo `/me` y cuelga de ahí. `health.router` sigue registrado directo y es la única pública. `tests/api/test_api_protegida.py` barre las rutas leyéndolas del esquema OpenAPI —reconstruir los prefijos a mano daba direcciones equivocadas en esta versión de FastAPI— y agrega una ruta sin dependencias a la app real para comprobar que igual pide sesión. Las mutaciones que caen: sacarle la dependencia al enrutador, colgar una ruta sin guardia, esconder una ruta del esquema, proteger `health`.
 
 - [ ] **F02-T16 · Migrar producción al día**
   **Tipo:** Infra · **Ref:** Técnico §4.1.1
@@ -1384,7 +1385,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 |---|---|---|---|
 | 0 · Puesta en marcha y producción | 12 | **12** | ✅ **Cerrada** el 03/10/2026 |
 | 1 · Sistema de estilo y esqueleto | 14 | 14 | **Cerrada** el 05/10/2026 |
-| 2 · Cuentas y autenticación | 16 | 5 | **En curso** · próxima: F02-T06 |
+| 2 · Cuentas y autenticación | 16 | 7 | **En curso** · próxima: F02-T08 |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
 | 4 · Movimientos | 15 | 0 | Pendiente |
 | 5 · Cálculos y dashboard | 12 | 0 | Pendiente |
