@@ -109,7 +109,7 @@ def test_un_token_vencido_se_rechaza(par_de_claves: tuple[Any, Any]) -> None:
     """Y con mensaje propio: el frontend puede renovar la sesión sin
     molestar al usuario, cosa que no haría con una inválida."""
     privada, _ = par_de_claves
-    vencido = token(privada, exp=int(time.time()) - 10)
+    vencido = token(privada, exp=int(time.time()) - security.TOLERANCIA_DE_RELOJ - 60)
 
     with pytest.raises(security.ErrorDeApi) as caso:
         security.verificar(vencido)
@@ -256,7 +256,8 @@ def test_los_tres_casos_se_distinguen(par_de_claves: tuple[Any, Any]) -> None:
     ahora = int(time.time())
 
     with pytest.raises(security.ErrorDeApi) as vencida:
-        security.verificar(token(privada, exp=ahora - 10))
+        # Vencido más allá de la tolerancia de reloj, o sigue valiendo.
+        security.verificar(token(privada, exp=ahora - security.TOLERANCIA_DE_RELOJ - 60))
     with pytest.raises(security.ErrorDeApi) as invalida:
         security.verificar("basura")
 
@@ -424,3 +425,73 @@ def test_un_token_de_otra_persona_no_deja_entrar(cliente: Any, otra_clave: Any) 
     r = cliente.get("/privado", headers={"Authorization": f"Bearer {falso}"})
     assert r.status_code == 401
     assert "dead" not in r.text
+
+
+# ------------------------------------------------- tolerancia de reloj
+
+
+@pytest.mark.unit
+@pytest.mark.usefixtures("jwks")
+def test_un_token_recien_emitido_se_acepta_con_el_reloj_corrido(
+    par_de_claves: tuple[Any, Any],
+) -> None:
+    """La razón de ser de `TOLERANCIA_DE_RELOJ`.
+
+    Sin ella, un token emitido por Supabase se rechaza si el reloj del
+    servidor está aunque sea una fracción de segundo atrasado. Medido
+    contra el proyecto real: **0,2 segundos bastaban** para que la
+    verificación fallara con «The token is not yet valid (iat)».
+
+    En producción se habría visto como un 401 intermitente justo
+    después de entrar: imposible de reproducir a voluntad.
+    """
+    privada, _ = par_de_claves
+    ahora = int(time.time())
+    # Como si el reloj de este servidor estuviera 5 segundos atrasado.
+    del_futuro = jwt.encode(
+        {
+            "iat": ahora + 5,
+            "nbf": ahora + 5,
+            "exp": ahora + 3600,
+            "sub": UUID_DE_PRUEBA,
+            "aud": AUDIENCIA,
+        },
+        privada,
+        algorithm="ES256",
+        headers={"kid": "prueba"},
+    )
+
+    assert security.verificar(del_futuro)["sub"] == UUID_DE_PRUEBA
+
+
+@pytest.mark.unit
+@pytest.mark.usefixtures("jwks")
+def test_la_tolerancia_no_acepta_un_token_del_futuro_lejano(
+    par_de_claves: tuple[Any, Any],
+) -> None:
+    """La tolerancia es para el desfase de reloj, no una puerta abierta:
+    un token fechado mucho más adelante sigue siendo inválido."""
+    privada, _ = par_de_claves
+    ahora = int(time.time())
+    lejano = jwt.encode(
+        {
+            "iat": ahora + security.TOLERANCIA_DE_RELOJ + 600,
+            "nbf": ahora + security.TOLERANCIA_DE_RELOJ + 600,
+            "exp": ahora + 7200,
+            "sub": UUID_DE_PRUEBA,
+            "aud": AUDIENCIA,
+        },
+        privada,
+        algorithm="ES256",
+        headers={"kid": "prueba"},
+    )
+
+    with pytest.raises(security.ErrorDeApi):
+        security.verificar(lejano)
+
+
+@pytest.mark.unit
+def test_la_tolerancia_es_chica() -> None:
+    """Treinta segundos cubren el desfase de reloj. Mucho más sería
+    alargar la vida de un token vencido sin motivo."""
+    assert 0 < security.TOLERANCIA_DE_RELOJ <= 120

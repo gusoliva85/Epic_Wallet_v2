@@ -5,6 +5,8 @@ compara contra esos metadatos: un modelo que no se importe no aparece
 en `autogenerate`, y la migración saldría vacía sin avisar.
 """
 
+# supabase va PRIMERO: declara auth.users, a la que apunta profiles.
+from . import supabase as _supabase  # noqa: F401
 from .base import Base, esquema_actual, metadata
 from .category import Category
 from .profile import Profile
