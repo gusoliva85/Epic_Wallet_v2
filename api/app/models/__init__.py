@@ -6,6 +6,7 @@ en `autogenerate`, y la migración saldría vacía sin avisar.
 """
 
 from .base import Base, esquema_actual, metadata
+from .category import Category
 from .profile import Profile
 
-__all__ = ["Base", "Profile", "esquema_actual", "metadata"]
+__all__ = ["Base", "Category", "Profile", "esquema_actual", "metadata"]
