@@ -248,7 +248,7 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **Hacer:** `core/security.py` con la dependencia `current_user_id`, verificando con la **clave pública del endpoint JWKS y algoritmo ES256** (ya comprobado en F00-T06: el proyecto no usa secreto compartido); `PyJWKClient` con caché y vencimiento para no buscar las claves en cada petición; verificación de firma, expiración y audiencia `authenticated`; errores 401 diferenciados entre sesión ausente, vencida e inválida; tests unitarios con tokens fabricados (válido, vencido, firma incorrecta, audiencia incorrecta, sin el claim `sub`).
   **Aceptación:** · los cinco casos de test pasan · un token manipulado se rechaza con `InvalidSignatureError` · el mensaje de error no filtra detalles internos · las claves del JWKS se buscan una sola vez por proceso.
 
-- [~] **F02-T02 · URLs de redirección y política de contraseñas**
+- [x] **F02-T02 · URLs de redirección y política de contraseñas**
   **Tipo:** Infra · **Ref:** Técnico §8.6, §8.9
   **Hacer:** en Authentication → URL Configuration cargar la Site URL y las Redirect URLs de producción, previews (`https://*.vercel.app/**`) y local (`http://localhost:3000/**`), que ya quedan listas para cuando se active el correo; en Authentication → Policies fijar el mínimo de 8 caracteres; **desactivar la confirmación por correo** (Providers → Email → *Confirm email* en off) para que el registro funcione sin depender de mails; dejar el registro habilitado y anotar dónde se desactiva si alguna vez hace falta.
   **Aceptación:** · una contraseña de 7 caracteres se rechaza del lado del servidor · una cuenta nueva queda confirmada al instante y puede iniciar sesión · las Redirect URLs están cargadas aunque todavía no se usen.

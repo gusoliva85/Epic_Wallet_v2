@@ -107,8 +107,15 @@ def main() -> int:
         fallos += 1
 
     # --- 2. una contraseña corta se rechaza del lado del servidor ---
+    # Dos correos distintos: si el mínimo del servidor permitiera 7
+    # caracteres, el primer registro CREA la cuenta, y entonces el
+    # segundo fallaba con «User already registered» y parecía que el
+    # registro estaba roto. Falla mía de la primera versión.
+    correo_corto = f"epicwallet.corta.{secrets.token_hex(6)}@example.com"
     correo = f"epicwallet.prueba.{secrets.token_hex(6)}@example.com"
-    estado, cuerpo = _pedir(url, clave, "/auth/v1/signup", {"email": correo, "password": "1234567"})
+    estado, cuerpo = _pedir(
+        url, clave, "/auth/v1/signup", {"email": correo_corto, "password": "1234567"}
+    )
     motivo = str(cuerpo.get("msg") or cuerpo.get("error_description") or cuerpo.get("message", ""))
     # Que falle no alcanza: tiene que fallar POR LA CONTRASEÑA. Si
     # fallara por el correo, esto daría verde sin haber comprobado nada.
