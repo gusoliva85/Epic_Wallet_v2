@@ -42,6 +42,20 @@ def crear_motor() -> Engine:
             "connect_timeout": 10,
             # Identifica las conexiones en el panel de Supabase.
             "application_name": f"epic-wallet-{settings.APP_ENV}",
+            # SIN sentencias preparadas. psycopg3 prepara sola una
+            # consulta después de unas cuantas repeticiones, y la
+            # sentencia queda guardada en la conexión DEL SERVIDOR. Con
+            # el pooler en modo transacción, esa conexión se le entrega
+            # después a otro cliente que no sabe que existe: la próxima
+            # vez que se prepare el mismo nombre, Postgres responde
+            # «prepared statement "_pg3_0" already exists» y la
+            # petición falla.
+            #
+            # No es teórico: apareció en esta tarea, en cuanto las
+            # pruebas repitieron las mismas consultas. En producción
+            # habría aparecido sola con el uso, de forma intermitente y
+            # muy difícil de atribuir.
+            "prepare_threshold": None,
         }
     return create_engine(settings.DATABASE_URL, **opciones)
 
@@ -51,19 +65,46 @@ motor = crear_motor()
 if settings.esquema and not settings.es_sqlite:
 
     @event.listens_for(motor, "connect", insert=True)
-    def _fijar_search_path(dbapi_conn, _registro) -> None:
-        """Cada conexión nueva arranca apuntando a nuestro esquema."""
+    def _preparar_conexion(dbapi_conn, _registro) -> None:
+        """Cada conexión nueva arranca limpia y apuntando a nuestro esquema.
+
+        El `reset role` no es paranoia: el pooler está en modo
+        transacción y reparte las conexiones del servidor entre
+        clientes. Si alguien —nosotros con un error, otro cliente, un
+        script de mantenimiento— deja un `set role` de sesión puesto,
+        esa conexión vuelve al pool con el rol cambiado y se la entrega
+        a quien siga.
+
+        Pasó de verdad: una prueba de mutación de F02-T05 cambió
+        `set local role` por `set role` para comprobar que la diferencia
+        importa, y dejó TODAS las conexiones del proyecto como
+        `authenticated` hasta que se limpiaron a mano. Con esta línea,
+        eso se corrige solo.
+        """
         with dbapi_conn.cursor() as cur:
+            cur.execute("reset role")
             cur.execute(f'set search_path to "{settings.esquema}", public')
 
 
 FabricaDeSesiones = sessionmaker(bind=motor, autoflush=False, expire_on_commit=False)
 
 
+def _limpiar_rol(sesion: Session) -> None:
+    """Deja la transacción con el rol de la aplicación.
+
+    Hace falta además del `reset role` de la conexión: el pooler asigna
+    la conexión del servidor **por transacción**, así que la que
+    atiende esta transacción puede no ser la misma que se limpió al
+    conectarse.
+    """
+    sesion.execute(text("reset role"))
+
+
 def get_session() -> Iterator[Session]:
     """Dependencia de FastAPI. Cierra siempre, revierte si hubo error."""
     sesion = FabricaDeSesiones()
     try:
+        _limpiar_rol(sesion)
         yield sesion
         sesion.commit()
     except Exception:
@@ -78,6 +119,7 @@ def sesion_manual() -> Iterator[Session]:
     """Para scripts y tareas fuera del ciclo de una petición."""
     sesion = FabricaDeSesiones()
     try:
+        _limpiar_rol(sesion)
         yield sesion
         sesion.commit()
     except Exception:
@@ -194,6 +236,7 @@ def sesion_de_usuario(user_id: str) -> Iterator[Session]:
     """
     sesion = FabricaDeSesiones()
     try:
+        _limpiar_rol(sesion)
         activar_usuario(sesion, user_id)
         yield sesion
         sesion.commit()

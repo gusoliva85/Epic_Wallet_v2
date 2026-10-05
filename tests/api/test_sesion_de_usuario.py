@@ -26,6 +26,8 @@ from pathlib import Path
 import pytest
 from sqlalchemy import text
 
+from tests.api.ayudas_db import escritura, lectura
+
 RAIZ = Path(__file__).resolve().parents[2]
 pytestmark = pytest.mark.api
 
@@ -61,7 +63,7 @@ def db():
 def dos_perfiles(db) -> Iterator[tuple[str, str]]:
     """Dos perfiles de cuentas distintas, con una categoría propia cada
     una para poder comprobar que no se cruzan."""
-    with db.motor.connect() as con:
+    with lectura(db.motor) as con:
         ids = [
             str(f[0])
             for f in con.execute(text("select id from auth.users order by created_at desc limit 2"))
@@ -71,7 +73,7 @@ def dos_perfiles(db) -> Iterator[tuple[str, str]]:
 
     a, b = ids
     marca = uuid.uuid4().hex[:8]
-    with db.motor.begin() as con:
+    with escritura(db.motor) as con:
         for uid, nombre in ((a, f"ses_a_{marca}"), (b, f"ses_b_{marca}")):
             con.execute(
                 text(
@@ -91,7 +93,7 @@ def dos_perfiles(db) -> Iterator[tuple[str, str]]:
 
     yield a, b
 
-    with db.motor.begin() as con:
+    with escritura(db.motor) as con:
         con.execute(
             text(f'delete from "{ESQUEMA}".categories where user_id = any(:ids)'),
             {"ids": [a, b]},
@@ -126,7 +128,7 @@ def test_sin_propagar_el_token_rls_no_filtra(db, dos_perfiles) -> None:
 @sin_base
 def test_la_conexion_de_la_aplicacion_saltea_rls(db) -> None:
     """El motivo de lo anterior, dicho por la base."""
-    with db.motor.connect() as con:
+    with lectura(db.motor) as con:
         bypass = con.execute(
             text("select rolbypassrls from pg_roles where rolname = current_user")
         ).scalar()
@@ -171,7 +173,7 @@ def test_tampoco_puede_escribir_en_lo_ajeno(db, dos_perfiles) -> None:
         )
         assert resultado.rowcount == 0
 
-    with db.motor.connect() as con:
+    with lectura(db.motor) as con:
         nombre = con.execute(
             text(f'select display_name from "{ESQUEMA}".profiles where id = :id'),
             {"id": b},
