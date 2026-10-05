@@ -255,12 +255,12 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
 
 ### Tema 2.2 — Backend de cuentas
 
-- [~] **F02-T03 · Tabla `profiles` y migración**
+- [x] **F02-T03 · Tabla `profiles` y migración**
   **Tipo:** Backend · **Ref:** Técnico §6.2
   **Hacer:** modelo SQLAlchemy y migración para `profiles` con `opening_balance`, `timezone` y la referencia a `auth.users`; RLS activo con la política `own_profile`; trigger de `updated_at`.
   **Aceptación:** · migración aplicada en `dev` · `downgrade` probado · con RLS activo, una consulta con el token de otro usuario no devuelve filas.
 
-- [ ] **F02-T04 · Trigger de creación de perfil y categorías iniciales**
+- [x] **F02-T04 · Trigger de creación de perfil y categorías iniciales**
   **Tipo:** Backend · **Ref:** Técnico §8.4 · General §7.1, §7.2
   **Hacer:** migración con la función `crear_perfil_y_categorias()` y su trigger sobre `auth.users`, con `security definer` y `search_path` vacío; inserta la fila de `profiles` y las **21 categorías iniciales** del documento general en su orden; `username` derivado del email.
   **Aceptación:** · al crear una cuenta nueva aparecen solos su perfil y sus 21 categorías, **sin pasar por nuestra API** · los nombres coinciden exactamente con los del documento general · la cuenta arranca con saldo inicial en cero · `downgrade` elimina función y trigger.
@@ -279,6 +279,12 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **Tipo:** Backend · **Ref:** Técnico §8.8
   **Hacer:** aplicar la dependencia de autenticación a nivel de enrutador para que ninguna ruta nueva pueda nacer desprotegida por olvido; dejar `/api/health` como única excepción; test que recorre todas las rutas registradas y verifica que responden 401 sin token.
   **Aceptación:** · el test de barrido pasa · agregar una ruta nueva sin tocar nada queda protegida por defecto.
+
+- [ ] **F02-T16 · Migrar producción al día**
+  **Tipo:** Infra · **Ref:** Técnico §4.1.1
+  **Nota:** el esquema `public` nunca se migró —ni siquiera la revisión inicial—, porque hasta ahora no había nada que la aplicación necesitara de la base. Desde F02-T08 el frontend empieza a hablar con la API con un usuario real, así que producción tiene que tener las tablas antes de eso. Esta tarea va acá a propósito: migrar producción antes de que exista algo visible sería tocar los datos reales sin motivo.
+  **Hacer:** `DB_SCHEMA=public alembic upgrade head`; verificar que las tablas, RLS y los permisos quedaron igual que en `dev`; comprobar `/api/health` después; dejar anotado el procedimiento de cada despliegue con migración (migrar primero, publicar después, porque el código nuevo espera tablas que el viejo no usa).
+  **Aceptación:** · `public` y `dev` están en la misma revisión · RLS y los permisos de `authenticated` son iguales en los dos · `/api/health` sigue respondiendo · un `downgrade` de prueba en `dev` no deja residuos.
 
 ### Tema 2.3 — Entrar y registrarse
 
@@ -370,14 +376,14 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **Hacer:** validaciones puras: nombre obligatorio de 1 a 60 caracteres, sin duplicados dentro del mismo tipo (comparando sin distinguir mayúsculas ni acentos), tipo válido; y la regla de que una categoría de ingreso no puede usarse en un egreso; tests de cada caso.
   **Aceptación:** · "Nafta" y "nafta" se consideran duplicados · "Otros" puede existir en ingreso y en egreso a la vez porque la unicidad es por tipo · el cruce de tipo se rechaza.
 
-- [ ] **F03-T07 · Tabla `categories` y migración**
+- [x] **F03-T07 · Tabla `categories` y migración** — *adelantada en F02-T04*
   **Tipo:** Backend · **Ref:** Técnico §6.2
-  **Hacer:** modelo y migración con la restricción única por usuario, tipo y nombre, el `CHECK` de tipo y el índice de orden; RLS; trigger.
-  **Aceptación:** · nombre duplicado en el mismo tipo da conflicto · el mismo nombre en tipos distintos se permite · `downgrade` probado.
+  **Hecha el 05/10/2026, junto con F02-T04.** El trigger que da de alta una cuenta inserta las 21 categorías iniciales: sin la tabla, el trigger no podía existir. Quedó con la restricción única por usuario, tipo y nombre, el `CHECK` de tipo, el índice de orden, RLS con la política `own_categories`, los permisos de `authenticated` y el trigger de `updated_at`. `downgrade` probado.
 
 - [ ] **F03-T08 · Siembra de las categorías iniciales**
   **Tipo:** Backend · **Ref:** General §7.1, §7.2
   **Hacer:** `scripts/seed_categories.py` que inserte las 3 de ingreso (Sueldo, Aguinaldo, Otros) y las 18 de egreso exactamente como las lista el documento general, con su orden; idempotente para poder correrlo dos veces sin duplicar; ejecutarlo en desarrollo y producción.
+  **Nota (05/10/2026):** desde F02-T04, una cuenta **nueva** ya nace con sus 21 categorías por el trigger. Este script sigue haciendo falta para las cuentas que existían **antes** del trigger —la de Gustavo, creada desde el panel en F00— y como red de seguridad si alguna vez el trigger no corre.
   **Aceptación:** · las 21 categorías existen con los nombres exactos del documento · correrlo de nuevo no duplica nada · el orden coincide con el del documento.
 
 - [ ] **F03-T09 · Endpoints de categorías**
@@ -1378,7 +1384,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 |---|---|---|---|
 | 0 · Puesta en marcha y producción | 12 | **12** | ✅ **Cerrada** el 03/10/2026 |
 | 1 · Sistema de estilo y esqueleto | 14 | 14 | **Cerrada** el 05/10/2026 |
-| 2 · Cuentas y autenticación | 15 | 0 | Pendiente |
+| 2 · Cuentas y autenticación | 16 | 4 | **En curso** · próxima: F02-T05 |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
 | 4 · Movimientos | 15 | 0 | Pendiente |
 | 5 · Cálculos y dashboard | 12 | 0 | Pendiente |
