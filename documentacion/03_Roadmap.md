@@ -255,7 +255,7 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
 
 ### Tema 2.2 — Backend de cuentas
 
-- [ ] **F02-T03 · Tabla `profiles` y migración**
+- [~] **F02-T03 · Tabla `profiles` y migración**
   **Tipo:** Backend · **Ref:** Técnico §6.2
   **Hacer:** modelo SQLAlchemy y migración para `profiles` con `opening_balance`, `timezone` y la referencia a `auth.users`; RLS activo con la política `own_profile`; trigger de `updated_at`.
   **Aceptación:** · migración aplicada en `dev` · `downgrade` probado · con RLS activo, una consulta con el token de otro usuario no devuelve filas.
