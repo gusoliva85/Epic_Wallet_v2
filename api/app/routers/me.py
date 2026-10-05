@@ -24,7 +24,10 @@ from ..core.security import UsuarioDelToken
 from ..models import Category, Profile
 from ..schemas.me import CambioDePerfil, Perfil, ResultadoDeBootstrap
 
-router = APIRouter(prefix="/api/me", tags=["perfil"])
+# Sin `/api`: lo pone el enrutador privado de `main.py`, que es el que
+# además exige la sesión. Un router que se registre por su cuenta se
+# saltearía esa exigencia.
+router = APIRouter(prefix="/me", tags=["perfil"])
 
 
 def _sin_perfil() -> ErrorDeApi:

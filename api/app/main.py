@@ -13,11 +13,12 @@ import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import APIRouter, Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .core.config import settings
 from .core.errors import registrar_manejadores
+from .core.security import current_user_id
 from .routers import health, me
 
 logging.basicConfig(
@@ -106,9 +107,19 @@ def crear_app() -> FastAPI:
     registrar_manejadores(app)
 
     # Todas las rutas bajo /api. Vercel reescribe /api/* a esta función.
+    #
+    # `/api/health` es la ÚNICA pública: sirve para saber si el
+    # despliegue vive, y pedirle una sesión para eso no tendría sentido.
     app.include_router(health.router, prefix="/api")
-    #  ya trae su propio prefijo /api/me.
-    app.include_router(me.router)
+
+    # Y todo lo demás cuelga de un enrutador que exige la sesión. La
+    # dependencia está acá y no en cada endpoint a propósito: una ruta
+    # nueva nace protegida sin que nadie tenga que acordarse. El olvido
+    # más caro de una API es el endpoint al que no le pusieron el
+    # guardia, y así ese olvido no es posible.
+    privado = APIRouter(prefix="/api", dependencies=[Depends(current_user_id)])
+    privado.include_router(me.router)
+    app.include_router(privado)
 
     return app
 
