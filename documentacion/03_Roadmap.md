@@ -296,10 +296,16 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
 
 ### Tema 2.3 — Entrar y registrarse
 
-- [ ] **F02-T08 · Integrar Supabase Auth en el cliente**
+- [x] **F02-T08 · Integrar Supabase Auth en el cliente**
   **Tipo:** Frontend · **Ref:** Técnico §8.7, §8.11
   **Hacer:** `auth.js` con `supabase-js` (sólo el módulo de autenticación): `signUp`, `signInWithPassword`, `signOut`, `resetPasswordForEmail`, `updateUser`, lectura del token y renovación automática antes del vencimiento; inyección de `SUPABASE_URL` y la clave anónima en el build.
   **Aceptación:** · la sesión persiste al recargar y al cerrar la aplicación instalada · el token se renueva solo sin que el usuario note nada · la clave de servicio **no** aparece en el paquete del navegador.
+  **Hecho:** `web/src/js/auth.js` es el único archivo del frontend que sabe de Supabase: `registrarse`, `entrar`, `salir`, `recuperarClave`, `actualizarUsuario`, `token()`, `cabeceras()`, `usuarioActual()` y `alCambiarLaSesion()`. Hay dos pruebas que lo mantienen así —ningún otro módulo nombra Supabase ni toca `localStorage`—, para que cambiar de proveedor siga siendo un cambio local.
+  **Lo que la tarea obligó a decidir, y no estaba en el plan:** el proyecto no usa empaquetador —`index.html` carga los módulos tal como están— y la CSP tiene `script-src 'self'`, así que `supabase-js` no se podía traer de un CDN. Y su build ESM tampoco se puede servir tal cual: los imports van sin extensión (`from './AuthClient'`), que Node resuelve y el navegador no. Se agregó `esbuild` **sólo** para empaquetar la dependencia (`scripts/preparar-auth.mjs` → `web/src/js/vendor/auth-js.js`, versionado, con prueba de deriva contra la versión instalada). Nuestro código sigue cargándose sin intermediarios. Son 101 kB sin comprimir, unos 30 con gzip; se pagó porque los dos criterios de aceptación difíciles —renovar antes de vencer, no pedir dos renovaciones a la vez, no pisarse entre pestañas— ya están resueltos ahí, y escribir los seis `fetch` a mano habría sido hacernos dueños de esa corrección.
+  La configuración entra por `web/public/config.js`, que genera el build (`scripts/generar-config.mjs`) desde `SUPABASE_URL` y `SUPABASE_ANON_KEY`. **El generador corta el build si faltan** —un despliegue sin autenticación se ve bien hasta que alguien intenta entrar— y **rechaza la clave secreta** si alguien la pone por error, reconociendo los dos formatos de Supabase (`sb_secret_…` y el JWT con `role: service_role`). Eso es lo único irreversible de la tarea: una clave de servicio dentro de un paquete de navegador ya quedó publicada, y rotarla no borra a quién la vio.
+  **Pruebas:** 29 de comportamiento en jsdom contra el `GoTrueClient` **real** con la red reemplazada, porque dos de los tres criterios no los implementa nuestro código sino la librería y un doble hecho a mano verificaría el doble; más 12 estáticas y 8 de la configuración. Mutantes que caen: sin `persistSession`, sin `storageKey`, margen de renovación en 0, un mensaje que delata que la cuenta no existe, y el generador aceptando la clave secreta.
+  **Un límite medido, no supuesto:** al apagar `autoRefreshToken` las 29 pruebas de jsdom siguieron pasando, porque `token()` fuerza la renovación por su cuenta y todo lo que sale a la red sigue andando. Lo que se pierde es la renovación con la aplicación abierta y quieta, y eso no se verifica sin dejar correr media hora de temporizadores. Lo sostiene una prueba estática, y está escrito ahí.
+  **Lo que falta para cerrar los criterios en el teléfono:** nada importa `auth.js` todavía, así que en producción el módulo está servido pero no se ejecuta. La verificación de punta a punta —entrar, recargar, cerrar la aplicación instalada y seguir adentro— se hace con **F02-T09**, que es la pantalla de ingreso.
 
 - [ ] **F02-T09 · Pantalla de inicio de sesión**
   **Tipo:** Frontend · **Ref:** General §48.1 · Técnico §8.9 · Mockup
@@ -1399,7 +1405,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 |---|---|---|---|
 | 0 · Puesta en marcha y producción | 12 | **12** | ✅ **Cerrada** el 03/10/2026 |
 | 1 · Sistema de estilo y esqueleto | 14 | 14 | **Cerrada** el 05/10/2026 |
-| 2 · Cuentas y autenticación | 16 | 8 | **En curso** · próxima: F02-T08 |
+| 2 · Cuentas y autenticación | 16 | 9 | **En curso** · próxima: F02-T09 |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
 | 4 · Movimientos | 15 | 0 | Pendiente |
 | 5 · Cálculos y dashboard | 12 | 0 | Pendiente |
@@ -1415,7 +1421,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 | 15 · PWA | 9 | 0 | Pendiente |
 | 16 · Seguridad, cierre y correo | 16 | 0 | Pendiente |
 | 17 · Integraciones futuras | 8 | 0 | Pendiente |
-| **Total** | **215** | **16** | — |
+| **Total** | **215** | **17** | — |
 
 Este cuadro se actualiza al cerrar cada tarea.
 
