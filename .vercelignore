@@ -8,7 +8,21 @@ docs/
 # Pruebas y migraciones: no se ejecutan en el despliegue
 tests/
 migrations/
-scripts/
+
+# De `scripts/` hace falta uno: `generar-config.mjs` corre dentro de
+# `npm run build` y escribe la configuración de Supabase que lee el
+# navegador. Los demás son de desarrollo y no suben.
+#
+# Va `scripts/*` y no `scripts/`, y la diferencia no es cosmética: al
+# excluir el directorio, Vercel no entra a mirar lo que hay dentro y la
+# línea con `!` no tiene ningún efecto. Excluyendo el contenido, sí.
+#
+# Esto costó un despliegue roto: el build fallaba con «Cannot find
+# module '/vercel/path0/scripts/generar-config.mjs'» mientras todo
+# pasaba en local, porque en local el archivo está. Lo vigila
+# `tests/unit/test_vercelignore.py`.
+scripts/*
+!scripts/generar-config.mjs
 
 # Entorno local
 .venv/
