@@ -45,6 +45,12 @@ pnpm-debug.log*
 web/public/app.css
 web/public/app.css.map
 
+# Configuración de Supabase para el navegador: la genera el build a
+# partir del entorno (scripts/generar-config.mjs). No se versiona
+# porque es propia del entorno, no porque sea secreta: la clave que
+# lleva es la publicable, pensada para viajar en el navegador.
+web/public/config.js
+
 # ─────────────────────────────── Vercel
 .vercel/
 .now/

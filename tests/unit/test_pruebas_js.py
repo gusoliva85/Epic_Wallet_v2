@@ -47,8 +47,18 @@ def test_las_pruebas_de_javascript_pasan() -> None:
     if node is None:
         pytest.skip("Node no está instalado: las pruebas de JavaScript se saltan")
 
+    # `--test-force-exit`: `auth.js` configura la renovación automática
+    # del token, que es un temporizador que el navegador tiene que
+    # mantener vivo y que acá deja el proceso abierto para siempre
+    # después de que las pruebas terminaron. Apagarlo a mano no alcanza:
+    # el arranque del cliente es asíncrono y el temporizador puede nacer
+    # después del `after`. Esta bandera corta el proceso cuando las
+    # pruebas terminan, que es lo que hace falta.
+    #
+    # Sin ella la suite pasaba y se quedaba colgada, que desde afuera
+    # parece una prueba lenta y no un problema.
     resultado = subprocess.run(
-        [node, "--test", "tests/js/*.test.mjs"],
+        [node, "--test", "--test-force-exit", "tests/js/*.test.mjs"],
         cwd=RAIZ,
         capture_output=True,
         text=True,

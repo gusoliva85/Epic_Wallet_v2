@@ -67,6 +67,13 @@
      En archivo aparte porque la política de contenido no admite
      scripts en línea. -->
     <script src="/src/js/tema.js"></script>
+
+    <!-- La configuración de Supabase, que el build genera a partir del
+     entorno (scripts/generar-config.mjs). Va antes de los módulos y sin
+     `defer` porque `auth.js` la lee al crear el cliente. La clave que
+     contiene es la publicable: es pública por diseño, no da acceso a
+     nada por sí sola porque del otro lado está RLS. -->
+    <script src="/public/config.js"></script>
   </head>
   <body>
     <div class="app">
