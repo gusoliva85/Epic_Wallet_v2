@@ -767,6 +767,120 @@
       </div>
     </aside>
 
+    <!-- ======================= INICIAR SESIÓN · F02-T09 =======================
+         Va encima de la aplicación, no dentro: no tiene barras, ni mes,
+         ni botón de alta. El enrutador la muestra en `#/login` y pone
+         `inert` en la aplicación de atrás.
+
+         Está en el HTML y no la pinta JavaScript, igual que la barra
+         superior y la del mes: es una pantalla fija: un formulario con
+         dos campos. Generarla desde JavaScript la dejaría en blanco
+         mientras carga el módulo, que en un teléfono con mala conexión
+         es justo el peor momento para no ver nada.
+
+         Quién puede entrar acá y quién no lo decide la guardia de
+         F02-T12. Hasta entonces la aplicación sigue abierta: cerrarla
+         antes de que exista el registro (F02-T10) dejaría a todo el
+         mundo afuera. -->
+    <div class="acceso" id="acceso" hidden>
+      <div class="acceso-card shell" role="main">
+        <div class="acceso-marca">
+          <span class="acceso-sello" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <rect x="3.5" y="5" width="17" height="14" rx="3" />
+              <circle cx="12" cy="12" r="3.2" />
+              <path d="M12 6.2v1.6M12 16.2v1.6" />
+            </svg>
+          </span>
+          <span class="acceso-nombre">Epic Wallet</span>
+        </div>
+
+        <h1 id="acceso-titulo">Iniciá sesión</h1>
+        <p class="acceso-bajada">Tus finanzas, mes por mes.</p>
+
+        <!-- `<form>` de verdad, con `type="submit"`: es lo que hace que
+             Enter envíe desde cualquiera de los dos campos y que el
+             teclado del teléfono muestre «Ir». Con un `div` y un
+             `click` habría que escuchar la tecla a mano en cada campo,
+             y el teclado mostraría «Enter». -->
+        <form id="form-login" novalidate>
+          <div class="campo">
+            <label for="login-email">Correo</label>
+            <input
+              class="inp"
+              id="login-email"
+              name="email"
+              type="email"
+              autocomplete="username"
+              inputmode="email"
+              autocapitalize="none"
+              spellcheck="false"
+              required
+              placeholder="vos@ejemplo.com"
+            />
+          </div>
+
+          <div class="campo">
+            <label for="login-clave">Contraseña</label>
+            <div class="clave-wrap">
+              <input
+                class="inp"
+                id="login-clave"
+                name="clave"
+                type="password"
+                autocomplete="current-password"
+                required
+              />
+              <!-- El `aria-label` cambia entre «Mostrar» y «Ocultar»:
+                   sin eso, quien no ve la pantalla no sabe en qué
+                   estado está. `aria-pressed` lo dice además de forma
+                   estructurada. -->
+              <button
+                class="clave-ojo"
+                id="login-ojo"
+                type="button"
+                aria-label="Mostrar contraseña"
+                aria-pressed="false"
+                aria-controls="login-clave"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true"></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- La región del error existe VACÍA desde que carga la
+               página. Un lector anuncia los cambios dentro de una
+               región `aria-live`; creada junto con el texto no hay
+               cambio que anunciar y el mensaje pasa en silencio.
+               Es la misma razón por la que el toast está vacío en el
+               HTML. -->
+          <p
+            class="acceso-error"
+            id="login-error"
+            role="alert"
+            aria-live="assertive"
+            hidden
+          ></p>
+
+          <button class="btn btn--principal" id="login-enviar" type="submit">
+            <span class="btn-texto">Ingresar</span>
+            <span class="btn-girador" aria-hidden="true"></span>
+          </button>
+        </form>
+
+        <p class="acceso-pie">
+          <!-- Deshabilitado a propósito: la pantalla de registro es
+               F02-T10. Un enlace que lleva a una pantalla que no existe
+               se siente roto; apagado y con el motivo a la vista, se
+               lee como lo que es. El de «Olvidé mi contraseña» llega en
+               F16-T13, cuando el correo esté configurado. -->
+          <span class="acceso-pendiente">
+            Crear cuenta <small>— llega en la próxima tarea</small>
+          </span>
+        </p>
+      </div>
+    </div>
+
     <!-- La notificación breve. Va VACÍA en el HTML y se queda: un
          lector de pantalla anuncia los cambios dentro de una región
          aria-live, y si la región se creara junto con el texto no
@@ -786,6 +900,7 @@
     <script type="module" src="/src/js/boton-tema.js"></script>
     <script type="module" src="/src/js/barra-mes.js"></script>
     <script type="module" src="/src/js/views/vistas.js"></script>
+    <script type="module" src="/src/js/acceso.js"></script>
     <script type="module" src="/src/js/app.js"></script>
     <script type="module" src="/src/js/registrar-sw.js"></script>
   </body>

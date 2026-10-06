@@ -40,6 +40,23 @@ const TRAZOS = {
   libro:
     '<path d="M6 4h11.5A1.5 1.5 0 0119 5.5v15H7.5A1.5 1.5 0 016 19V4z"/>' +
     '<path d="M9.2 4v16.5"/>',
+
+  /* El ojito de mostrar y ocultar la contraseña. Dos trazos distintos y
+     no uno con una línea encima: la barra tachada es lo único que
+     distingue «oculta» de «visible» de un vistazo, y tiene que leerse
+     en 20 px. */
+  ojo: '<path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3.1"/>',
+  ojo_tachado:
+    '<path d="M4 4l16 16"/>' +
+    '<path d="M9.6 6.2A9.6 9.6 0 0112 5.8c6 0 9.5 6.2 9.5 6.2a17 17 0 01-2.8 3.6"/>' +
+    '<path d="M6.4 8.2A17 17 0 002.5 12S6 18.2 12 18.2a9 9 0 003.3-.6"/>' +
+    '<path d="M10 10a3.1 3.1 0 004.2 4.2"/>',
+
+  /* El sello de la marca en las pantallas de cuenta: una caja fuerte,
+     el mismo signo que el mockup usa para la bóveda. */
+  caja_fuerte:
+    '<rect x="3.5" y="5" width="17" height="14" rx="3"/>' +
+    '<circle cx="12" cy="12" r="3.2"/><path d="M12 6.2v1.6M12 16.2v1.6"/>',
 };
 
 /** Los nombres válidos. Útil para las pruebas y para no adivinar. */

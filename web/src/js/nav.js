@@ -68,6 +68,31 @@ export const SECCIONES = [
   },
 ];
 
+/** Las pantallas de cuenta: rutas de verdad, pero fuera de la aplicación.
+ *
+ * Están acá y no en `SECCIONES` justamente porque **no** son secciones:
+ * si entraran en esa lista aparecerían como una posición más en las dos
+ * barras de navegación, que es lo último que queremos. Pero sí son
+ * rutas —tienen hash, historial y «atrás»—, así que el enrutador tiene
+ * que conocerlas.
+ *
+ * Crecen con las tareas: `registro` en F02-T10, `recuperar` y
+ * `nueva-clave` en F16-T13 y F16-T14. Se agregan acá cuando la pantalla
+ * existe, no antes: una ruta declarada sin pantalla deja la aplicación
+ * en blanco, que es peor que caer en el inicio.
+ *
+ * Quién puede entrar a cada una lo decide la guardia de F02-T12. Hasta
+ * entonces estas pantallas son alcanzables y la aplicación sigue
+ * abierta: bloquearla antes de que exista el registro dejaría a todo el
+ * mundo afuera.
+ */
+export const PUBLICAS = [{ id: "login", label: "Iniciar sesión" }];
+
+/** @param {string} id */
+export function esPublica(id) {
+  return PUBLICAS.some((p) => p.id === id);
+}
+
 /** La sección que se abre cuando no hay ninguna indicada o la ruta no existe. */
 export const INICIO = "inicio";
 
@@ -75,4 +100,10 @@ export const INICIO = "inicio";
     quien llame decida: el enrutador cae en el inicio, no explota. */
 export function seccion(id) {
   return SECCIONES.find((s) => s.id === id);
+}
+
+/** El título de documento de cualquier ruta, de sección o de cuenta. */
+export function tituloDeRuta(id) {
+  const s = seccion(id) ?? PUBLICAS.find((p) => p.id === id);
+  return s ? `${s.label} · Epic Wallet` : null;
 }

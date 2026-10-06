@@ -196,6 +196,31 @@
 
   /* color-mix contra estos dos es lo que hace que píldoras, iconos y
      marcas funcionen en ambos temas con una sola regla */
+
+  /* El ambiente: tres lavados radiales sobre un degradado vertical.
+     Está acá y no suelto en `body::after` porque lo usan dos capas: el
+     fondo de la aplicación y la pantalla de inicio de sesión, que tapa
+     la aplicación y tiene que verse como la misma superficie. Copiado
+     en dos lados se desincroniza la primera vez que alguien lo toque.
+     Se redefine solo en oscuro, porque sus colores son tokens. */
+  --ambiente:
+    radial-gradient(
+      ellipse 52% 34% at 10% -6%,
+      var(--color-wash-a),
+      transparent 62%
+    ),
+    radial-gradient(
+      ellipse 42% 28% at 106% 6%,
+      var(--color-wash-b),
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 38% 26% at 50% 104%,
+      var(--color-wash-a),
+      transparent 66%
+    ),
+    linear-gradient(180deg, var(--color-bg-1), var(--color-bg-2));
+
   --mix-tint: #fff;
   --mix-ink: #1c2024;
 

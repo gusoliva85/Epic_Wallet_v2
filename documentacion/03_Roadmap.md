@@ -309,10 +309,20 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **El despliegue se rompió y costó encontrarlo:** `.vercelignore` excluía `scripts/` —decidido en F00, cuando el build no usaba ninguno— y ahora el build corre `generar-config.mjs`. Falla sólo en Vercel, y cuando el build falla Vercel deja publicada la versión anterior: la aplicación sigue respondiendo y todo parece sano, los cambios nuevos simplemente no aparecen nunca. Diagnostiqué mal una vez antes de pedir el log. Arreglado con `scripts/*` más la negación del archivo (excluir el directorio impide que la negación tenga efecto) y cubierto por `tests/unit/test_vercelignore.py`, que lee el comando de build y comprueba que nada de lo que nombra esté excluido.
   **Lo que falta para cerrar los criterios en el teléfono:** nada importa `auth.js` todavía, así que en producción el módulo está servido pero no se ejecuta. La verificación de punta a punta —entrar, recargar, cerrar la aplicación instalada y seguir adentro— se hace con **F02-T09**, que es la pantalla de ingreso.
 
-- [ ] **F02-T09 · Pantalla de inicio de sesión**
+- [x] **F02-T09 · Pantalla de inicio de sesión**
   **Tipo:** Frontend · **Ref:** General §48.1 · Técnico §8.9 · Mockup
   **Hacer:** pantalla con la estética del mockup; campos de email y contraseña; **botón de mostrar y ocultar la contraseña** con su `aria-label`; enlace a *Crear cuenta* (el de *Olvidé mi contraseña* se agrega en F16-T13, cuando el correo esté configurado); estado de carga en el botón; mensajes de error claros que **no revelen si el email existe**; Enter envía; `autocomplete` correcto para que el gestor de contraseñas del teléfono funcione.
   **Aceptación:** · credenciales incorrectas muestran un mensaje entendible y genérico · el ojito muestra y oculta la contraseña · el botón no permite envíos dobles · se ve bien con el teclado del celular abierto · el `autocomplete` deja que el gestor de contraseñas del teléfono complete los campos.
+  **Hecho:** la pantalla vive en `#/login`, con el formulario en `index.html` y el comportamiento en `web/src/js/acceso.js`. Tarjeta de vidrio centrada de 372 px sobre el fondo de lavados, en los dos temas.
+  **No bloquea la aplicación, y es a propósito.** La guardia de rutas es F02-T12 y el registro es F02-T10: si esta pantalla se mostrara sola al no haber sesión, nadie podría entrar hasta que exista el registro. Una prueba lo fija —`acceso.js` no consulta la sesión— para que no se cuele esa decisión por un camino lateral.
+  **Lo que la tarea obligó a decidir:** las pantallas de cuenta son rutas de verdad pero **no** secciones, así que van en `PUBLICAS` y no en `SECCIONES`; si entraran ahí aparecerían como una posición más en las dos barras. El enrutador las conoce, y mientras una está abierta pone `inert` y `aria-hidden` en la aplicación de atrás.
+  **Un detalle que no es de estilo:** hay un **piso de 350 ms** en la respuesta. Después de igualar los textos de «no existe la cuenta» y «contraseña incorrecta» queda el tiempo, y una respuesta notablemente más rápida cuenta lo mismo que contaría un mensaje distinto: con qué correos hay cuenta.
+  **Pruebas:** 24 de comportamiento en jsdom sobre el HTML que se publica (no una copia), más 17 estáticas para lo que jsdom no puede ver —el teclado del celular, el contraste calculado del error y del botón en los dos temas, y la integración con el enrutador—. Mutantes que caen, seis de seis: sin la bandera de envío, sin `disabled`, con el `aria-label` del ojito fijo, sin el piso de respuesta, sin el desplazamiento de la pantalla y sin `inert`.
+  **Dos errores que encontraron las pruebas y no yo:**
+  1. Mirado en un navegador de verdad, **se veía la aplicación por detrás**: la barra superior, la del mes, la navegación y el botón de alta. `inert` la saca del teclado y del lector pero no la borra. Le faltaba fondo propio; ahora usa el mismo `--ambiente` que el fondo de la aplicación, extraído a token para que no sea una copia.
+  2. La prueba del tiempo **medía su propia espera fija** y daba la misma cifra siempre: pasaba aunque se le sacara el piso al código. Lo destapó la mutación. Ahora mide hasta que el mensaje aparece.
+  **Y un error ajeno que apareció de paso:** el helper `_token` de `test_contraste.py` buscaba sólo hexadecimales de seis dígitos, así que `--mix-tint: #fff` del tema claro no coincidía y **devolvía el valor del tema oscuro**, sin fallar. Daba 1,67:1 donde la pantalla da 6,3:1. Arreglado, y además ahora cada bloque se recorta antes de buscar, para que un token que falta falle en vez de mentir.
+  **Lo que queda dicho y no hecho:** el enlace de *Crear cuenta* está en su lugar pero apagado, con «llega en la próxima tarea» a la vista — un enlace a una pantalla que no existe se siente roto. Lo habilita **F02-T10**. El de *Olvidé mi contraseña* es **F16-T13**, cuando el correo esté configurado.
 
 - [ ] **F02-T10 · Pantalla de registro**
   **Tipo:** Frontend · **Ref:** Técnico §8.2, §8.3
@@ -1407,7 +1417,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 |---|---|---|---|
 | 0 · Puesta en marcha y producción | 12 | **12** | ✅ **Cerrada** el 03/10/2026 |
 | 1 · Sistema de estilo y esqueleto | 14 | 14 | **Cerrada** el 05/10/2026 |
-| 2 · Cuentas y autenticación | 16 | 9 | **En curso** · próxima: F02-T09 |
+| 2 · Cuentas y autenticación | 16 | 10 | **En curso** · próxima: F02-T10 |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
 | 4 · Movimientos | 15 | 0 | Pendiente |
 | 5 · Cálculos y dashboard | 12 | 0 | Pendiente |
@@ -1423,7 +1433,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 | 15 · PWA | 9 | 0 | Pendiente |
 | 16 · Seguridad, cierre y correo | 16 | 0 | Pendiente |
 | 17 · Integraciones futuras | 8 | 0 | Pendiente |
-| **Total** | **215** | **17** | — |
+| **Total** | **215** | **18** | — |
 
 Este cuadro se actualiza al cerrar cada tarea.
 
