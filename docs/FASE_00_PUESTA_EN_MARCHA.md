@@ -349,7 +349,9 @@ Ningún secreto está en el repositorio. Se verificó con una revisión del hist
 
 Esto cambió en **F02-T08**. `SUPABASE_URL` y `SUPABASE_ANON_KEY` ya no son sólo del backend: `scripts/generar-config.mjs` las lee durante `npm run build` y escribe `web/public/config.js`, que es de donde las toma el navegador. En Vercel tienen que estar disponibles para **Production, Preview y Development**.
 
-Si faltan, **el build falla a propósito** con un mensaje que dice cuál falta y dónde se arregla. Es deliberado: un despliegue que sale sin configuración de autenticación se ve perfecto hasta que alguien intenta entrar, y ahí falla sin explicar nada.
+Si faltan, el build **avisa fuerte y sigue**. La primera versión cortaba el build, y la decisión estaba mal: bloqueaba *todos* los despliegues por una variable del frontend, incluido un arreglo urgente de la API que no tiene nada que ver. En un proyecto donde cada tarea se prueba en el teléfono el mismo día, eso cuesta más de lo que evita.
+
+Lo que hay que evitar no es el silencio del build, es que algo quede a medias sin que nadie se entere. Así que cuando faltan: aviso en el log del despliegue, un `config.js` explícitamente vacío que nombra las variables que faltan, y un `console.error` que el navegador muestra. `auth.js` levanta un error con el mismo texto en cuanto algo intenta usarlo. El resto de la aplicación se publica y funciona.
 
 El generador además **rechaza la clave secreta** si alguien la pone en `SUPABASE_ANON_KEY` por error, reconociendo los dos formatos que usa Supabase (`sb_secret_…` y el JWT viejo con `role: service_role`). Es la única equivocación de esta lista que no se puede deshacer: una clave de servicio dentro de un paquete de navegador ya quedó publicada, y rotarla no borra a quién la vio. `tests/unit/test_config_web.py` revisa además todos los archivos de `web/` por si aparece por otro camino.
 

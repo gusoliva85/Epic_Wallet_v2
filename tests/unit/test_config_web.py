@@ -122,6 +122,11 @@ def _generar(entorno: dict[str, str], raiz: Path | None = None) -> subprocess.Co
         ["node", str(GENERADOR), str(raiz or RAIZ)],
         capture_output=True,
         text=True,
+        # Sin esto la consola de Windows decodifica en cp1252 y los
+        # acentos del mensaje llegan rotos, así que una comprobación
+        # sobre el texto falla por la codificación y no por el mensaje.
+        encoding="utf-8",
+        errors="replace",
         env=env,
         check=False,
     )
@@ -176,17 +181,37 @@ def test_el_generador_acepta_la_publicable(tmp_path: Path) -> None:
 
 
 @nodo
-def test_el_generador_corta_el_build_si_falta_la_configuracion(tmp_path: Path) -> None:
-    """Un despliegue sin configuración de autenticación se ve bien hasta
-    que alguien intenta entrar. Mejor que falle donde se lee el mensaje.
+def test_sin_configuracion_avisa_fuerte_pero_no_bloquea_el_despliegue(tmp_path: Path) -> None:
+    """Avisa y sigue, y la diferencia importa.
+
+    La primera versión cortaba el build. El argumento era bueno —un
+    despliegue sin autenticación se ve perfecto hasta
+    que alguien intenta entrar— y la decisión estaba mal: bloqueaba
+    **todos** los despliegues por una variable del frontend, incluido un
+    arreglo urgente de la API que no tiene nada que ver.
 
     La raíz de juguete no tiene `.env`, así que el generador no tiene de
     dónde sacarla: es el caso de Vercel sin las variables cargadas.
     """
     r = _generar({"SUPABASE_URL": "", "SUPABASE_ANON_KEY": ""}, raiz=tmp_path)
-    assert r.returncode == 1, "siguió adelante sin configuración"
+
+    assert r.returncode == 0, (
+        "cortó el build por una variable del frontend: eso bloquea "
+        "despliegues que no tienen nada que ver"
+    )
     assert "FALTA" in r.stderr
-    assert "Environment Variables" in r.stderr, "el mensaje de error no dice dónde se arregla"
+    assert "Environment Variables" in r.stderr, "el aviso no dice dónde se arregla"
+    assert "INICIAR SESIÓN" in r.stderr, "el aviso no dice qué deja de funcionar"
+
+    escrito = (tmp_path / "web" / "public" / "config.js").read_text(encoding="utf-8")
+    assert "SUPABASE_URL" in escrito and "SUPABASE_ANON_KEY" in escrito, (
+        "el config.js vacío no dice qué variables faltan"
+    )
+    assert "console.error" in escrito, (
+        "sin un error en la consola, el navegador no dice nada y el problema "
+        "se descubre recién al intentar entrar"
+    )
+    assert 'supabaseAnonKey: ""' in escrito, "escribió una clave inventada"
 
 
 # ============================================= el HTML la carga

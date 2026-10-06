@@ -62,19 +62,56 @@ const url = await delEntorno("SUPABASE_URL");
 const anon = await delEntorno("SUPABASE_ANON_KEY");
 
 if (!url || !anon) {
-  /* Se corta el build en vez de generar un archivo vacío. Un
-     despliegue que sale sin configuración de autenticación se ve bien
-     hasta que alguien intenta entrar, y ahí falla sin explicación.
-     Mejor que falle acá, donde el mensaje se lee. */
-  console.error(
-    "\n  ERROR: falta la configuración de Supabase para el frontend.\n" +
+  /* FALTA LA CONFIGURACIÓN: avisa fuerte y sigue.
+
+     La primera versión de este script cortaba el build acá, con el
+     argumento de que un despliegue sin autenticación se ve perfecto
+     hasta que alguien intenta entrar. El argumento sigue siendo
+     cierto; la decisión estaba mal.
+
+     Cortar el build bloquea TODOS los despliegues por una variable del
+     frontend: una corrección de la API, un cambio de estilo o un
+     arreglo urgente dejan de poder publicarse porque falta algo que no
+     tiene nada que ver con ellos. En un proyecto donde cada tarea se
+     prueba en el teléfono el mismo día, eso cuesta más de lo que
+     evita.
+
+     Y lo que el corte quería evitar no era el silencio, era la
+     confusión: así que se escribe una configuración explícitamente
+     vacía. `auth.js` levanta un error que nombra las variables que
+     faltan en cuanto algo intenta usarlo, el navegador lo deja en la
+     consola, y el resto de la aplicación se publica y funciona. Nada
+     queda a medias en silencio. */
+  console.warn(
+    "\n  AVISO: falta la configuración de Supabase para el frontend.\n" +
       `         SUPABASE_URL      ${url ? "ok" : "FALTA"}\n` +
       `         SUPABASE_ANON_KEY ${anon ? "ok" : "FALTA"}\n\n` +
+      "  Se publica igual, pero NADIE VA A PODER INICIAR SESIÓN.\n\n" +
       "  En Vercel: Settings → Environment Variables, para Production,\n" +
       "  Preview y Development (el build las necesita, no sólo la API).\n" +
       "  En la máquina de desarrollo: están en .env.\n",
   );
-  process.exit(1);
+
+  const faltan = [!url && "SUPABASE_URL", !anon && "SUPABASE_ANON_KEY"]
+    .filter(Boolean)
+    .join(", ");
+  await mkdir(dirname(SALIDA), { recursive: true });
+  await writeFile(
+    SALIDA,
+    `/* GENERADO EN EL BUILD POR scripts/generar-config.mjs — NO EDITAR.
+
+   El build no encontró la configuración de Supabase, así que la
+   autenticación NO funciona en este despliegue. Falta: ${faltan}. */
+console.error(
+  "Epic Wallet: falta la configuración de Supabase (${faltan}). " +
+    "No se puede iniciar sesión. Se definen en las variables de entorno " +
+    "del despliegue.",
+);
+window.EPIC_WALLET = Object.freeze({ supabaseUrl: "", supabaseAnonKey: "" });
+`,
+    "utf8",
+  );
+  process.exit(0);
 }
 
 /* Que no se publique por error la clave que se saltea RLS.
