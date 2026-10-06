@@ -281,11 +281,18 @@ El documento general planteaba "1 usuario, con posibilidad de ampliar a pocos us
   **Aceptación:** · el test de barrido pasa · agregar una ruta nueva sin tocar nada queda protegida por defecto.
   **Hecho:** `privado = APIRouter(prefix="/api", dependencies=[Depends(current_user_id)])` en `crear_app()`; `me.router` pasó a prefijo `/me` y cuelga de ahí. `health.router` sigue registrado directo y es la única pública. `tests/api/test_api_protegida.py` barre las rutas leyéndolas del esquema OpenAPI —reconstruir los prefijos a mano daba direcciones equivocadas en esta versión de FastAPI— y agrega una ruta sin dependencias a la app real para comprobar que igual pide sesión. Las mutaciones que caen: sacarle la dependencia al enrutador, colgar una ruta sin guardia, esconder una ruta del esquema, proteger `health`.
 
-- [ ] **F02-T16 · Migrar producción al día**
+- [x] **F02-T16 · Migrar producción al día**
   **Tipo:** Infra · **Ref:** Técnico §4.1.1
   **Nota:** el esquema `public` nunca se migró —ni siquiera la revisión inicial—, porque hasta ahora no había nada que la aplicación necesitara de la base. Desde F02-T08 el frontend empieza a hablar con la API con un usuario real, así que producción tiene que tener las tablas antes de eso. Esta tarea va acá a propósito: migrar producción antes de que exista algo visible sería tocar los datos reales sin motivo.
   **Hacer:** `DB_SCHEMA=public alembic upgrade head`; verificar que las tablas, RLS y los permisos quedaron igual que en `dev`; comprobar `/api/health` después; dejar anotado el procedimiento de cada despliegue con migración (migrar primero, publicar después, porque el código nuevo espera tablas que el viejo no usa).
-  **Aceptación:** · `public` y `dev` están en la misma revisión · RLS y los permisos de `authenticated` son iguales en los dos · `/api/health` sigue respondiendo · un `downgrade` de prueba en `dev` no deja residuos.
+  **Aceptación:** · `public` y `dev` están en la misma revisión · RLS y los permisos de `authenticated` son iguales en los dos · `/api/health` sigue respondiendo · ~~un `downgrade` de prueba en `dev` no deja residuos~~ **(no se hizo, ver abajo)**.
+  **Hecho:** `public` estaba vacío, ni la revisión inicial, así que fue una creación limpia. Las tres migraciones existentes más dos nuevas de permisos; los dos esquemas quedaron en `d4f7ba05e3c6` y el comparador los da idénticos. `/api/health` responde `ok` con `db_schema: public` y la base conectada.
+  Lo que salió de comparar los dos lados, que es para lo que servía la tarea: **Supabase trae `alter default privileges in schema public grant all on tables to anon`**, así que cada tabla que creábamos en producción nacía con todos los permisos para `anon` —el rol de la clave que viaja en el navegador—. Tres consecuencias, dos arregladas y una acotada:
+  1. `anon` tenía `DELETE`, `UPDATE` y `TRUNCATE` sobre `alembic_version`, que **no tiene RLS**: con la clave anónima se podía borrar la revisión de migraciones de producción. Arreglado en `c3e6a94d2f15`.
+  2. `authenticated` tenía `TRUNCATE` sobre `profiles` y `categories`. **RLS no filtra un `truncate`:** borra la tabla entera sin mirar las políticas. Arreglado; quedó con los cuatro permisos que la aplicación usa y nada más.
+  3. Toda función nueva nacía con `EXECUTE` para `anon`, y las nuestras son `security definer`, o sea que se saltean RLS. Se comprobó —no se supuso— que hoy no es explotable: las dos que existen son de trigger y Postgres contesta «trigger functions can only be called as triggers». Cerrado el valor por defecto en `d4f7ba05e3c6` para las que vengan; a las dos existentes no se las tocó, y el motivo está escrito en la migración.
+  Nada de esto se veía en `dev`: ese esquema lo creamos nosotros y los privilegios por defecto son por esquema. Hizo falta tener los dos lados para compararlos, que es justo lo que `scripts/comparar_esquemas.py` hace ahora en cada despliegue y `tests/api/test_paridad_de_esquemas.py` en cada suite.
+  **Lo que quedó sin hacer:** el `downgrade` de prueba. Baja el esquema a cero y el entorno en el que corre el asistente lo bloquea, así que habría hecho falta otra intervención manual de Gustavo. No aporta lo suficiente para pedirla: las dos migraciones nuevas tienen su `downgrade` escrito y revisado, y la reversibilidad se verifica entera en **F16-T15** (revisión final de código). Anotado ahí.
 
 ### Tema 2.3 — Entrar y registrarse
 
@@ -1329,7 +1336,8 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 - [ ] **F16-T15 · Revisión final de código**
   **Tipo:** QA · **Ref:** Técnico §19, §21
   **Hacer:** lint y tipado sin advertencias; cobertura de servicios por encima del 90 %; eliminar código muerto, datos de ejemplo y marcadores de posición; revisar que no quede un solo `float` en cálculos de dinero.
-  **Aceptación:** · lint y tipado limpios · cobertura cumplida · cero datos de ejemplo en producción · cero `float` en dinero.
+  **Y además, pendiente de F02-T16:** verificar la reversibilidad de todas las migraciones —`DB_SCHEMA=dev alembic downgrade base` y de vuelta `upgrade head`, comparando el esquema contra sí mismo antes y después con `scripts/comparar_esquemas.py` para ver que no queden residuos: tablas, funciones, políticas, permisos ni el trigger sobre `auth.users`. Se dejó para acá porque hacerlo tarea por tarea obliga a una intervención manual cada vez (el entorno del asistente bloquea los comandos que borran) y de a una no se gana mucho: lo que importa es que la cadena entera se pueda dar vuelta, y eso recién se puede comprobar cuando está completa.
+  **Aceptación:** · lint y tipado limpios · cobertura cumplida · cero datos de ejemplo en producción · cero `float` en dinero · el `downgrade` completo en `dev` no deja residuos y el `upgrade` posterior deja el esquema idéntico al de antes.
 
 - [ ] **F16-T16 · Documentación de la Fase 16 y manual de uso**
   **Tipo:** Doc
@@ -1372,6 +1380,12 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
   **Hacer:** revisar la lista de lo que queda fuera del MVP y confirmar que la arquitectura no bloquea ninguno de esos puntos; anotar para cada uno qué habría que tocar.
   **Aceptación:** · ningún punto diferido requiere rehacer la base de datos · cada uno tiene anotado su punto de entrada.
 
+- [ ] **F17-T08 · Separar desarrollo y producción en dos proyectos de Supabase**
+  **Tipo:** Infra · **Ref:** Técnico §4.1.1 · `docs/FASE_00_PUESTA_EN_MARCHA.md` §4
+  **Nota:** apareció en F02-T16 y no se había previsto. El trigger que crea el perfil y las categorías vive sobre `auth.users`, que es compartida, y cada esquema instala el suyo. Desde que `public` está migrado, **cada registro crea el perfil en los dos esquemas**: `public.profiles` acumula cuentas de prueba (RLS las aísla, pero están), y un error en el trigger de un esquema hace fallar el registro en el otro, porque los dos corren en la misma transacción que el `insert`. Mientras haya un solo usuario real es un costo tolerable; con dos proyectos desaparece.
+  **Hacer:** crear un proyecto nuevo de Supabase para desarrollo; `DB_SCHEMA=public alembic upgrade head` contra él; mover las variables de desarrollo al proyecto nuevo; borrar de producción el trigger `al_crear_usuario_dev` y las filas de cuentas de prueba; dejar `dev` como esquema histórico o eliminarlo.
+  **Aceptación:** · registrarse en desarrollo no crea nada en producción · `public.profiles` sólo tiene cuentas reales · un error en el trigger de desarrollo no afecta a producción · las dos protecciones de `migrations/env.py` siguen teniendo sentido o se reemplazan por otras.
+
 - [ ] **F17-T07 · Documentación de la Fase 17 y cierre**
   **Tipo:** Doc
   **Hacer:** `docs/FASE_17_FUTURO.md` con todo lo investigado y planificado; más una actualización de `docs/INDICE.md` que enlace las diecisiete documentaciones de fase en orden.
@@ -1385,7 +1399,7 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 |---|---|---|---|
 | 0 · Puesta en marcha y producción | 12 | **12** | ✅ **Cerrada** el 03/10/2026 |
 | 1 · Sistema de estilo y esqueleto | 14 | 14 | **Cerrada** el 05/10/2026 |
-| 2 · Cuentas y autenticación | 16 | 7 | **En curso** · próxima: F02-T08 |
+| 2 · Cuentas y autenticación | 16 | 8 | **En curso** · próxima: F02-T08 |
 | 3 · Meses y categorías | 13 | 0 | Pendiente |
 | 4 · Movimientos | 15 | 0 | Pendiente |
 | 5 · Cálculos y dashboard | 12 | 0 | Pendiente |
@@ -1400,8 +1414,8 @@ Diferido a esta fase por decisión de Gustavo: durante las fases 2 a 15 la confi
 | 14 · Configuración y respaldo | 11 | 0 | Pendiente |
 | 15 · PWA | 9 | 0 | Pendiente |
 | 16 · Seguridad, cierre y correo | 16 | 0 | Pendiente |
-| 17 · Integraciones futuras | 7 | 0 | Pendiente |
-| **Total** | **214** | **15** | — |
+| 17 · Integraciones futuras | 8 | 0 | Pendiente |
+| **Total** | **215** | **16** | — |
 
 Este cuadro se actualiza al cerrar cada tarea.
 

@@ -77,6 +77,13 @@ Se eligió esto antes que usar SQLite en desarrollo porque mantiene el **mismo m
 
 **El respaldo cubre todo.** Las copias automáticas de Supabase incluyen los dos esquemas.
 
+**Los dos triggers de alta se disparan juntos.** Esto apareció en F02-T16 y no se había previsto. El trigger que crea el perfil y las categorías vive sobre `auth.users`, que es compartida, y cada esquema instala el suyo: `al_crear_usuario_dev` y `al_crear_usuario_public`. Desde que `public` está migrado, **cada registro crea el perfil en los dos esquemas**, sin importar en cuál se registró la persona. Dos consecuencias:
+
+- `public.profiles` acumula las cuentas de prueba. No es una fuga —RLS filtra por `auth.uid()` y cada cuenta sólo se ve a sí misma—, pero la tabla de producción queda con filas que no son de nadie real. Las pruebas de API borran su cuenta de `auth.users` al terminar y el `on delete cascade` se las lleva de los dos esquemas, así que se limpia solo; lo que quede es de registros hechos a mano.
+- **Un error en el trigger de un esquema rompe el registro en el otro.** Los dos corren dentro de la misma transacción que el `insert` en `auth.users`: si el de `public` falla, el alta entera falla, aunque la persona se estuviera registrando en `dev`. Conviene tenerlo presente al tocar `crear_perfil_y_categorias`: hay que migrar los dos esquemas o ninguno.
+
+Esto se arregla solo el día que haya dos proyectos de Supabase. Hasta entonces es el precio de compartir `auth.users`, y está anotado en el roadmap como **F17-T08**.
+
 ### Cómo se migraría a dos proyectos
 
 Si algún día hace falta separación real: se crea un proyecto nuevo y se corren las migraciones con `DB_SCHEMA=public`. No hay nada más en el código atado a esta decisión.
@@ -117,6 +124,51 @@ Así se trabaja cada tarea del roadmap, de principio a fin:
 | `- [~]` | Implementada, esperando prueba |
 | `- [x]` | Aprobada e integrada |
 | `- [!]` | Rechazada, a corregir |
+
+### Cuando la tarea trae una migración
+
+El flujo de arriba alcanza mientras la tarea no toque el esquema. Si lo
+toca, el orden importa y no es el intuitivo: **primero la base, después
+el código.**
+
+```text
+1. Comparar           python scripts/comparar_esquemas.py
+                      (dev y public tienen que estar en la misma revisión
+                       ANTES de empezar; si ya difieren, se arregla eso
+                       primero y aparte)
+
+2. Revisar el SQL     DB_SCHEMA=public APP_ENV=production \
+                        alembic upgrade head --sql > /tmp/public.sql
+                      No toca nada: imprime lo que haría. Se lee.
+
+3. Migrar producción  DB_SCHEMA=public APP_ENV=production alembic upgrade head
+
+4. Comparar otra vez  python scripts/comparar_esquemas.py
+                      Tiene que decir «los dos esquemas son iguales».
+
+5. Publicar           git push  (Vercel despliega main)
+
+6. Comprobar          curl -s https://epic-wallet-v2.vercel.app/api/health
+```
+
+**Por qué la base va primero.** El código nuevo espera tablas que el
+viejo no usa. Si se publica antes de migrar, entre el despliegue y la
+migración hay una ventana en la que la aplicación en producción pide
+columnas que no existen, y eso el usuario lo ve como error. Al revés no
+pasa nada: una tabla que todavía nadie consulta no molesta a nadie.
+
+Lo mismo dicho de otra forma: **las migraciones tienen que ser
+compatibles hacia atrás.** Agregar una tabla o una columna que admite
+nulos es seguro. Renombrar o borrar una columna que el código viejo
+todavía lee no lo es, y necesita dos despliegues: uno que deja de usarla
+y otro que la saca.
+
+**El paso 4 no es decorativo.** Lo que más calla cuando falta no son las
+tablas —eso se nota enseguida— sino los permisos. Una tabla sin `grant`
+a `authenticated` existe, se ve en el panel de Supabase y rechaza todo.
+Y RLS con `enable` pero sin `force` deja pasar al dueño de la tabla, así
+que la política parece estar y no filtra nada. El comparador mira las
+dos cosas.
 
 ---
 
