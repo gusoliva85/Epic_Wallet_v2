@@ -2423,3 +2423,314 @@
   line-height: 1.5;
   color: var(--color-ink-3);
 }
+
+/* ============================================================
+   Pantallas de cuenta · F02-T09
+   skill §8 «Pantallas de cuenta» · General §48.1
+
+   Una tarjeta de vidrio centrada sobre el fondo de lavados. El fondo
+   es el del `body`, no uno propio: la pantalla de ingreso es la misma
+   aplicación antes de entrar, no otra marca.
+   ============================================================ */
+
+.acceso {
+  position: fixed;
+  inset: 0;
+  z-index: 80; /* encima de las dos barras y del botón de alta */
+  display: grid;
+  place-items: center;
+  /* Fondo propio, y es imprescindible: `inert` saca la aplicación del
+     teclado y del lector de pantalla, pero no la borra. Sin esto se
+     ven la barra superior, la del mes, la navegación y el botón de
+     alta por detrás del formulario, que es lo que pasó la primera vez
+     que se miró en un navegador.
+     Es el mismo `--ambiente` del fondo de la aplicación, no una copia:
+     la pantalla de ingreso es la misma aplicación antes de entrar. */
+  background: var(--ambiente);
+  /* El relleno de abajo suma el área segura: en un teléfono con barra
+     de gestos, sin esto la tarjeta queda pegada al borde y el último
+     elemento cae bajo la barra. */
+  padding: 22px 16px calc(22px + env(safe-area-inset-bottom));
+  /* Con el teclado abierto la tarjeta puede ser más alta que el hueco
+     que queda: tiene que poder desplazarse o el botón de ingresar
+     queda inalcanzable, que es uno de los criterios de aceptación. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.acceso[hidden] {
+  display: none;
+}
+
+.acceso-card {
+  width: 100%;
+  max-width: 372px;
+  padding: 26px 22px;
+  border-radius: var(--radius-sheet);
+}
+
+.acceso-marca {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-bottom: 18px;
+}
+
+.acceso-sello {
+  display: grid;
+  place-items: center;
+  width: 33px;
+  height: 33px;
+  border-radius: var(--radius-btn);
+  background: linear-gradient(
+    155deg,
+    var(--color-accent),
+    var(--color-accent-2)
+  );
+  color: var(--color-on-accent);
+}
+
+.acceso-sello svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.acceso-nombre {
+  font-family: var(--font-display);
+  font-size: var(--text-section);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--color-ink);
+}
+
+.acceso-card h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-sheet);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  text-align: center;
+  color: var(--color-ink);
+}
+
+.acceso-bajada {
+  margin: 6px 0 20px;
+  font-size: var(--text-sub);
+  text-align: center;
+  color: var(--color-ink-3);
+}
+
+/* ---- campo con etiqueta ---- */
+
+.campo {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.campo label {
+  font-size: var(--text-label);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--color-ink-3);
+}
+
+/* ---- el ojito ---- */
+
+.clave-wrap {
+  position: relative;
+}
+
+/* El relleno de la derecha deja el lugar del botón: sin esto, una
+   contraseña larga pasa por debajo del ojito y no se lee. */
+.clave-wrap .inp {
+  padding-right: 46px;
+}
+
+.clave-ojo {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--radius-ico);
+  background: transparent;
+  color: var(--color-ink-3);
+  cursor: pointer;
+  transition:
+    color 0.18s var(--ease),
+    background 0.18s var(--ease);
+}
+
+/* El recuadro mide 36 px para no desbordar el campo; el área táctil
+   llega a los 44 del sistema con un ::after invisible. Si se borra,
+   el botón queda en 36 y se falla el toque en el teléfono. */
+.clave-ojo::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
+
+.clave-ojo:hover {
+  color: var(--color-ink);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
+.clave-ojo[aria-pressed="true"] {
+  color: var(--color-accent);
+}
+
+.clave-ojo svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---- el error ---- */
+
+.acceso-error {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--color-crit) 30%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-crit) 15%, var(--mix-tint));
+  /* 60 % contra la tinta y no el color puro: el rojo puro sobre vidrio
+     no llega al mínimo de contraste. Es la misma mezcla que usan los
+     avisos. */
+  color: color-mix(in srgb, var(--color-crit) 60%, var(--mix-ink));
+  font-size: var(--text-row);
+  line-height: 1.45;
+}
+
+.acceso-error[hidden] {
+  display: none;
+}
+
+/* ---- botón principal ---- */
+
+.btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 46px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--glass-content-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-button);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 0.18s var(--ease),
+    filter 0.18s var(--ease);
+}
+
+.btn--principal {
+  border: 0;
+  background: linear-gradient(
+    155deg,
+    var(--color-accent),
+    var(--color-accent-2)
+  );
+  color: var(--color-on-accent);
+  box-shadow:
+    var(--glass-in),
+    var(--sh-sm);
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.btn:disabled {
+  cursor: default;
+  /* Se atenúa con `filter` y no bajando la opacidad del texto: así el
+     contraste del texto contra su propio fondo no cambia. */
+  filter: saturate(0.6) brightness(0.96);
+}
+
+/* El texto NO se reemplaza por «Ingresando…»: cambiarlo mueve el ancho
+   del botón y la pantalla salta justo cuando se está esperando. Se
+   atenúa y el girador aparece encima. */
+.btn.cargando .btn-texto {
+  opacity: 0.35;
+}
+
+.btn-girador {
+  position: absolute;
+  width: 19px;
+  height: 19px;
+  border: 2px solid color-mix(in srgb, var(--color-on-accent) 35%, transparent);
+  border-top-color: var(--color-on-accent);
+  border-radius: 50%;
+  opacity: 0;
+  animation: girar 0.75s linear infinite;
+}
+
+.btn.cargando .btn-girador {
+  opacity: 1;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Con movimiento reducido el girador no gira: se queda como un anillo
+   quieto. El `aria-busy` del botón es lo que informa de verdad. */
+@media (prefers-reduced-motion: reduce) {
+  .btn-girador {
+    animation: none;
+    border-top-color: color-mix(
+      in srgb,
+      var(--color-on-accent) 35%,
+      transparent
+    );
+  }
+}
+
+/* ---- pie ---- */
+
+.acceso-pie {
+  margin: 16px 0 0;
+  font-size: var(--text-sub);
+  text-align: center;
+  color: var(--color-ink-3);
+}
+
+.acceso-pendiente {
+  color: var(--color-ink-4);
+}
+
+.acceso-pendiente small {
+  font-size: var(--text-label);
+}

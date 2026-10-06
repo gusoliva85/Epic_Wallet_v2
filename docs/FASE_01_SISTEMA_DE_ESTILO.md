@@ -277,7 +277,13 @@ Un tamaño por ROL, nunca por medida.
 | `--ease` | `cubic-bezier(0.32, 0.72, 0, 1)` | *igual* |
 | `--ease-glass` | `cubic-bezier(0.32, 0.72, 0, 1)` | *igual* |
 
-**101 tokens en total**, de los cuales **45 se redefinen en el tema oscuro.** Los que no aparecen en la columna oscura son los mismos en los dos temas: medidas, curvas y las tarjetas de color.
+#### Otros
+
+| Token | Claro | Oscuro |
+|---|---|---|
+| `--ambiente` | `radial-gradient( ellipse 52% 34% at 10% -6%, var(--color-wash-a), transparent 62% ), radial-gradient( ellipse 42% 28% at 106% 6%, var(--color-wash-b), transparent 58% ), radial-gradient( ellipse 38% 26% at 50% 104%, var(--color-wash-a), transparent 66% ), linear-gradient(180deg, var(--color-bg-1), var(--color-bg-2))` | *igual* |
+
+**102 tokens en total**, de los cuales **45 se redefinen en el tema oscuro.** Los que no aparecen en la columna oscura son los mismos en los dos temas: medidas, curvas y las tarjetas de color.
 
 <!-- TOKENS:FIN -->
 

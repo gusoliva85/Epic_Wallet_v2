@@ -127,8 +127,19 @@ def test_todo_boton_de_solo_icono_se_anuncia() -> None:
 @pytest.mark.unit
 def test_todo_boton_declara_su_tipo() -> None:
     """Sin `type` explícito, un botón dentro de un formulario envía.
-    Los formularios llegan en F01-T12 y el error sería difícil de ver."""
-    faltan = [t for t in re.findall(r"<button\b[^>]*>", _html()) if 'type="button"' not in t]
+
+    El `type` tiene que estar, pero no tiene que ser `button`: desde
+    F02-T09 hay un formulario de verdad y su botón es `submit`, que es
+    justamente lo que hace que Enter envíe desde los campos. Lo que no
+    puede haber es un botón **sin** `type`: dentro de un formulario el
+    valor por omisión es `submit`, así que enviaría sin que nadie lo
+    haya decidido.
+    """
+    faltan = [
+        t
+        for t in re.findall(r"<button\b[^>]*>", _html())
+        if not re.search(r'type="(button|submit|reset)"', t)
+    ]
     assert not faltan, f"botones sin type: {faltan}"
 
 
@@ -215,7 +226,14 @@ def test_las_pestanas_son_navegacion_y_no_un_grupo_de_pestanas() -> None:
 
 @pytest.mark.unit
 def test_las_siete_secciones_estan_y_no_se_repiten() -> None:
-    ids = re.findall(r'id:\s*"([\w-]+)"', NAV_JS.read_text(encoding="utf-8"))
+    # Sólo el bloque de `SECCIONES`. Desde F02-T09 `nav.js` tiene
+    # también `PUBLICAS`, con las pantallas de cuenta: son rutas de
+    # verdad pero NO secciones, y no van en las barras de navegación.
+    # Leyendo el archivo entero, `login` contaba como una octava
+    # sección.
+    fuente = NAV_JS.read_text(encoding="utf-8")
+    bloque = fuente.split("export const SECCIONES")[1].split("\n];")[0]
+    ids = re.findall(r'id:\s*"([\w-]+)"', bloque)
     assert len(ids) == 7, f"tienen que ser siete secciones, hay {len(ids)}: {ids}"
     assert len(set(ids)) == 7, f"ids repetidos: {ids}"
     esperadas = {

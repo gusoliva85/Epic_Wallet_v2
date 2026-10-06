@@ -17,9 +17,12 @@
    lo que venga después no se ponen de acuerdo entre ellas, sino cada
    una con el enrutador. */
 
-import { SECCIONES, INICIO, seccion } from "./nav.js";
+import { SECCIONES, PUBLICAS, INICIO, esPublica, tituloDeRuta } from "./nav.js";
 
-const RUTAS = SECCIONES.map((s) => s.id);
+// Las siete secciones más las pantallas de cuenta. Las dos barras de
+// navegación siguen leyendo sólo `SECCIONES`, así que una pantalla de
+// cuenta es alcanzable por URL sin aparecer como una posición más.
+const RUTAS = [...SECCIONES.map((s) => s.id), ...PUBLICAS.map((p) => p.id)];
 
 /** Nombre del evento que avisa que cambió la ruta. */
 export const EVENTO = "epic:ruta";
@@ -50,8 +53,25 @@ function pintar(id) {
     vista.hidden = !activa;
   });
 
-  const d = seccion(id);
-  if (d) document.title = `${d.label} · Epic Wallet`;
+  // Las pantallas de cuenta van encima de la aplicación, no dentro: no
+  // tienen barras, ni mes, ni botón de alta. Mientras una está abierta,
+  // todo lo de atrás queda `inert` — si no, el tabulador sigue
+  // recorriendo la aplicación tapada y el lector de pantalla la lee
+  // igual, aunque no se vea nada de ella.
+  const publica = esPublica(id);
+  const acceso = document.getElementById("acceso");
+  const app = document.querySelector(".app");
+  if (acceso && app) {
+    acceso.hidden = !publica;
+    app.inert = publica;
+    // `aria-hidden` además de `inert`: hay lectores que todavía no
+    // implementan `inert` y sin esto leerían las dos cosas a la vez.
+    if (publica) app.setAttribute("aria-hidden", "true");
+    else app.removeAttribute("aria-hidden");
+  }
+
+  const titulo = tituloDeRuta(id);
+  if (titulo) document.title = titulo;
 
   // Al cambiar de vista se vuelve arriba. Sin esto, entrar a una
   // sección desde el final de una lista larga la abre por la mitad.

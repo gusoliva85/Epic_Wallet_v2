@@ -330,11 +330,17 @@ describe("enrutador", () => {
   test("las rutas del enrutador son las siete de nav.js", async () => {
     // Si se agregara una sección a nav.js y no al enrutador, su
     // posición en la barra llevaría a inicio sin que nada avise.
+    //
+    // Se lee sólo el bloque de `SECCIONES`: desde F02-T09 `nav.js`
+    // tiene también `PUBLICAS`, con las pantallas de cuenta. Son rutas
+    // de verdad —el enrutador las conoce— pero no secciones, y no
+    // tienen una posición en ninguna barra.
     const nav = readFileSync(
       resolve(RAIZ, "web", "src", "js", "nav.js"),
       "utf8",
     );
-    const ids = [...nav.matchAll(/id:\s*"([\w-]+)"/g)].map((m) => m[1]);
+    const bloque = nav.split("export const SECCIONES")[1].split("\n];")[0];
+    const ids = [...bloque.matchAll(/id:\s*"([\w-]+)"/g)].map((m) => m[1]);
     assert.deepEqual(ids, SECCIONES);
 
     for (const id of ids) {

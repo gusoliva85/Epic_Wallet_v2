@@ -47,16 +47,41 @@ def _sobre(frente: Color, alfa: float, fondo: Color) -> Color:
 
 
 def _hex(valor: str) -> Color:
-    valor = valor.strip().lstrip("#")
-    return (int(valor[0:2], 16), int(valor[2:4], 16), int(valor[4:6], 16))
+    """Acepta las dos formas, de tres y de seis dígitos.
+
+    `--mix-tint` vale `#fff` en tema claro. Leyéndolo como si fuera de
+    seis se obtiene basura, o nada.
+    """
+    v = valor.strip().lstrip("#")
+    if len(v) == 3:
+        v = "".join(c * 2 for c in v)
+    assert len(v) == 6, f"no es un color hexadecimal: {valor}"
+    return (int(v[0:2], 16), int(v[2:4], 16), int(v[4:6], 16))
 
 
 def _token(nombre: str, *, oscuro: bool = False) -> Color:
-    """Lee un token del bloque claro o del bloque oscuro."""
+    """Lee un token del bloque claro o del bloque oscuro.
+
+    Dos cosas que esta función hacía mal y se arreglaron en F02-T09,
+    porque las dos **devolvían un color equivocado en silencio**:
+
+    1. Buscaba sólo hexadecimales de seis dígitos. `--mix-tint: #fff`
+       no coincidía, así que la búsqueda seguía… y encontraba el
+       `--mix-tint` del bloque **oscuro**. Pedir el valor claro
+       devolvía el oscuro, y el contraste calculado no era el de
+       ninguna pantalla real: daba 1,67:1 donde la pantalla da 6,3:1.
+    2. El bloque claro no estaba delimitado. Cualquier token que
+       faltara en `:root` se resolvía con el valor de `html[data-theme
+       ="dark"]` en lugar de fallar.
+
+    Ahora cada bloque se recorta antes de buscar, así que un token que
+    falta falla en vez de mentir.
+    """
     css = TOKENS.read_text(encoding="utf-8")
-    if oscuro:
-        css = css[css.index('html[data-theme="dark"] {') :]
-    hallado = re.search(rf"{re.escape(nombre)}:\s*(#[0-9a-fA-F]{{6}})", css)
+    marca = 'html[data-theme="dark"] {'
+    css = css[css.index(marca) :] if oscuro else css[: css.index(marca)]
+
+    hallado = re.search(rf"{re.escape(nombre)}:\s*(#[0-9a-fA-F]{{3,8}})", css)
     assert hallado, f"no se encontró {nombre} ({'oscuro' if oscuro else 'claro'})"
     return _hex(hallado.group(1))
 

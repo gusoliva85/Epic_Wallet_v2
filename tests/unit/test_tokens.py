@@ -24,6 +24,11 @@ TOKENS = ESTILOS / "tokens.css"
 
 # No cambian con el tema: medidas, familias y curvas.
 INVARIANTES = {
+    # El ambiente del fondo no se redefine porque no hace falta: su
+    # declaración es la misma en los dos temas y lo que cambia son los
+    # colores que usa adentro, que sí tienen versión oscura. Repetirlo
+    # en el bloque oscuro sería una copia que se desincroniza.
+    "--ambiente",
     # Las tarjetas de color son su propia superficie: el mismo fondo
     # sólido con texto blanco en los dos temas. No se tiñen con el
     # tema porque no son vidrio.
