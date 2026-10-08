@@ -161,7 +161,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 
 > **La confirmación por correo sigue desactivada** en Supabase (Authentication → Providers → Email → *Confirm email* en off), así el registro funciona de inmediato. El correo se configura en **F11-T03**, junto con la recuperación de contraseña.
 
-- [ ] **F02-T10 · Pantalla de registro**
+- [~] **F02-T10 · Pantalla de registro**
   **Tipo:** Frontend · **Ref:** Técnico §8.2, §8.3
   **Hacer:** email, contraseña y repetir contraseña con mostrar/ocultar; validación en vivo de que coincidan y del mínimo de 8 caracteres; al enviar, entrada directa al dashboard; un email ya registrado no revela que existe. Habilitar el enlace *Crear cuenta* de la pantalla de login.
   **Aceptación:** · se crea una cuenta de punta a punta desde el celular y entra directo · la cuenta nueva aparece con su dashboard vacío y sus 21 categorías · contraseñas que no coinciden no permiten enviar.

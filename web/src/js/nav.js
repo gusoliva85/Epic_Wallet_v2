@@ -76,17 +76,23 @@ export const SECCIONES = [
  * rutas —tienen hash, historial y «atrás»—, así que el enrutador tiene
  * que conocerlas.
  *
- * Crecen con las tareas: `registro` en F02-T10, `recuperar` y
- * `nueva-clave` en F16-T13 y F16-T14. Se agregan acá cuando la pantalla
- * existe, no antes: una ruta declarada sin pantalla deja la aplicación
- * en blanco, que es peor que caer en el inicio.
+ * Crecen con las tareas: `registro` entró en F02-T10. `recuperar` y
+ * `nueva-clave` llegan en F11-T03, con el correo. Se agregan acá cuando
+ * la pantalla existe, no antes: una ruta declarada sin pantalla deja la
+ * aplicación en blanco, que es peor que caer en el inicio.
  *
  * Quién puede entrar a cada una lo decide la guardia de F02-T12. Hasta
  * entonces estas pantallas son alcanzables y la aplicación sigue
  * abierta: bloquearla antes de que exista el registro dejaría a todo el
  * mundo afuera.
  */
-export const PUBLICAS = [{ id: "login", label: "Iniciar sesión" }];
+export const LOGIN = "login";
+export const REGISTRO = "registro";
+
+export const PUBLICAS = [
+  { id: LOGIN, label: "Iniciar sesión" },
+  { id: REGISTRO, label: "Crear cuenta" },
+];
 
 /** @param {string} id */
 export function esPublica(id) {

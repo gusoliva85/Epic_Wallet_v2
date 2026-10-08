@@ -68,6 +68,16 @@ function pintar(id) {
     // implementan `inert` y sin esto leerían las dos cosas a la vez.
     if (publica) app.setAttribute("aria-hidden", "true");
     else app.removeAttribute("aria-hidden");
+
+    // Dentro de `#acceso` conviven varias tarjetas —login, registro—,
+    // igual que las siete vistas conviven dentro de `.app`. La misma
+    // regla aplica: la que no está activa lleva `hidden`, no sólo una
+    // clase, o el tabulador sigue entrando a sus campos.
+    if (publica) {
+      acceso.querySelectorAll("[data-cuenta]").forEach((tarjeta) => {
+        tarjeta.hidden = tarjeta.dataset.cuenta !== id;
+      });
+    }
   }
 
   const titulo = tituloDeRuta(id);

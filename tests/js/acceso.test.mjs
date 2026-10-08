@@ -104,7 +104,10 @@ async function cargarConDobles(espia, navegaciones) {
       'import { navegar } from "./router.js";',
       "const navegar = (id) => globalThis.__navegaciones.push(id);",
     )
-    .replace('import { INICIO } from "./nav.js";', 'const INICIO = "inicio";')
+    .replace(
+      'import { INICIO, REGISTRO } from "./nav.js";',
+      'const INICIO = "inicio"; const REGISTRO = "registro";',
+    )
     .replace(
       'import { icono } from "./iconos.js";',
       'const icono = (n) => `<!--${n}-->`;',

@@ -2727,10 +2727,103 @@
   color: var(--color-ink-3);
 }
 
-.acceso-pendiente {
-  color: var(--color-ink-4);
+/* ---- enlace entre pantallas de cuenta · F02-T10 ---- */
+
+/* Botón con pinta de enlace: "Crear cuenta" desde el login, "Iniciá
+   sesión" desde el registro. `<button>` y no `<a href="#/...">` — el
+   enrutador es el único que toca el hash (skill §7), y un enlace nativo
+   lo cambiaría por su cuenta antes de que nada valide la ruta. */
+.acceso-enlace {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--color-accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.18s var(--ease);
 }
 
-.acceso-pendiente small {
-  font-size: var(--text-label);
+.acceso-enlace:hover,
+.acceso-enlace:focus-visible {
+  text-decoration-color: currentColor;
+}
+
+/* ---- nota bajo un campo: fortaleza, coincidencia ---- */
+
+.campo-nota {
+  display: block;
+  min-height: 1em;
+  margin-top: 5px;
+  font-size: var(--text-sub);
+  color: var(--color-ink-3);
+}
+
+.campo-nota--ok {
+  color: color-mix(in srgb, var(--color-ok) 70%, var(--mix-ink));
+}
+
+.campo-nota--crit {
+  color: color-mix(in srgb, var(--color-crit) 70%, var(--mix-ink));
+}
+
+/* ---- medidor de fortaleza · F02-T10 ---- */
+
+.fuerza-clave {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 7px;
+}
+
+.fuerza-track {
+  flex: 1;
+  height: 4px;
+  border-radius: var(--radius-sm);
+  background: var(--groove-bg);
+  overflow: hidden;
+}
+
+/* Arranca en 0 en el CSS. A diferencia de las tarjetas de indicador
+   (skill §8, "nace en 0 y recibe su ancho en rAF"), acá no hace falta
+   ese paso: el ancho cambia con cada tecla sobre un elemento que ya
+   está en pantalla, no en su primer pintado, así que la transición
+   siempre tiene un valor anterior del que partir. */
+.fuerza-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: var(--radius-sm);
+  background: var(--color-crit);
+  transition:
+    width 0.25s var(--ease),
+    background 0.25s var(--ease);
+}
+
+.fuerza-clave .campo-nota {
+  flex: none;
+  margin-top: 0;
+  /* "Faltan 7" es el texto más largo que puede mostrar. */
+  min-width: 5em;
+  text-align: right;
+}
+
+/* ---- «revisá tu correo» · preparado para F11-T03 ---- */
+
+.acceso-confirmar {
+  display: grid;
+  gap: 14px;
+  text-align: center;
+}
+
+.acceso-confirmar p {
+  margin: 0;
+  font-size: var(--text-sub);
+  line-height: 1.5;
+  color: var(--color-ink-2);
+}
+
+.acceso-confirmar[hidden] {
+  display: none;
 }

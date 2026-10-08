@@ -18,7 +18,7 @@
 
 import { entrar } from "./auth.js";
 import { navegar } from "./router.js";
-import { INICIO } from "./nav.js";
+import { INICIO, REGISTRO } from "./nav.js";
 import { icono } from "./iconos.js";
 
 /* Lo que se tarda, como mínimo, en contestar «credenciales
@@ -230,6 +230,12 @@ export function arrancar() {
   // pantalla mientras se corrige la contraseña se lee como si la
   // corrección tampoco sirviera.
   form.addEventListener("input", () => mostrarError(null));
+
+  // El enlace a la pantalla de registro. `navegar()` y no un `<a
+  // href="#/registro">`: el enrutador es el único que decide el hash
+  // (skill §7), y un enlace nativo lo tocaría por su cuenta.
+  const irARegistro = $("login-ir-registro");
+  irARegistro?.addEventListener("click", () => navegar(REGISTRO));
 }
 
 if (document.readyState === "loading") {

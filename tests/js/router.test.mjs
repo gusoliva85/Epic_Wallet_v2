@@ -349,3 +349,122 @@ describe("enrutador", () => {
     }
   });
 });
+
+/* ===================================================================
+   Las pantallas de cuenta dentro de `#acceso` · F02-T10
+
+   `login` y `registro` comparten el mismo `#acceso`: no son dos
+   pantallas que el enrutador prenda y apague enteras, son dos
+   tarjetas `[data-cuenta]` adentro de una, igual que las siete
+   `.view` adentro de `.app`. Lo que hay que probar es que el
+   enrutador elige la tarjeta correcta y nunca deja las dos visibles
+   ni las dos ocultas. */
+
+async function montarConAcceso(hash = "#/login") {
+  const vistas = SECCIONES.map(
+    (id) => `<section class="view" data-vista="${id}" hidden></section>`,
+  ).join("");
+
+  const dom = new JSDOM(
+    `<!doctype html><html><head><title>Epic Wallet</title></head>` +
+      `<body>` +
+      `<div class="app"><main>${vistas}</main></div>` +
+      `<div class="acceso" id="acceso" hidden>` +
+      `<div class="acceso-card" data-cuenta="login"></div>` +
+      `<div class="acceso-card" data-cuenta="registro" hidden></div>` +
+      `</div>` +
+      `</body></html>`,
+    { url: `https://epic-wallet-v2.vercel.app/${hash}`, pretendToBeVisual: true },
+  );
+  dom.window.scrollTo = () => {};
+
+  globalThis.window = dom.window;
+  globalThis.document = dom.window.document;
+  globalThis.location = dom.window.location;
+  globalThis.history = dom.window.history;
+  globalThis.CustomEvent = dom.window.CustomEvent;
+
+  const url =
+    "file:///" +
+    resolve(RAIZ, "web", "src", "js", "router.js").replace(/\\/g, "/") +
+    `?t=${Math.random()}`;
+  const router = await import(url);
+  router.arrancar();
+  return { dom, router };
+}
+
+function tarjetaVisible(dom) {
+  const el = dom.window.document.querySelector(
+    "#acceso .acceso-card[data-cuenta]:not([hidden])",
+  );
+  return el ? el.dataset.cuenta : null;
+}
+
+/** Igual que `esperarVista`, pero para una tarjeta de `#acceso`: ésa
+ * no es una `.view` y `activa()` nunca la encontraría. */
+function esperarTarjeta(dom, cuenta, ms = 2000) {
+  return new Promise((listo, falla) => {
+    const limite = Date.now() + ms;
+    const probar = () => {
+      if (tarjetaVisible(dom) === cuenta) return listo();
+      if (Date.now() > limite) {
+        return falla(
+          new Error(`la tarjeta nunca pasó a «${cuenta}»; quedó en «${tarjetaVisible(dom)}»`),
+        );
+      }
+      dom.window.setTimeout(probar, 5);
+    };
+    probar();
+  });
+}
+
+describe("pantallas de cuenta dentro de #acceso", () => {
+  beforeEach(() => {
+    for (const k of [
+      "window",
+      "document",
+      "location",
+      "history",
+      "CustomEvent",
+    ])
+      delete globalThis[k];
+  });
+
+  test("en #/login se ve la tarjeta de login y no la de registro", async () => {
+    const { dom } = await montarConAcceso("#/login");
+    assert.equal(tarjetaVisible(dom), "login");
+  });
+
+  test("en #/registro se ve la tarjeta de registro y no la de login", async () => {
+    const { dom } = await montarConAcceso("#/registro");
+    assert.equal(tarjetaVisible(dom), "registro");
+  });
+
+  test("ir de login a registro oculta una y muestra la otra, nunca las dos", async () => {
+    const { dom, router } = await montarConAcceso("#/login");
+    assert.equal(tarjetaVisible(dom), "login");
+
+    router.navegar("registro");
+    await esperarTarjeta(dom, "registro");
+
+    const ocultas = dom.window.document.querySelectorAll(
+      "#acceso .acceso-card[data-cuenta][hidden]",
+    );
+    assert.equal(ocultas.length, 1, "tiene que quedar exactamente una oculta");
+    assert.equal(ocultas[0].dataset.cuenta, "login");
+  });
+
+  test("#acceso queda oculto y .app deja de ser inert en una ruta de la aplicación", async () => {
+    const { dom, router } = await montarConAcceso("#/login");
+    const acceso = () => dom.window.document.getElementById("acceso");
+    const app = () => dom.window.document.querySelector(".app");
+
+    assert.equal(acceso().hidden, false);
+    assert.equal(app().inert, true);
+
+    router.navegar("inicio");
+    await esperarVista(dom, "inicio");
+    assert.equal(acceso().hidden, true);
+    assert.equal(app().inert, false);
+  });
+});

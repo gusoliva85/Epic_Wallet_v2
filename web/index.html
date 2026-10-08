@@ -767,23 +767,22 @@
       </div>
     </aside>
 
-    <!-- ======================= INICIAR SESIÓN · F02-T09 =======================
+    <!-- =================== PANTALLAS DE CUENTA · F02-T09 y F02-T10 ===================
          Va encima de la aplicación, no dentro: no tiene barras, ni mes,
-         ni botón de alta. El enrutador la muestra en `#/login` y pone
-         `inert` en la aplicación de atrás.
+         ni botón de alta. El enrutador la muestra en `#/login` y
+         `#/registro`, alternando qué `[data-cuenta]` queda sin `hidden`,
+         y pone `inert` en la aplicación de atrás (`router.js`).
 
          Está en el HTML y no la pinta JavaScript, igual que la barra
-         superior y la del mes: es una pantalla fija: un formulario con
-         dos campos. Generarla desde JavaScript la dejaría en blanco
+         superior y la del mes: son pantallas fijas, un formulario con
+         sus campos. Generarlas desde JavaScript las dejaría en blanco
          mientras carga el módulo, que en un teléfono con mala conexión
          es justo el peor momento para no ver nada.
 
          Quién puede entrar acá y quién no lo decide la guardia de
-         F02-T12. Hasta entonces la aplicación sigue abierta: cerrarla
-         antes de que exista el registro (F02-T10) dejaría a todo el
-         mundo afuera. -->
+         F02-T12. Hasta entonces la aplicación sigue abierta. -->
     <div class="acceso" id="acceso" hidden>
-      <div class="acceso-card shell" role="main">
+      <div class="acceso-card shell" data-cuenta="login" role="main">
         <div class="acceso-marca">
           <span class="acceso-sello" aria-hidden="true">
             <svg viewBox="0 0 24 24">
@@ -869,14 +868,160 @@
         </form>
 
         <p class="acceso-pie">
-          <!-- Deshabilitado a propósito: la pantalla de registro es
-               F02-T10. Un enlace que lleva a una pantalla que no existe
-               se siente roto; apagado y con el motivo a la vista, se
-               lee como lo que es. El de «Olvidé mi contraseña» llega en
-               F16-T13, cuando el correo esté configurado. -->
-          <span class="acceso-pendiente">
-            Crear cuenta <small>— llega en la próxima tarea</small>
+          ¿No tenés cuenta?
+          <button class="acceso-enlace" id="login-ir-registro" type="button">
+            Crear cuenta
+          </button>
+          <!-- «Olvidé mi contraseña» llega en F11-T03, cuando el correo
+               esté configurado. Hasta entonces no se muestra ningún
+               enlace apagado acá: ya quedó uno arriba mientras existió
+               el registro sin hacer, y lo que enseñó es que un enlace
+               que no lleva a nada se siente roto más de lo que avisa
+               que «todavía no». -->
+        </p>
+      </div>
+
+      <!-- ===================== CREAR CUENTA · F02-T10 =====================
+           Misma tarjeta, mismo fondo, mismo lugar: es la continuación
+           de la pantalla anterior, no una marca distinta. El enrutador
+           la muestra en `#/registro` y oculta la de login (`router.js`,
+           bloque de `[data-cuenta]`).
+
+           Dos campos de contraseña en vez de uno, con el mismo patrón
+           de ojito que el login — ver skill §8 «Pantallas de cuenta». -->
+      <div class="acceso-card shell" data-cuenta="registro" hidden role="main">
+        <div class="acceso-marca">
+          <span class="acceso-sello" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <rect x="3.5" y="5" width="17" height="14" rx="3" />
+              <circle cx="12" cy="12" r="3.2" />
+              <path d="M12 6.2v1.6M12 16.2v1.6" />
+            </svg>
           </span>
+          <span class="acceso-nombre">Epic Wallet</span>
+        </div>
+
+        <h1 id="registro-titulo">Creá tu cuenta</h1>
+        <p class="acceso-bajada">Un lugar propio para tus finanzas.</p>
+
+        <!-- Lo que se ve mientras falte confirmar el correo. Hoy la
+             confirmación está apagada (F02-T02) y este bloque no se usa
+             nunca, pero queda preparado para cuando F11-T03 la active:
+             ese día alcanza con que `registro.js` lo muestre, sin tocar
+             una línea más de acá. -->
+        <div class="acceso-confirmar" id="registro-confirmar" hidden>
+          <p>
+            Te mandamos un correo para confirmar tu cuenta. Abrí el enlace
+            y después volvé a iniciar sesión.
+          </p>
+          <button class="btn" id="registro-volver-login" type="button">
+            Ir a iniciar sesión
+          </button>
+        </div>
+
+        <form id="form-registro" novalidate>
+          <div class="campo">
+            <label for="registro-email">Correo</label>
+            <input
+              class="inp"
+              id="registro-email"
+              name="email"
+              type="email"
+              autocomplete="username"
+              inputmode="email"
+              autocapitalize="none"
+              spellcheck="false"
+              required
+              placeholder="vos@ejemplo.com"
+            />
+          </div>
+
+          <div class="campo">
+            <label for="registro-clave">Contraseña</label>
+            <div class="clave-wrap">
+              <input
+                class="inp"
+                id="registro-clave"
+                name="clave"
+                type="password"
+                autocomplete="new-password"
+                minlength="8"
+                required
+              />
+              <button
+                class="clave-ojo"
+                id="registro-ojo"
+                type="button"
+                aria-label="Mostrar contraseña"
+                aria-pressed="false"
+                aria-controls="registro-clave"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true"></svg>
+              </button>
+            </div>
+            <!-- Medidor orientativo, nunca bloqueante más allá del
+                 mínimo de 8 caracteres (skill §8, Técnico §8.9). La
+                 barra arranca en 0 y la llena JavaScript: puesta a mano
+                 no tiene de dónde partir y aparece ya llena. -->
+            <div class="fuerza-clave" id="registro-fuerza" hidden>
+              <div class="fuerza-track">
+                <div class="fuerza-fill" id="registro-fuerza-barra"></div>
+              </div>
+              <span class="campo-nota" id="registro-fuerza-texto"></span>
+            </div>
+          </div>
+
+          <div class="campo">
+            <label for="registro-clave2">Repetir contraseña</label>
+            <div class="clave-wrap">
+              <input
+                class="inp"
+                id="registro-clave2"
+                name="clave2"
+                type="password"
+                autocomplete="new-password"
+                required
+              />
+              <button
+                class="clave-ojo"
+                id="registro-ojo2"
+                type="button"
+                aria-label="Mostrar contraseña"
+                aria-pressed="false"
+                aria-controls="registro-clave2"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true"></svg>
+              </button>
+            </div>
+            <!-- Vacía hasta que haya algo para comparar: con las dos
+                 cajas en blanco no hay "coincide" ni "no coincide" que
+                 decir todavía. -->
+            <span
+              class="campo-nota"
+              id="registro-coincide"
+              aria-live="polite"
+            ></span>
+          </div>
+
+          <p
+            class="acceso-error"
+            id="registro-error"
+            role="alert"
+            aria-live="assertive"
+            hidden
+          ></p>
+
+          <button class="btn btn--principal" id="registro-enviar" type="submit">
+            <span class="btn-texto">Crear cuenta</span>
+            <span class="btn-girador" aria-hidden="true"></span>
+          </button>
+        </form>
+
+        <p class="acceso-pie">
+          ¿Ya tenés cuenta?
+          <button class="acceso-enlace" id="registro-ir-login" type="button">
+            Iniciá sesión
+          </button>
         </p>
       </div>
     </div>
@@ -901,6 +1046,7 @@
     <script type="module" src="/src/js/barra-mes.js"></script>
     <script type="module" src="/src/js/views/vistas.js"></script>
     <script type="module" src="/src/js/acceso.js"></script>
+    <script type="module" src="/src/js/registro.js"></script>
     <script type="module" src="/src/js/app.js"></script>
     <script type="module" src="/src/js/registrar-sw.js"></script>
   </body>
