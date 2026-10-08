@@ -1,24 +1,17 @@
-/* Cuenta: nombre visible y cambio de contraseña · F02-T11
-   Referencia: 02_Documento_Tecnico.md §8.3, §9.1 · General §48.9
+/* Cuenta: nombre visible, cambio de contraseña y cerrar sesión
+   F02-T11 (nombre y contraseña) · F02-T12 (cerrar sesión)
+   Referencia: 02_Documento_Tecnico.md §8.3, §9.1, §12.3 · General §48.9
    · skill §8 «Pantallas de cuenta»
 
-   La tarjeta "Cuenta" de configuración, con dos formularios
-   independientes: nombre visible y cambio de contraseña. Comparten la
-   tarjeta pero no comparten estado — guardar uno no toca al otro, y
-   si uno falla el otro sigue intacto.
+   La tarjeta "Cuenta" de configuración, con tres piezas independientes:
+   nombre visible, cambio de contraseña y cerrar sesión. Ninguna
+   comparte estado con las otras — guardar una no toca a las demás.
 
    El correo es de sólo lectura y sale de la sesión de Supabase
    (`usuarioActual()`), no de nuestra API: el correo no vive en
    `profiles`, lo gestiona Supabase Auth (Técnico §6.1). El nombre
    visible sí vive en `profiles`, así que su lectura y su escritura
-   pasan por `GET`/`PATCH /api/me`.
-
-   Por qué un `fetch` a mano y no un cliente de API: `api.js`, con el
-   reintento ante un 401 vencido, es F02-T12 —la tarea siguiente—. Acá
-   alcanza con la llamada mínima usando `cabeceras()` de auth.js; el
-   día que exista `api.js` esta función se reemplaza por una línea.
-   Construir el cliente general antes de que haga falta sería
-   adelantar esa tarea.
+   pasan por `GET`/`PATCH /api/me`, ahora a través de `api.js`.
 
    El cambio de contraseña va en dos pasos. Supabase no pide la
    contraseña actual para cambiarla —el token ya prueba quién sos—,
@@ -28,9 +21,10 @@
    criterio de aceptación de la tarea: "con la actual equivocada no se
    cambia nada". */
 
-import { usuarioActual, entrar, actualizarUsuario, cabeceras } from "./auth.js";
+import { usuarioActual, entrar, actualizarUsuario } from "./auth.js";
 import { conectarOjito } from "./acceso.js";
 import { toast } from "./components/toast.js";
+import { api, ApiError, cerrarSesion } from "./api.js";
 
 const MINIMO_CLAVE = 8;
 
@@ -50,20 +44,20 @@ async function cargarCuenta() {
   const campoNombre = /** @type {HTMLInputElement | null} */ ($("cuenta-nombre"));
   if (!campoNombre) return;
 
-  const cab = await cabeceras();
-  // Sin sesión no hay nada que precargar. No es un error que mostrar:
-  // la guardia de rutas (F02-T12) es la que decide si esta pantalla
-  // debería ser alcanzable sin sesión; acá sólo se evita romper.
-  if (!cab) return;
+  // Sin sesión no hay nada que pedir. No es un error que mostrar —la
+  // guardia de rutas ya se encarga de que no se llegue hasta acá sin
+  // sesión—, es sólo evitar una llamada que de entrada va a fallar con
+  // un 401 y, peor, terminaría cerrando una sesión que ni siquiera
+  // existe (`api.js` cierra sesión al segundo 401 seguido).
+  if (!usuario) return;
 
   try {
-    const r = await fetch("/api/me", { headers: cab });
-    if (!r.ok) return;
-    const perfil = await r.json();
+    const perfil = await api.get("/me");
     campoNombre.value = perfil.display_name ?? "";
   } catch {
-    // Sin red: el campo queda como esté. Si el usuario escribe y
-    // guarda, el error de esa llamada ya lo va a avisar.
+    // Sin perfil, sin red, o la sesión venció justo ahora: el campo
+    // queda como esté. Si el usuario escribe y guarda, el error de esa
+    // llamada ya lo va a avisar.
   }
 }
 
@@ -105,32 +99,21 @@ async function alGuardarNombre(evento) {
   marcarCargandoNombre(true);
 
   try {
-    const cab = await cabeceras();
-    if (!cab) {
-      mostrarErrorNombre("Tu sesión no está disponible. Volvé a entrar e intentá de nuevo.");
-      return;
-    }
-
-    const r = await fetch("/api/me", {
-      method: "PATCH",
-      headers: { ...cab, "Content-Type": "application/json" },
-      // Sólo `display_name`: mandar `opening_balance` acá lo pisaría
-      // con `undefined` → el backend lo ignora por `exclude_unset`,
-      // pero no hace falta mandarlo ni para eso. Nombre recortado: un
-      // nombre de puros espacios el backend lo convierte en null, que
-      // es justo "sin nombre visible".
-      body: JSON.stringify({ display_name: campo.value.trim() }),
-    });
-
-    if (!r.ok) {
-      mostrarErrorNombre("No se pudo guardar el nombre. Probá de nuevo en un momento.");
-      return;
-    }
-
+    // Sólo `display_name`: mandar `opening_balance` acá lo pisaría con
+    // `undefined` → el backend lo ignora por `exclude_unset`, pero no
+    // hace falta mandarlo ni para eso. Nombre recortado: un nombre de
+    // puros espacios el backend lo convierte en null, que es justo
+    // "sin nombre visible".
+    await api.patch("/me", { display_name: campo.value.trim() });
     toast("Nombre guardado.");
   } catch (e) {
-    mostrarErrorNombre("No se pudo guardar el nombre. Probá de nuevo en un momento.");
-    console.error("config-cuenta: error al guardar el nombre", e);
+    // El mensaje de un `ApiError` ya viene en español y listo para
+    // mostrar (Técnico §9.3): "no se pudo guardar" sería menos preciso
+    // que lo que el servidor ya está diciendo.
+    mostrarErrorNombre(
+      e instanceof ApiError ? e.message : "No se pudo guardar el nombre. Probá de nuevo en un momento.",
+    );
+    if (!(e instanceof ApiError)) console.error("config-cuenta: error al guardar el nombre", e);
   } finally {
     guardandoNombre = false;
     marcarCargandoNombre(false);
@@ -301,6 +284,8 @@ export function arrancar() {
 
   campoNueva?.addEventListener("input", actualizarCoincidencia);
   campoNueva2?.addEventListener("input", actualizarCoincidencia);
+
+  $("btn-cerrar-sesion")?.addEventListener("click", cerrarSesion);
 
   cargarCuenta();
 }

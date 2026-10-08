@@ -1,20 +1,25 @@
-/* Pruebas de la tarjeta de Cuenta en configuración · F02-T11
+/* Pruebas de la tarjeta de Cuenta en configuración · F02-T11 y F02-T12
    Se corren con `npm test` (`node --test tests/js/*.test.mjs`).
 
    El HTML sale del `index.html` real, igual que `acceso.test.mjs` y
    `registro.test.mjs`. Se doblan `auth.js` (entrar, actualizarUsuario,
-   usuarioActual, cabeceras), `components/toast.js` y `fetch` —lo único
-   que NO se dobla es `conectarOjito`, que se importa de verdad desde
-   `acceso.js`: es la misma función que ya prueba `acceso.test.mjs`
-   sobre el campo de login, y acá lo que importa es que se conecte a
-   los tres campos de contraseña, no reprobarla.
+   usuarioActual) y `components/toast.js`. De `api.js` se dobla el
+   objeto `api` y `cerrarSesion` —son lo que hay que controlar para
+   simular éxito o fallo sin red de verdad—, pero `ApiError` se importa
+   real: `e instanceof ApiError` tiene que seguir siendo la misma
+   clase que usa `config-cuenta.js`, o la distinción entre un error de
+   la API y uno inesperado (que el código sí hace) dejaría de
+   probarse. Tampoco se dobla `conectarOjito`, que se importa de
+   verdad desde `acceso.js`: es la misma función que ya prueba
+   `acceso.test.mjs` sobre el campo de login, y acá lo que importa es
+   que se conecte a los tres campos de contraseña, no reprobarla.
 
    Los criterios de aceptación son de comportamiento: que la
    contraseña nueva sirva para entrar (que se llame a
    `actualizarUsuario`), que con la actual equivocada no se cambie
-   nada (que `actualizarUsuario` NUNCA se llame), y que el correo no
-   se pueda editar (que no haya ningún campo de formulario en esa
-   fila). */
+   nada (que `actualizarUsuario` NUNCA se llame), que el correo no se
+   pueda editar (que no haya ningún campo de formulario en esa fila),
+   y que cerrar sesión limpie el estado y lleve al login. */
 
 import { test, describe, after } from "node:test";
 import assert from "node:assert/strict";
@@ -26,6 +31,13 @@ import { dirname, resolve } from "node:path";
 const AQUI = dirname(fileURLToPath(import.meta.url));
 const RAIZ = resolve(AQUI, "..", "..");
 const INDEX = resolve(RAIZ, "web", "index.html");
+
+// La misma clase que importa (real) `config-cuenta.js` doblado: hace
+// falta acá para poder fabricar un `ApiError` de prueba y comprobar
+// que `e instanceof ApiError` elige el mensaje correcto.
+const { ApiError } = await import(
+  `file:///${resolve(RAIZ, "web", "src", "js", "api.js").replace(/\\/g, "/")}`
+);
 
 const ventanas = [];
 after(() => {
@@ -49,23 +61,22 @@ function htmlDeCuenta() {
 }
 
 /**
- * Monta la pantalla y carga `config-cuenta.js` con dobles de
- * `auth.js`, `components/toast.js` y `fetch`.
+ * Monta la pantalla y carga `config-cuenta.js` con dobles.
  *
  * @param {object} opciones
  * @param {{id?:string, email?:string}|null} [opciones.usuario] lo que
  *   devuelve `usuarioActual()`; `null` simula sin sesión.
- * @param {boolean} [opciones.conSesion] si `cabeceras()` devuelve algo.
  * @param {(email:string, clave:string) => Promise<object>} [opciones.entrar]
  * @param {(cambios:object) => Promise<object>} [opciones.actualizarUsuario]
- * @param {(url:string, init:object) => Promise<{ok:boolean, status?:number, json?:()=>Promise<object>}>} [opciones.fetch]
+ * @param {() => Promise<object>} [opciones.apiGet] respuesta de `api.get("/me")`.
+ * @param {(path:string, datos:object) => Promise<object>} [opciones.apiPatch]
  */
 async function montar({
   usuario = { id: "u1", email: "gustavo@example.com" },
-  conSesion = true,
   entrar = async () => ({ ok: true, usuario: { id: "u1" } }),
   actualizarUsuario = async () => ({ ok: true, usuario: { id: "u1" } }),
-  fetchImpl = async () => ({ ok: true, json: async () => ({ display_name: "Gustavo" }) }),
+  apiGet = async () => ({ display_name: "Gustavo" }),
+  apiPatch = async () => ({ display_name: "Gustavo" }),
 } = {}) {
   const dom = new JSDOM(`<!doctype html><html><body>${htmlDeCuenta()}</body></html>`, {
     url: "https://epic-wallet-v2.vercel.app/#/config",
@@ -78,11 +89,17 @@ async function montar({
   globalThis.HTMLElement = dom.window.HTMLElement;
   globalThis.CustomEvent = dom.window.CustomEvent;
 
-  const llamadas = { entrar: [], actualizarUsuario: [], fetch: [], toasts: [] };
+  const llamadas = {
+    entrar: [],
+    actualizarUsuario: [],
+    apiGet: [],
+    apiPatch: [],
+    cerrarSesion: 0,
+    toasts: [],
+  };
 
   globalThis.__espia = {
     usuarioActual: async () => usuario,
-    cabeceras: async () => (conSesion ? { Authorization: "Bearer token-de-prueba" } : null),
     entrar: async (...a) => {
       llamadas.entrar.push(a);
       return entrar(...a);
@@ -91,10 +108,17 @@ async function montar({
       llamadas.actualizarUsuario.push(a);
       return actualizarUsuario(...a);
     },
-  };
-  globalThis.fetch = async (...a) => {
-    llamadas.fetch.push(a);
-    return fetchImpl(...a);
+    apiGet: async (...a) => {
+      llamadas.apiGet.push(a);
+      return apiGet(...a);
+    },
+    apiPatch: async (...a) => {
+      llamadas.apiPatch.push(a);
+      return apiPatch(...a);
+    },
+    cerrarSesion: async () => {
+      llamadas.cerrarSesion++;
+    },
   };
   globalThis.__toasts = llamadas.toasts;
 
@@ -106,11 +130,10 @@ async function cargarConDobles() {
   let codigo = readFileSync(resolve(RAIZ, "web", "src", "js", "config-cuenta.js"), "utf8");
   codigo = codigo
     .replace(
-      'import { usuarioActual, entrar, actualizarUsuario, cabeceras } from "./auth.js";',
+      'import { usuarioActual, entrar, actualizarUsuario } from "./auth.js";',
       "const usuarioActual = (...a) => globalThis.__espia.usuarioActual(...a);\n" +
         "const entrar = (...a) => globalThis.__espia.entrar(...a);\n" +
-        "const actualizarUsuario = (...a) => globalThis.__espia.actualizarUsuario(...a);\n" +
-        "const cabeceras = (...a) => globalThis.__espia.cabeceras(...a);",
+        "const actualizarUsuario = (...a) => globalThis.__espia.actualizarUsuario(...a);",
     )
     .replace(
       'import { conectarOjito } from "./acceso.js";',
@@ -119,6 +142,19 @@ async function cargarConDobles() {
     .replace(
       'import { toast } from "./components/toast.js";',
       "const toast = (...a) => globalThis.__toasts.push(a);",
+    )
+    .replace(
+      'import { api, ApiError, cerrarSesion } from "./api.js";',
+      // `ApiError` real, y SIN `?t=`: tiene que ser la misma clase que
+      // importa este archivo de prueba más abajo, o `instanceof`
+      // compararía dos clases de dos instancias de módulo distintas y
+      // daría `false` siempre. Es justo el motivo por el que el resto
+      // de los módulos SÍ llevan `?t=` —tienen estado propio entre
+      // pruebas— y éste no lo necesita: una clase no tiene estado que
+      // limpiar entre una prueba y la siguiente.
+      `import { ApiError } from "file:///${resolve(RAIZ, "web", "src", "js", "api.js").replace(/\\/g, "/")}";\n` +
+        'const api = { get: (...a) => globalThis.__espia.apiGet(...a), patch: (...a) => globalThis.__espia.apiPatch(...a) };\n' +
+        "const cerrarSesion = (...a) => globalThis.__espia.cerrarSesion(...a);",
     );
 
   const unico = `
@@ -170,13 +206,21 @@ describe("el correo es de sólo lectura", () => {
 describe("guardar el nombre visible", () => {
   test("precarga el nombre que ya tenía, pedido a la API", async () => {
     const { dom, llamadas } = await montar({
-      fetchImpl: async () => ({ ok: true, json: async () => ({ display_name: "Gustavo Oliva" }) }),
+      apiGet: async () => ({ display_name: "Gustavo Oliva" }),
     });
     await esperar(10);
 
     assert.equal($(dom, "cuenta-nombre").value, "Gustavo Oliva");
-    assert.equal(llamadas.fetch[0][0], "/api/me");
-    assert.equal(llamadas.fetch[0][1].method, undefined, "la primera llamada es GET, sin method");
+    assert.equal(llamadas.apiGet.length, 1);
+    assert.equal(llamadas.apiGet[0][0], "/me");
+  });
+
+  test("sin sesión, no llega a pedir el nombre", async () => {
+    // El resguardo que evita el 401 en cascada: sin usuario, `api.get`
+    // ni se llama.
+    const { llamadas } = await montar({ usuario: null });
+    await esperar(10);
+    assert.equal(llamadas.apiGet.length, 0);
   });
 
   test("guardar manda sólo display_name, recortado", async () => {
@@ -187,11 +231,8 @@ describe("guardar el nombre visible", () => {
     enviar(dom, "form-nombre");
     await esperar(50);
 
-    const guardado = llamadas.fetch.find((l) => l[1]?.method === "PATCH");
-    assert.ok(guardado, "no se llamó a PATCH /api/me");
-    assert.equal(guardado[0], "/api/me");
-    const cuerpo = JSON.parse(guardado[1].body);
-    assert.deepEqual(cuerpo, { display_name: "Gustavo" });
+    assert.equal(llamadas.apiPatch.length, 1);
+    assert.deepEqual(llamadas.apiPatch[0], ["/me", { display_name: "Gustavo" }]);
   });
 
   test("al guardar bien, avisa con un toast", async () => {
@@ -204,10 +245,11 @@ describe("guardar el nombre visible", () => {
     assert.match(llamadas.toasts[0][0], /nombre/i);
   });
 
-  test("si la API falla, el error queda en la región de alerta", async () => {
+  test("si la API falla, el mensaje del ApiError queda en la región de alerta", async () => {
     const { dom } = await montar({
-      fetchImpl: async (url, init) =>
-        init?.method === "PATCH" ? { ok: false, status: 500 } : { ok: true, json: async () => ({}) },
+      apiPatch: async () => {
+        throw new ApiError({ code: "VALIDATION_ERROR", message: "El nombre es demasiado largo." });
+      },
     });
     await esperar(10);
     enviar(dom, "form-nombre");
@@ -216,16 +258,14 @@ describe("guardar el nombre visible", () => {
     const error = $(dom, "nombre-error");
     assert.equal(error.hidden, false);
     assert.equal(error.getAttribute("role"), "alert");
+    assert.match(error.textContent, /demasiado largo/);
   });
 
   test("no permite envíos dobles", async () => {
     const { dom, llamadas } = await montar({
-      fetchImpl: async (url, init) => {
-        if (init?.method === "PATCH") {
-          await new Promise((listo) => setTimeout(listo, 30));
-          return { ok: true };
-        }
-        return { ok: true, json: async () => ({}) };
+      apiPatch: async () => {
+        await new Promise((listo) => setTimeout(listo, 30));
+        return { display_name: "Gustavo" };
       },
     });
     await esperar(10);
@@ -235,8 +275,7 @@ describe("guardar el nombre visible", () => {
     enviar(dom, "form-nombre");
     await esperar(150);
 
-    const guardados = llamadas.fetch.filter((l) => l[1]?.method === "PATCH");
-    assert.equal(guardados.length, 1, `hubo ${guardados.length} guardados y tenía que haber 1`);
+    assert.equal(llamadas.apiPatch.length, 1, `hubo ${llamadas.apiPatch.length} guardados y tenía que haber 1`);
   });
 });
 
@@ -360,5 +399,25 @@ describe("cambiar la contraseña", () => {
     await esperar(150);
 
     assert.equal(llamadas.entrar.length, 1, `hubo ${llamadas.entrar.length} intentos y tenía que haber 1`);
+  });
+});
+
+describe("cerrar sesión · F02-T12", () => {
+  test("el botón llama a cerrarSesion, que limpia y manda al login", async () => {
+    const { dom, llamadas } = await montar();
+    await esperar(10);
+
+    $(dom, "btn-cerrar-sesion").click();
+    await tick();
+
+    assert.equal(llamadas.cerrarSesion, 1);
+  });
+
+  test("sin confirmación de por medio: un solo toque alcanza", async () => {
+    // No hay diálogo que cancelar: el botón es `type="button"` sin
+    // `confirm()` ni una hoja que abrir antes.
+    const boton = (await montar()).dom.window.document.getElementById("btn-cerrar-sesion");
+    assert.equal(boton.tagName, "BUTTON");
+    assert.equal(boton.getAttribute("type"), "button");
   });
 });

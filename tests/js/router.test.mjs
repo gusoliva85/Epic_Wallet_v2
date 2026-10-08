@@ -1,7 +1,5 @@
-/* Pruebas del enrutador · F01-T07
-   Se corren con `node --test tests/js/` y también desde pytest, que
-   las invoca en tests/unit/test_router.py para que `pytest` siga
-   siendo el único comando que hay que recordar.
+/* Pruebas del enrutador · F01-T07, guardia de rutas desde F02-T12
+   Se corren con `npm test` (`node --test tests/js/*.test.mjs`).
 
    Por qué con jsdom y no leyendo el archivo como las demás pruebas de
    frontend: los cuatro criterios de aceptación de la tarea son de
@@ -31,9 +29,42 @@ const SECCIONES = [
   "config",
 ];
 
+/** Carga `router.js` con `haySesion()` doblada por `globalThis.__haySesion`.
+ * El resto de sus importaciones (`nav.js`) son datos puros —ninguna
+ * `const` global, ningún efecto de lado— así que se dejan reales, con
+ * una ruta absoluta y su propio `?t=` para que el caché de módulos de
+ * Node no devuelva una instancia compartida entre pruebas. Es el mismo
+ * patrón que `conectarOjito` en `registro.test.mjs` y
+ * `config-cuenta.test.mjs`: doblar sólo lo que hace falta doblar. */
+async function cargarRouterConDobles() {
+  let codigo = readFileSync(resolve(RAIZ, "web", "src", "js", "router.js"), "utf8");
+  const navUrl =
+    "file:///" +
+    resolve(RAIZ, "web", "src", "js", "nav.js").replace(/\\/g, "/") +
+    `?t=${Math.random()}`;
+  codigo = codigo
+    .replace(
+      'import { SECCIONES, PUBLICAS, INICIO, LOGIN, esPublica, tituloDeRuta } from "./nav.js";',
+      `import { SECCIONES, PUBLICAS, INICIO, LOGIN, esPublica, tituloDeRuta } from "${navUrl}";`,
+    )
+    .replace(
+      'import { haySesion } from "./auth.js";',
+      "const haySesion = async () => globalThis.__haySesion;",
+    );
+
+  const unico = `\n// ${Math.random()}\n`;
+  const url = `data:text/javascript;base64,${Buffer.from(codigo + unico, "utf8").toString("base64")}`;
+  return import(url);
+}
+
 /** Monta un DOM con las siete vistas y devuelve el enrutador cargado
-    en ese contexto. `hash` simula con qué URL se entró. */
-async function montar(hash = "") {
+ * en ese contexto. `hash` simula con qué URL se entró.
+ *
+ * `haySesion` por defecto en `true`: todas las pruebas de este bloque
+ * son de cuando la aplicación ya funciona con una cuenta adentro, de
+ * antes de que existiera la guardia de rutas (F02-T12). Las pruebas de
+ * la guardia en sí ponen `haySesion` explícito, en los dos valores. */
+async function montar(hash = "", { haySesion = true } = {}) {
   const vistas = SECCIONES.map(
     (id) => `<section class="view" data-vista="${id}" hidden></section>`,
   ).join("");
@@ -58,15 +89,10 @@ async function montar(hash = "") {
   globalThis.location = dom.window.location;
   globalThis.history = dom.window.history;
   globalThis.CustomEvent = dom.window.CustomEvent;
+  globalThis.__haySesion = haySesion;
 
-  // Cache-buster: cada prueba necesita el módulo con su estado interno
-  // en blanco (el enrutador recuerda la última ruta pintada).
-  const url =
-    "file:///" +
-    resolve(RAIZ, "web", "src", "js", "router.js").replace(/\\/g, "/") +
-    `?t=${Math.random()}`;
-  const router = await import(url);
-  router.arrancar();
+  const router = await cargarRouterConDobles();
+  await router.arrancar();
   return { dom, router };
 }
 
@@ -360,7 +386,11 @@ describe("enrutador", () => {
    enrutador elige la tarjeta correcta y nunca deja las dos visibles
    ni las dos ocultas. */
 
-async function montarConAcceso(hash = "#/login") {
+/** `haySesion` por defecto en `false`: este bloque prueba sobre todo
+ * las pantallas de cuenta, que son las que ve alguien sin sesión. La
+ * única prueba que necesita estar adentro con la aplicación pasa
+ * `haySesion: true` explícito. */
+async function montarConAcceso(hash = "#/login", { haySesion = false } = {}) {
   const vistas = SECCIONES.map(
     (id) => `<section class="view" data-vista="${id}" hidden></section>`,
   ).join("");
@@ -383,13 +413,10 @@ async function montarConAcceso(hash = "#/login") {
   globalThis.location = dom.window.location;
   globalThis.history = dom.window.history;
   globalThis.CustomEvent = dom.window.CustomEvent;
+  globalThis.__haySesion = haySesion;
 
-  const url =
-    "file:///" +
-    resolve(RAIZ, "web", "src", "js", "router.js").replace(/\\/g, "/") +
-    `?t=${Math.random()}`;
-  const router = await import(url);
-  router.arrancar();
+  const router = await cargarRouterConDobles();
+  await router.arrancar();
   return { dom, router };
 }
 
@@ -462,9 +489,130 @@ describe("pantallas de cuenta dentro de #acceso", () => {
     assert.equal(acceso().hidden, false);
     assert.equal(app().inert, true);
 
+    // Simula que mientras tanto se inició sesión —como pasaría de
+    // verdad después de un login— antes de ir a una vista privada. Sin
+    // esto la guardia (F02-T12) devolvería la navegación a login en
+    // cuanto el `hashchange` la revisara, y la prueba no vería lo que
+    // dice probar.
+    globalThis.__haySesion = true;
     router.navegar("inicio");
     await esperarVista(dom, "inicio");
     assert.equal(acceso().hidden, true);
     assert.equal(app().inert, false);
+  });
+});
+
+/* ===================================================================
+   Guardia de rutas · F02-T12
+
+   Se prueba sobre el `montar()` principal —el de las siete vistas—,
+   sin el DOM de `#acceso`: alcanza con mirar qué `.view` queda activa
+   (o ninguna) y a qué hash se corrigió la URL. `pintar()` ya tolera
+   que `#acceso`/`.app` no existan (`if (acceso && app)`), así que una
+   redirección a "login" en este DOM se ve como "ninguna vista activa,
+   hash en #/login" — no hace falta reconstruir la tarjeta de login
+   para comprobar hacia dónde la guardia decidió ir. */
+
+describe("guardia de rutas", () => {
+  beforeEach(() => {
+    for (const k of ["window", "document", "location", "history", "CustomEvent"])
+      delete globalThis[k];
+  });
+
+  test("una ruta privada sin sesión manda a login", async () => {
+    const { dom } = await montar("#/inversiones", { haySesion: false });
+    assert.equal(activa(dom), null, "quedó una vista de la aplicación activa sin sesión");
+    assert.equal(dom.window.location.hash, "#/login");
+  });
+
+  test("con sesión, la misma ruta privada se abre normalmente", async () => {
+    const { dom } = await montar("#/inversiones", { haySesion: true });
+    assert.equal(activa(dom), "inversiones");
+    assert.equal(dom.window.location.hash, "#/inversiones");
+  });
+
+  test("login con sesión ya puesta manda al dashboard", async () => {
+    const { dom } = await montar("#/login", { haySesion: true });
+    assert.equal(activa(dom), "inicio");
+    assert.equal(dom.window.location.hash, "#/inicio");
+  });
+
+  test("login sin sesión se queda en login", async () => {
+    const { dom } = await montar("#/login", { haySesion: false });
+    assert.equal(activa(dom), null);
+    assert.equal(dom.window.location.hash, "#/login");
+  });
+
+  test("una ruta inválida sin sesión cae en login, no en inicio", async () => {
+    // Antes de la guardia, cualquier ruta que no existiera caía en
+    // inicio. Sin sesión, inicio tampoco es alcanzable: tiene que caer
+    // un paso más allá, en login, y no quedarse a mitad de camino.
+    const { dom } = await montar("#/esto-no-existe", { haySesion: false });
+    assert.equal(activa(dom), null);
+    assert.equal(dom.window.location.hash, "#/login");
+  });
+
+  test("la redirección no deja la ruta corregida en el historial", async () => {
+    // Mismo criterio que la corrección de ruta inválida: "atrás" no
+    // puede volver a un lugar al que la guardia ya decidió que no se
+    // podía entrar.
+    const { dom } = await montar("#/historial", { haySesion: false });
+    assert.equal(dom.window.history.length, 1, "la redirección agregó una entrada al historial");
+  });
+
+  test("navegar a una ruta privada sin sesión mientras se usa la app también redirige", async () => {
+    // No sólo la primera pintada: cualquier cambio de hash pasa por la
+    // misma guardia, incluida una sesión que se cerró a mitad de uso.
+    const { dom, router } = await montar("#/inicio", { haySesion: true });
+    assert.equal(activa(dom), "inicio");
+
+    globalThis.__haySesion = false;
+    router.navegar("analisis");
+    // `esperarVista` espera que una `.view` se active; acá se espera
+    // lo contrario —que la guardia redirija y ninguna quede activa—,
+    // así que se sondea el hash a mano en vez de reusarla.
+    await new Promise((listo, falla) => {
+      const limite = Date.now() + 2000;
+      const probar = () => {
+        if (dom.window.location.hash === "#/login") return listo();
+        if (Date.now() > limite) return falla(new Error("nunca redirigió a login"));
+        dom.window.setTimeout(probar, 5);
+      };
+      probar();
+    });
+    assert.equal(activa(dom), null);
+  });
+
+  test("después de cerrar sesión, «atrás» no vuelve a mostrar la vista privada", async () => {
+    // Criterio de aceptación de F02-T12: "al cerrar sesión no queda
+    // nada del usuario anterior, ni volviendo atrás". Cerrar sesión
+    // deja la sesión en falso y navega a login (lo que hace
+    // `cerrarSesion()` de api.js); "atrás" vuelve al hash privado de
+    // antes, pero esa vuelta dispara la misma guardia y la manda de
+    // nuevo a login, nunca a mostrar la vista.
+    const { dom, router } = await montar("#/patrimonio", { haySesion: true });
+    assert.equal(activa(dom), "patrimonio");
+
+    // Cerrar sesión: sesión en falso y navegar a login (igual que
+    // `cerrarSesion()`, sin importar los dobles de auth.js que usa esa
+    // función en api.test.mjs).
+    globalThis.__haySesion = false;
+    router.navegar("login");
+    await new Promise((listo) => dom.window.setTimeout(listo, 20));
+    assert.equal(dom.window.location.hash, "#/login");
+
+    dom.window.history.back();
+    await new Promise((listo, falla) => {
+      const limite = Date.now() + 2000;
+      const probar = () => {
+        // Vuelve a "patrimonio" en el historial, pero la guardia lo
+        // intercepta: nunca llega a pintarse.
+        if (dom.window.location.hash === "#/login" && activa(dom) !== "patrimonio") return listo();
+        if (Date.now() > limite) return falla(new Error("«atrás» mostró la vista privada"));
+        dom.window.setTimeout(probar, 5);
+      };
+      probar();
+    });
+    assert.notEqual(activa(dom), "patrimonio");
   });
 });

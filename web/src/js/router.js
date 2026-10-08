@@ -15,9 +15,17 @@
    Quien quiera saber la ruta activa no la lee del DOM ni del hash:
    escucha el evento `epic:ruta`. Así la barra superior, la inferior y
    lo que venga después no se ponen de acuerdo entre ellas, sino cada
-   una con el enrutador. */
+   una con el enrutador.
 
-import { SECCIONES, PUBLICAS, INICIO, esPublica, tituloDeRuta } from "./nav.js";
+   Guardia de rutas · F02-T12. Antes de pintar, se decide si la ruta
+   pedida es la que corresponde: una ruta privada sin sesión cae en
+   login; una pública (login, registro) con sesión cae en inicio. La
+   sesión se pregunta en cada cambio de ruta y no se cachea acá: es una
+   lectura local (`getSession()` no toca la red), y cachearla sería
+   quedarse con una respuesta vieja justo después de cerrar sesión. */
+
+import { SECCIONES, PUBLICAS, INICIO, LOGIN, esPublica, tituloDeRuta } from "./nav.js";
+import { haySesion } from "./auth.js";
 
 // Las siete secciones más las pantallas de cuenta. Las dos barras de
 // navegación siguen leyendo sólo `SECCIONES`, así que una pantalla de
@@ -121,18 +129,43 @@ export function navegar(id, { reemplazar = false } = {}) {
   location.hash = url;
 }
 
-function alCambiarElHash() {
-  const id = rutaActual();
-  if (id) {
-    pintar(id);
+/**
+ * Decide qué ruta corresponde mostrar de verdad, según haya o no
+ * sesión. Devuelve `id` sin tocar si no hay nada que corregir.
+ */
+async function resolverDestino(id) {
+  const publica = esPublica(id);
+  const sesion = await haySesion();
+  if (!publica && !sesion) return LOGIN; // privada sin sesión
+  if (publica && sesion) return INICIO; // pública con sesión ya puesta
+  return id;
+}
+
+async function alCambiarElHash() {
+  const pedida = rutaActual();
+  // Ruta inválida o sin hash: la base para la guardia es inicio, igual
+  // que antes de que existiera la guardia.
+  const destino = await resolverDestino(pedida ?? INICIO);
+
+  if (destino === pedida) {
+    // La ruta del hash es válida y la guardia la deja pasar tal cual.
+    pintar(destino);
   } else {
-    // Ruta inválida o sin hash: cae en inicio y además corrige la URL,
-    // reemplazando para no dejar la ruta mala en el historial.
-    navegar(INICIO, { reemplazar: true });
+    // O la ruta no existía, o la guardia decidió otra cosa. En los dos
+    // casos se corrige el hash sin dejar la ruta vieja en el
+    // historial: si no, «atrás» volvería justo a lo que se corrigió.
+    navegar(destino, { reemplazar: true });
   }
 }
 
-export function arrancar() {
+/**
+ * Async desde F02-T12: la primera pintada ahora pasa por la guardia de
+ * rutas, que pregunta la sesión antes de pintar. Quien llama puede
+ * ignorar la promesa (`arrancar()` a secas, como hace `app.js`) o
+ * esperarla cuando necesite saber que la primera pintada —con la
+ * guardia ya aplicada— terminó, que es lo que hacen las pruebas.
+ */
+export async function arrancar() {
   // Sólo `hashchange`. Todas las entradas que crea este enrutador son
   // de hash, y el navegador emite `hashchange` tanto al cambiarlo como
   // al recorrer el historial con «atrás» y «adelante». Agregar
@@ -146,10 +179,15 @@ export function arrancar() {
   // evento y registraron su escucha antes que ésta, así que ya están
   // oyendo `epic:ruta` cuando se emite. Arrancando antes, la primera
   // ruta se emitiría sin nadie escuchando.
-  const primera = () => alCambiarElHash();
+  //
+  // La rama de `DOMContentLoaded` no se espera: con los módulos
+  // cargados como `type="module"` (y en cualquier DOM ya parseado,
+  // como el de las pruebas) `readyState` nunca vale "loading" acá, así
+  // que esa rama no se ejecuta en la práctica; no vale la pena
+  // complicarla para poder esperarla.
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", primera);
+    document.addEventListener("DOMContentLoaded", () => void alCambiarElHash());
   } else {
-    primera();
+    await alCambiarElHash();
   }
 }
