@@ -2827,3 +2827,269 @@
 .acceso-confirmar[hidden] {
   display: none;
 }
+
+/* ============================================================
+   Realce del login · pedido de Gustavo, 08/10/2026
+
+   Todo lo de acá abajo está escopado a `.acceso-premium`,
+   `.acceso-brand` y `.acceso-card--login`: tres clases que SÓLO
+   existen en el login. El registro sigue usando `.acceso-card` a
+   secas y no hereda un solo píxel de esto — es la regla que pidió
+   Gustavo ("esta perfecto la pantalla [de registro], pero no me
+   gusta mucho el login").
+
+   En el celular `.acceso-premium` se ve igual que la tarjeta sola de
+   siempre: el panel de marca nace en `display: none` y recién
+   aparece desde 960 px, que es donde el resto del sistema ya hace
+   lugar para una segunda columna (skill §5). Mobile-first de
+   verdad: lo que cambia en la tarjeta misma —el sello con brillo,
+   el tamaño de letra, el movimiento de entrada— se ve en cualquier
+   ancho, porque el celular es la prioridad y ahí es donde más
+   importa que se sienta cuidado. ============================================================ */
+
+.acceso-premium {
+  display: grid;
+  width: 100%;
+  max-width: 372px;
+  /* Entra con una leve aparición y un pequeño ascenso: el primer
+     gesto de la pantalla, antes de que nadie toque nada. */
+  animation: accesoEntrada 0.5s var(--ease) both;
+}
+
+.acceso-premium[hidden] {
+  display: none;
+}
+
+@keyframes accesoEntrada {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .acceso-premium {
+    animation: none;
+  }
+}
+
+/* ---- el sello, con un brillo detrás que no estaba en el registro ---- */
+
+.acceso-card--login .acceso-marca {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.acceso-card--login .acceso-sello {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  box-shadow:
+    var(--glass-in),
+    0 2px 10px -2px color-mix(in srgb, var(--color-accent) 55%, transparent);
+}
+
+.acceso-card--login .acceso-sello svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* El halo: un resplandor suave detrás del sello, no un brillo de
+   neón. `--accent-ring` ya es la mezcla que usa el foco del sistema;
+   reusarla acá es la misma intensidad en otro lugar, no un color
+   nuevo. */
+.acceso-card--login .acceso-marca::before {
+  content: "";
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  width: 150px;
+  height: 90px;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    ellipse at center,
+    var(--accent-ring),
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.acceso-card--login .acceso-nombre {
+  font-size: var(--text-sheet);
+}
+
+/* ---- tipografía algo más confiada que la del registro ---- */
+
+.acceso-card--login h1 {
+  font-size: calc(var(--text-sheet) * 1.08);
+}
+
+.acceso-card--login .acceso-bajada {
+  margin-bottom: 24px;
+}
+
+/* ---- el botón: el mismo gradiente, con más cuerpo en el pase ---- */
+
+.acceso-card--login .btn--principal:hover:not(:disabled) {
+  box-shadow:
+    var(--glass-in),
+    var(--sh-md),
+    0 0 0 3px var(--accent-ring);
+}
+
+/* ============================================================
+   El panel de marca · sólo existe para acompañar al login
+   ============================================================ */
+
+.acceso-brand {
+  display: none;
+  position: relative;
+  overflow: hidden;
+  padding: 38px 34px;
+}
+
+/* El trazo de fondo: una silueta de área, igual de abstracta que
+   cualquier otro adorno del sistema (la capa de ruido, el brillo
+   diagonal de `.shell`). No lleva eje ni cifra porque no es un
+   gráfico de datos — si lo fuera, necesitaría la aclaración de "cifras
+   de muestra" que llevan las siete vistas (skill §11.2), y acá no
+   aplica: es ornamento, no una visualización que alguien pueda leer
+   como información real. */
+.acceso-brand-grafico {
+  position: absolute;
+  inset: auto 0 0 0;
+  width: 100%;
+  height: auto;
+  opacity: 0.16;
+  fill: var(--color-sav);
+}
+
+/* El lavado de acento: igual que los lavados del fondo general de la
+   aplicación (`body`, `base.css`), sólo que acá tiñe el vidrio del
+   panel en lugar de la página entera. `::after` y no `::before`
+   porque `.shell::before` ya es el brillo diagonal — tocarlo cambiaría
+   también el de cada tarjeta del dashboard. */
+.acceso-brand::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 75% 60% at 18% 0%,
+    color-mix(in srgb, var(--color-accent) 20%, transparent),
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.acceso-brand-contenido {
+  position: relative;
+  /* Por encima del lavado y del trazo de fondo: los dos son
+     `position: absolute` sin `z-index`, así que cualquier descendiente
+     posicionado con `z-index` explícito ya les gana en el orden de
+     pintado. */
+  z-index: 1;
+  display: grid;
+  gap: 18px;
+}
+
+.acceso-brand-sello {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-card);
+  background: linear-gradient(155deg, var(--color-accent), var(--color-accent-2));
+  color: var(--color-on-accent);
+  box-shadow:
+    var(--glass-in),
+    var(--sh-sm);
+}
+
+.acceso-brand-sello svg {
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.acceso-brand-contenido h2 {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-size: 27px;
+  font-weight: 700;
+  line-height: 1.22;
+  letter-spacing: -0.015em;
+  color: var(--color-ink);
+}
+
+.acceso-brand-texto {
+  margin: 0;
+  font-size: var(--text-row);
+  line-height: 1.6;
+  color: var(--color-ink-2);
+  max-width: 34ch;
+}
+
+.acceso-brand-lista {
+  display: grid;
+  gap: 14px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.acceso-brand-lista li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: var(--text-row);
+  font-weight: 600;
+  color: var(--color-ink-2);
+}
+
+.acceso-brand-lista span {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-accent) 14%, var(--mix-tint));
+  color: var(--color-accent);
+}
+
+.acceso-brand-lista svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---- desde 960 px: dos columnas ---- */
+
+@media (min-width: 960px) {
+  .acceso-premium {
+    max-width: 900px;
+    grid-template-columns: 1.05fr 1fr;
+    align-items: stretch;
+    gap: 20px;
+  }
+
+  .acceso-brand {
+    display: flex;
+  }
+
+  /* La tarjeta ya no necesita centrarse por su cuenta: la columna
+     la centra. Sigue con el mismo ancho máximo que en el celular
+     para que el formulario no se estire de más. */
+  .acceso-card--login {
+    justify-self: center;
+    align-self: center;
+  }
+}

@@ -782,109 +782,185 @@
          Quién puede entrar acá y quién no lo decide la guardia de
          F02-T12. Hasta entonces la aplicación sigue abierta. -->
     <div class="acceso" id="acceso" hidden>
-      <div class="acceso-card shell" data-cuenta="login" role="main">
-        <div class="acceso-marca">
-          <span class="acceso-sello" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <rect x="3.5" y="5" width="17" height="14" rx="3" />
-              <circle cx="12" cy="12" r="3.2" />
-              <path d="M12 6.2v1.6M12 16.2v1.6" />
-            </svg>
-          </span>
-          <span class="acceso-nombre">Epic Wallet</span>
-        </div>
-
-        <h1 id="acceso-titulo">Iniciá sesión</h1>
-        <p class="acceso-bajada">Tus finanzas, mes por mes.</p>
-
-        <!-- `<form>` de verdad, con `type="submit"`: es lo que hace que
-             Enter envíe desde cualquiera de los dos campos y que el
-             teclado del teléfono muestre «Ir». Con un `div` y un
-             `click` habría que escuchar la tecla a mano en cada campo,
-             y el teclado mostraría «Enter». -->
-        <form id="form-login" novalidate>
-          <div class="campo">
-            <label for="login-email">Correo</label>
-            <input
-              class="inp"
-              id="login-email"
-              name="email"
-              type="email"
-              autocomplete="username"
-              inputmode="email"
-              autocapitalize="none"
-              spellcheck="false"
-              required
-              placeholder="vos@ejemplo.com"
+      <!-- `data-cuenta="login"` vive en el envoltorio, no en la tarjeta:
+           `router.js` oculta y muestra por ese atributo, y acá adentro
+           conviven dos piezas —la marca y la tarjeta— que tienen que
+           aparecer y desaparecer juntas. En el celular el envoltorio se
+           ve igual que antes, una sola tarjeta centrada; desde 960 px
+           se abre en dos columnas (skill §8, "Pantallas de cuenta"). -->
+      <div class="acceso-premium" data-cuenta="login">
+        <!-- El panel de marca es puramente de presentación: ningún
+             control vive acá, así que no hace falta que un lector lo
+             anuncie como una región aparte, pero su texto sí se lee —
+             es contenido real, no relleno. Sólo lo decorativo interno
+             (el sello y el trazo de fondo) lleva `aria-hidden`. -->
+        <aside class="acceso-brand shell" aria-labelledby="acceso-brand-titulo">
+          <svg class="acceso-brand-grafico" viewBox="0 0 320 200" aria-hidden="true" focusable="false">
+            <path
+              d="M-10,150 C40,135 70,80 120,95 C170,110 190,55 240,45 C270,40 290,55 330,35 L330,210 L-10,210 Z"
             />
+          </svg>
+          <div class="acceso-brand-contenido">
+            <span class="acceso-brand-sello" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <rect x="3.5" y="5" width="17" height="14" rx="3" />
+                <circle cx="12" cy="12" r="3.2" />
+                <path d="M12 6.2v1.6M12 16.2v1.6" />
+              </svg>
+            </span>
+
+            <h2 id="acceso-brand-titulo">
+              Tus finanzas, con la claridad que merecen.
+            </h2>
+            <p class="acceso-brand-texto">
+              Ingresos, gastos, ahorro e inversiones en un solo lugar —
+              pensado primero para el celular, cómodo también en la
+              computadora.
+            </p>
+
+            <!-- `role="list"`: Safari con VoiceOver deja de anunciar
+                 `<ul>` como lista en cuanto pierde su viñeta nativa
+                 (`list-style: none`), y es justo lo que hace esta. -->
+            <ul class="acceso-brand-lista" role="list">
+              <li>
+                <span aria-hidden="true"
+                  ><svg viewBox="0 0 24 24">
+                    <path d="M3 17l5-6 4 3.5L21 6" /><path
+                      d="M15.5 6H21v5.5"
+                    /></svg
+                ></span>
+                Un dashboard que se entiende de un vistazo
+              </li>
+              <li>
+                <span aria-hidden="true"
+                  ><svg viewBox="0 0 24 24">
+                    <path
+                      d="M4 12a6 6 0 016-6h5l3-2v4a6 6 0 01-2 4.5V17h-3v-2h-3v2H7v-2.2A6 6 0 014 12z"
+                    /></svg
+                ></span>
+                Ahorro e inversiones, siempre al día
+              </li>
+              <li>
+                <span aria-hidden="true"
+                  ><svg viewBox="0 0 24 24">
+                    <rect x="3.5" y="5" width="17" height="14" rx="3" />
+                    <circle cx="12" cy="12" r="3.2" /><path
+                      d="M12 6.2v1.6M12 16.2v1.6"
+                    /></svg
+                ></span>
+                Cada cuenta ve sólo lo suyo
+              </li>
+            </ul>
+          </div>
+        </aside>
+
+        <div class="acceso-card acceso-card--login shell" role="main">
+          <div class="acceso-marca">
+            <span class="acceso-sello" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <rect x="3.5" y="5" width="17" height="14" rx="3" />
+                <circle cx="12" cy="12" r="3.2" />
+                <path d="M12 6.2v1.6M12 16.2v1.6" />
+              </svg>
+            </span>
+            <span class="acceso-nombre">Epic Wallet</span>
           </div>
 
-          <div class="campo">
-            <label for="login-clave">Contraseña</label>
-            <div class="clave-wrap">
+          <h1 id="acceso-titulo">Iniciá sesión</h1>
+          <p class="acceso-bajada">Tus finanzas, mes por mes.</p>
+
+          <!-- `<form>` de verdad, con `type="submit"`: es lo que hace que
+               Enter envíe desde cualquiera de los dos campos y que el
+               teclado del teléfono muestre «Ir». Con un `div` y un
+               `click` habría que escuchar la tecla a mano en cada campo,
+               y el teclado mostraría «Enter». -->
+          <form id="form-login" novalidate>
+            <div class="campo">
+              <label for="login-email">Correo</label>
               <input
                 class="inp"
-                id="login-clave"
-                name="clave"
-                type="password"
-                autocomplete="current-password"
+                id="login-email"
+                name="email"
+                type="email"
+                autocomplete="username"
+                inputmode="email"
+                autocapitalize="none"
+                spellcheck="false"
                 required
+                placeholder="vos@ejemplo.com"
               />
-              <!-- El `aria-label` cambia entre «Mostrar» y «Ocultar»:
-                   sin eso, quien no ve la pantalla no sabe en qué
-                   estado está. `aria-pressed` lo dice además de forma
-                   estructurada. -->
-              <button
-                class="clave-ojo"
-                id="login-ojo"
-                type="button"
-                aria-label="Mostrar contraseña"
-                aria-pressed="false"
-                aria-controls="login-clave"
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true"></svg>
-              </button>
             </div>
-          </div>
 
-          <!-- La región del error existe VACÍA desde que carga la
-               página. Un lector anuncia los cambios dentro de una
-               región `aria-live`; creada junto con el texto no hay
-               cambio que anunciar y el mensaje pasa en silencio.
-               Es la misma razón por la que el toast está vacío en el
-               HTML. -->
-          <p
-            class="acceso-error"
-            id="login-error"
-            role="alert"
-            aria-live="assertive"
-            hidden
-          ></p>
+            <div class="campo">
+              <label for="login-clave">Contraseña</label>
+              <div class="clave-wrap">
+                <input
+                  class="inp"
+                  id="login-clave"
+                  name="clave"
+                  type="password"
+                  autocomplete="current-password"
+                  required
+                />
+                <!-- El `aria-label` cambia entre «Mostrar» y «Ocultar»:
+                     sin eso, quien no ve la pantalla no sabe en qué
+                     estado está. `aria-pressed` lo dice además de forma
+                     estructurada. -->
+                <button
+                  class="clave-ojo"
+                  id="login-ojo"
+                  type="button"
+                  aria-label="Mostrar contraseña"
+                  aria-pressed="false"
+                  aria-controls="login-clave"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true"></svg>
+                </button>
+              </div>
+            </div>
 
-          <button class="btn btn--principal" id="login-enviar" type="submit">
-            <span class="btn-texto">Ingresar</span>
-            <span class="btn-girador" aria-hidden="true"></span>
-          </button>
-        </form>
+            <!-- La región del error existe VACÍA desde que carga la
+                 página. Un lector anuncia los cambios dentro de una
+                 región `aria-live`; creada junto con el texto no hay
+                 cambio que anunciar y el mensaje pasa en silencio.
+                 Es la misma razón por la que el toast está vacío en el
+                 HTML. -->
+            <p
+              class="acceso-error"
+              id="login-error"
+              role="alert"
+              aria-live="assertive"
+              hidden
+            ></p>
 
-        <p class="acceso-pie">
-          ¿No tenés cuenta?
-          <button class="acceso-enlace" id="login-ir-registro" type="button">
-            Crear cuenta
-          </button>
-          <!-- «Olvidé mi contraseña» llega en F11-T03, cuando el correo
-               esté configurado. Hasta entonces no se muestra ningún
-               enlace apagado acá: ya quedó uno arriba mientras existió
-               el registro sin hacer, y lo que enseñó es que un enlace
-               que no lleva a nada se siente roto más de lo que avisa
-               que «todavía no». -->
-        </p>
+            <button class="btn btn--principal" id="login-enviar" type="submit">
+              <span class="btn-texto">Ingresar</span>
+              <span class="btn-girador" aria-hidden="true"></span>
+            </button>
+          </form>
+
+          <p class="acceso-pie">
+            ¿No tenés cuenta?
+            <button class="acceso-enlace" id="login-ir-registro" type="button">
+              Crear cuenta
+            </button>
+            <!-- «Olvidé mi contraseña» llega en F11-T03, cuando el correo
+                 esté configurado. Hasta entonces no se muestra ningún
+                 enlace apagado acá: ya quedó uno arriba mientras existió
+                 el registro sin hacer, y lo que enseñó es que un enlace
+                 que no lleva a nada se siente roto más de lo que avisa
+                 que «todavía no». -->
+          </p>
+        </div>
       </div>
 
       <!-- ===================== CREAR CUENTA · F02-T10 =====================
-           Misma tarjeta, mismo fondo, mismo lugar: es la continuación
-           de la pantalla anterior, no una marca distinta. El enrutador
-           la muestra en `#/registro` y oculta la de login (`router.js`,
+           Mismo fondo, mismo lugar que el login: es la continuación de
+           la pantalla anterior, no una marca distinta. Queda como una
+           tarjeta suelta, sin el panel de marca de al lado — ese panel
+           es un realce del login (pedido de Gustavo, 08/10/2026), no
+           una pieza del sistema de cuentas en general. El enrutador la
+           muestra en `#/registro` y oculta la de login (`router.js`,
            bloque de `[data-cuenta]`).
 
            Dos campos de contraseña en vez de uno, con el mismo patrón
