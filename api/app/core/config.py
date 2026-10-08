@@ -39,7 +39,8 @@ class Settings(BaseSettings):
 
     # --- base de datos ---
     DATABASE_URL: str
-    DB_SCHEMA: str = ""
+    # Un solo esquema para todo el proyecto. No hay entorno separado.
+    DB_SCHEMA: str = "public"
 
     # --- Supabase ---
     SUPABASE_URL: str
@@ -112,17 +113,8 @@ class Settings(BaseSettings):
         return self.APP_ENV == "production"
 
     def validar_coherencia(self) -> list[str]:
-        """Avisos de configuración sospechosa, sin impedir el arranque.
-
-        El único caso que sí frena la aplicación es desarrollo apuntando
-        al esquema de producción, y eso se controla en el arranque de
-        main.py para que el mensaje sea visible.
-        """
+        """Avisos de configuración sospechosa, sin impedir el arranque."""
         avisos: list[str] = []
-        if not self.es_sqlite and not self.DB_SCHEMA:
-            avisos.append("DB_SCHEMA sin definir: las tablas caerían en el esquema por defecto")
-        if self.es_produccion and self.esquema != "public":
-            avisos.append(f"APP_ENV=production con esquema '{self.esquema}': debería ser 'public'")
         if not self.es_sqlite and ":6543" not in self.DATABASE_URL:
             avisos.append(
                 "DATABASE_URL no usa el pooler (6543): en serverless se agotan "

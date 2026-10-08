@@ -2009,6 +2009,18 @@ Requisitos:
 Las credenciales de Mercado Pago, si alguna vez se integra, deben
 permanecer exclusivamente en backend.
 
+> **Nota del 07/10/2026.** Esta lista se implementa **a la escala del
+> proyecto**: pocos usuarios conocidos, cada uno viendo sus propios
+> datos. Lo central —HTTPS, contraseñas hasheadas por Supabase Auth,
+> aislamiento entre cuentas con RLS, validación en servidor, consultas
+> parametrizadas y secretos en variables de entorno— está implementado y
+> no se negocia. Se decidió **no** hacer límite de peticiones, auditoría
+> del historial de Git ni auditorías formales de carga y accesibilidad:
+> es trabajo de aplicación pública y acá no compra nada. El detalle y el
+> criterio para revisarlo están en la sección 17 del documento técnico.
+> El protegido CSRF no aplica: la sesión viaja en la cabecera
+> `Authorization`, no en una cookie.
+
 ------------------------------------------------------------------------
 
 # 58. Backup
@@ -2121,6 +2133,15 @@ Esto será especialmente importante para una futura sincronización.
 ------------------------------------------------------------------------
 
 # 63. Roadmap
+
+> **Nota del 07/10/2026.** Las fases de abajo son el planteo conceptual
+> original. El plan que se ejecuta es
+> [`03_Roadmap.md`](03_Roadmap.md) v2.0, que cubre los mismos temas en
+> 12 fases y pone antes lo que hace útil la aplicación: movimientos,
+> indicadores, gráficos e histórico. Cotizaciones automáticas, alertas,
+> historial salarial, análisis y PWA offline se movieron a «Después del
+> MVP» sin salir del alcance del producto.
+
 
 ## Fase 0 --- Diseño
 

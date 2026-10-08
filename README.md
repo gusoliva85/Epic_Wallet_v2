@@ -22,9 +22,9 @@ Leerla en este orden:
 |---|---|
 | [`documentacion/01_Documento_General.md`](documentacion/01_Documento_General.md) | **Qué** hace la aplicación. Especificación funcional completa: modelo financiero, reglas de negocio, pantallas, alcance. |
 | [`documentacion/02_Documento_Tecnico.md`](documentacion/02_Documento_Tecnico.md) | **Cómo** se construye. Stack, arquitectura, esquema de datos, contratos de API, sistema de estilo, despliegue y seguridad. |
-| [`documentacion/03_Roadmap.md`](documentacion/03_Roadmap.md) | **En qué orden.** 18 fases y 205 tareas con criterios de aceptación. Es la guía obligatoria de implementación. |
+| [`documentacion/03_Roadmap.md`](documentacion/03_Roadmap.md) | **En qué orden.** 12 fases y 46 tareas pendientes con criterios de aceptación. Es la guía obligatoria de implementación. |
 | [`documentacion/mockups/01_Mockup_V1_Grafito_Clasico.html`](documentacion/mockups/01_Mockup_V1_Grafito_Clasico.html) | Diseño aprobado. Se abre con doble clic y es funcional. |
-| `docs/` | Documentación de cada fase terminada, en lenguaje natural. |
+| `docs/` | `COMO_FUNCIONA.md` (se escribe en F11-T05) y los dos documentos de fase escritos antes de la revisión. |
 
 Si el documento técnico contradice al general en una decisión funcional, gana el general. Si el general propone una tecnología y el técnico decide otra, gana el técnico y la desviación queda registrada en su sección 4.
 
@@ -71,7 +71,7 @@ epic-wallet/
 ├── migrations/               # Alembic
 ├── scripts/                  # siembra de categorías, carga de histórico, respaldo
 ├── tests/                    # unit · api · e2e
-├── docs/                     # documentación por fase
+├── docs/                     # documentación del proyecto
 └── documentacion/            # especificación funcional, técnica, roadmap y mockups
 ```
 
@@ -107,8 +107,8 @@ npm run build                    # genera web/public/app.css minificado
 # 4 · Variables de entorno
 cp .env.example .env             # y completar los valores (F00-T08)
 
-# 5 · Base de datos: migraciones sobre el esquema de desarrollo
-DB_SCHEMA=dev alembic upgrade head     # requiere Alembic configurado (F00-T05)
+# 5 · Base de datos: migraciones (respaldo primero, ver abajo)
+DB_SCHEMA=public APP_ENV=production alembic upgrade head
 
 # 6 · Levantar
 uvicorn api.app.main:app --reload --port 8000    # API en :8000
@@ -131,9 +131,11 @@ El CSS compilado **no se versiona**: lo genera el build.
 
 ### Sobre las migraciones
 
-`DB_SCHEMA` es obligatorio en todo comando de Alembic y **no tiene valor por defecto**. Es deliberado: con un solo proyecto de Supabase, el esquema es lo único que separa los datos reales de los de prueba, y una migración en el esquema equivocado los tocaría. `migrations/env.py` aborta con código 1 si falta `DB_SCHEMA`, si falta `DATABASE_URL`, o si `APP_ENV=development` apunta a `public`. Los tres casos tienen test en `tests/unit/test_migraciones.py`.
+**Hay un solo esquema (`public`), así que una migración toca los datos reales.** Lo que protege es el procedimiento: **respaldo primero, generar y revisar el archivo a mano, aplicar, verificar con `/api/health`, y recién entonces publicar el código.** Toda migración lleva su `downgrade` escrito y revisado.
 
-El esquema se crea solo en la primera migración si no existe, y `alembic_version` vive **dentro de cada esquema**, así que desarrollo y producción llevan su propio control de versiones.
+`DB_SCHEMA` y `APP_ENV` siguen siendo obligatorios y explícitos en todo comando de Alembic: `migrations/env.py` no asume un valor por defecto. Migrar es la operación destructiva del proyecto y que pida ser explícita es deliberado. La aplicación, en cambio, usa `public` por defecto y no necesita que definas nada.
+
+El esquema se crea solo en la primera migración si no existe, y `alembic_version` vive dentro del esquema.
 
 Los pasos marcados con una tarea entre paréntesis todavía no están disponibles: se habilitan al completar esa tarea de la Fase 0.
 
@@ -154,10 +156,14 @@ Se copian de `.env.example` y se completan con los valores de tu proyecto de Sup
 | Entorno | Rama | URL | Base de datos |
 |---|---|---|---|
 | Producción | `main` | [epic-wallet-v2.vercel.app](https://epic-wallet-v2.vercel.app) | Supabase · esquema `public` |
-| Preview | cualquier otra rama | URL automática de Vercel por rama | Supabase · esquema `dev` |
-| Local | — | `localhost:8000` | Supabase · esquema `dev` |
+| Preview | cualquier otra rama | URL automática de Vercel por rama | Supabase · esquema `public` |
+| Local | — | `localhost:8000` | Supabase · esquema `public` |
 
-Los tres apuntan al **mismo proyecto de Supabase** y se diferencian por la variable `DB_SCHEMA`: `public` guarda los datos reales y `dev` los de prueba. `scripts/check_db.py` falla si el entorno de desarrollo apunta a `public`, para que no se trabaje contra los datos reales por descuido. El detalle y sus implicancias están en la sección 4.1.1 del documento técnico.
+Los tres apuntan al **mismo proyecto de Supabase y al mismo esquema `public`**. La diferencia entre ellos es el código que corre, no los datos.
+
+La separación en dos esquemas (`public` y `dev`) se quitó en la revisión del 07/10/2026: para una aplicación de pocos usuarios conocidos costaba más de lo que protegía. El detalle está en la sección 4.1.1 del documento técnico.
+
+**Consecuencia a tener presente:** una preview escribe sobre los datos reales. Las tareas que prueban escritura usan una **segunda cuenta de prueba**, no la tuya; RLS garantiza que no se cruzan.
 
 Cada push genera una URL de preview. Eso es lo que permite probar cada tarea en el celular en el momento, sin esperar a que termine una fase.
 
@@ -199,21 +205,21 @@ https://epic-wallet-v2-git-feat-f04-t03-alta-movimiento-gusoliva85s-projects.ver
 
 Si el nombre resulta muy largo, Vercel lo trunca y agrega un hash, así que ante la duda la URL exacta está en el panel del despliegue.
 
-**Cómo distinguir una preview de producción de un vistazo:** `/api/health` informa el esquema activo.
+**Cómo saber contra qué está corriendo:** `/api/health` informa el entorno y el esquema activo.
 
 ```bash
 curl -s https://epic-wallet-v2.vercel.app/api/health | grep db_schema
 #   "db_schema":"public"    ← producción, datos reales
 
 curl -s https://epic-wallet-v2-git-<rama>-gusoliva85s-projects.vercel.app/api/health | grep db_schema
-#   "db_schema":"dev"       ← preview, datos de prueba
+#   "db_schema":"public"    ← el único esquema del proyecto
 ```
 
-Esa diferencia la dan las variables de entorno de Vercel: `DB_SCHEMA` vale `public` sólo en Production y `dev` en Preview y Development. Es lo que garantiza que probar una tarea no pueda tocar los datos reales.
+`APP_ENV` es lo que distingue un entorno de otro en las variables de Vercel. `DB_SCHEMA` vale `public` en los tres.
 
-**Protección de las previews:** está desactivada (Settings → Deployment Protection → Vercel Authentication → Disabled) para poder abrirlas en el celular sin iniciar sesión en Vercel. Las previews quedan accesibles para quien tenga la URL exacta; usan el esquema `dev` con datos de prueba y las claves viven en variables de entorno del servidor, así que no exponen nada real. Si alguna vez se quiere volver a protegerlas, alcanza con reactivar esa opción.
+**Protección de las previews:** está desactivada (Settings → Deployment Protection → Vercel Authentication → Disabled) para poder abrirlas en el celular sin iniciar sesión en Vercel. Las previews quedan accesibles para quien tenga la URL exacta. Los datos siguen protegidos por el login y por RLS, y las claves viven en variables de entorno del servidor. Si alguna vez se quiere volver a protegerlas, alcanza con reactivar esa opción.
 
-Nada se da por terminado sin probarlo. Nada se implementa junto. Al cerrar todas las tareas de una fase se escribe su documento en `docs/`.
+Nada se da por terminado sin probarlo. Nada se implementa junto.
 
 ### Estado de las tareas en el roadmap
 
@@ -251,14 +257,11 @@ Cobertura mínima exigida en `api/app/services/`: 90 %. Toda función de cálcul
 ## Comandos útiles
 
 ```bash
-# Migraciones · DB_SCHEMA es OBLIGATORIO y no tiene valor por defecto
-DB_SCHEMA=dev alembic revision --autogenerate -m "F03 meses y categorias"
-DB_SCHEMA=dev alembic upgrade head
-DB_SCHEMA=dev alembic downgrade -1
-DB_SCHEMA=dev alembic current            # en qué revisión está
-
-# Producción: sólo después de verificar en dev
+# Migraciones · RESPALDO PRIMERO: hay un solo esquema y son los datos reales
+DB_SCHEMA=public APP_ENV=production alembic revision --autogenerate -m "F03 meses"
 DB_SCHEMA=public APP_ENV=production alembic upgrade head
+DB_SCHEMA=public APP_ENV=production alembic downgrade -1
+DB_SCHEMA=public APP_ENV=production alembic current   # en qué revisión está
 
 # Siembra de datos
 python scripts/seed_categories.py        # las 21 categorías iniciales

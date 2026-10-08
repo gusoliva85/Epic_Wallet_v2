@@ -57,7 +57,7 @@ Regla de precedencia: si este documento contradice al general en una decisión f
 | Fuentes | **Outfit** + **Inter** (Google Fonts, `display=swap`, precarga) | Las del mockup aprobado. |
 | PWA | **Web App Manifest** + **Service Worker** propio | Instalable en Android, cache offline. |
 | Build | **Tailwind CLI** (único paso de build) | Genera un CSS; nada más que compilar. |
-| Testing | **Playwright** | Pruebas de interfaz en móvil y escritorio. |
+| Testing | **pytest** | Cálculos y endpoints. La interfaz se verifica a mano en el celular (§19). |
 
 ### Infraestructura
 
@@ -65,9 +65,9 @@ Regla de precedencia: si este documento contradice al general en una decisión f
 |---|---|
 | Hosting del frontend | **Vercel** (estático con CDN) |
 | Hosting de la API | **Vercel Python Serverless Functions** (`/api`), mismo proyecto y dominio |
-| Base de datos | **Supabase Postgres** — un solo proyecto, dos esquemas (`public` y `dev`) |
-| Autenticación | **Supabase Auth** (compartida entre esquemas) |
-| Base de datos local de desarrollo | El esquema `dev` del mismo proyecto. **SQLite** sólo para los tests |
+| Base de datos | **Supabase Postgres** — un solo proyecto, un solo esquema (`public`) |
+| Autenticación | **Supabase Auth** |
+| Base de datos local de desarrollo | El mismo esquema `public` de Supabase. **SQLite** sólo para los tests de cálculo |
 | Repositorio y CI | **GitHub** + integración de Vercel (preview por rama, producción en `main`) |
 | Backups | Supabase (automáticos) + exportación manual desde la app |
 
@@ -89,25 +89,25 @@ Qué se conserva:
 
 Riesgo conocido y cómo se mitiga: SQLite y Postgres no se comportan igual en tipos, `ON CONFLICT`, ordenamiento de texto y zonas horarias. Para evitar bugs que sólo aparecen en producción, **el desarrollo normal usa Postgres**, y SQLite se usa sólo para los tests unitarios. Los tests de integración corren contra Postgres.
 
-### 4.1.1 Un solo proyecto de Supabase, dos esquemas
+### 4.1.1 Un solo proyecto de Supabase, un solo esquema
 
-La cuenta de Supabase disponible admite **un único proyecto**, así que producción y desarrollo comparten instancia. La separación se hace con **esquemas de Postgres**, no con proyectos:
+La cuenta de Supabase admite **un único proyecto**, y el proyecto trabaja contra **un único esquema: `public`**.
 
-| Esquema | Para qué | Quién lo usa |
-|---|---|---|
-| `public` | Producción: los datos financieros reales | la rama `main` desplegada |
-| `dev` | Desarrollo y previews: datos de prueba | la máquina local y las ramas de tarea |
+La versión anterior de este documento definía dos esquemas (`public` para producción y `dev` para desarrollo) y una variable `DB_SCHEMA` para elegir. Esa separación se quitó en la revisión del 07/10/2026: para una aplicación de pocos usuarios conocidos costaba más de lo que protegía —dos juegos de migraciones, un comparador de esquemas, una prueba de paridad y varias guardias de arranque—, todo para cuidar un entorno de pruebas que en la práctica era el único que se usaba.
 
-Una sola variable, `DB_SCHEMA`, decide cuál se usa. Ventajas sobre usar SQLite en desarrollo: **mismo motor, misma versión, mismas extensiones y mismo comportamiento de RLS**, así que lo que funciona en desarrollo funciona en producción.
+`DB_SCHEMA` sigue existiendo como variable, con **`public` por defecto**, para no atar el código a un nombre de esquema. Nadie necesita definirla.
 
-Qué implica, dicho sin vueltas:
+**Qué se pierde y cómo se cubre.** Al no haber un esquema de pruebas, una migración equivocada toca los datos reales. El reemplazo es un procedimiento, no una barrera técnica:
 
-- **Supabase Auth es única por proyecto**, así que los usuarios se comparten entre ambos esquemas. Con un solo usuario es irrelevante: el mismo login sirve para los dos.
-- **La aislación es lógica, no física.** Un `DROP SCHEMA` mal dado o una migración apuntada al esquema equivocado sí puede tocar producción. Por eso `scripts/check_db.py` falla si `APP_ENV=development` apunta a `public`, y las migraciones exigen que el esquema esté declarado explícitamente.
-- **Si el proyecto se pausa** por inactividad (el plan gratuito pausa a los 7 días sin uso), se pausan los dos entornos a la vez.
-- El respaldo automático de Supabase cubre toda la instancia, los dos esquemas incluidos.
+1. **Respaldo antes de cada migración.** Supabase hace respaldos automáticos; además `GET /api/export` (F11-T02) permite bajarse todo.
+2. **Toda migración tiene su `downgrade` escrito y probado** antes de aplicarse.
+3. **`migrations/env.py` exige que el esquema esté declarado explícitamente** al migrar. Migrar es la operación destructiva: que pida ser explícita está bien.
 
-Cuando el proyecto justifique un segundo entorno aislado de verdad, migrar es crear un proyecto nuevo y correr las migraciones con `DB_SCHEMA=public`: no hay nada en el código atado a esta decisión más que esa variable.
+Qué más implica tener un solo proyecto:
+
+- **Supabase Auth es única por proyecto.** Con pocos usuarios es irrelevante.
+- **Si el proyecto se pausa** por inactividad (el plan gratuito pausa a los 7 días sin uso), se pausa todo.
+- El respaldo automático de Supabase cubre la instancia completa.
 
 ### 4.2 Sin plantillas de servidor
 
@@ -996,7 +996,6 @@ epic-wallet/
 ├── tests/
 │   ├── unit/                         # calc.py y servicios
 │   ├── api/                          # endpoints
-│   └── e2e/                          # Playwright
 ├── docs/                             # documentación por fase (ver roadmap)
 ├── .env.example
 ├── package.json                      # Tailwind CLI y scripts
@@ -1012,7 +1011,7 @@ epic-wallet/
 # .env.example
 # --- Base de datos ---
 DATABASE_URL=postgresql+psycopg://postgres.xxxx:PASS@aws-0-sa-east-1.pooler.supabase.com:6543/postgres
-DB_SCHEMA=dev                            # dev | public — ver §4.1.1
+DB_SCHEMA=public                         # único esquema del proyecto — ver §4.1.1
 # sólo para los tests:
 # DATABASE_URL=sqlite+pysqlite:///./test.db
 # DB_SCHEMA=main
@@ -1461,12 +1460,14 @@ Frontend y API comparten dominio, así que **no hay CORS** en producción. Sólo
 | Entorno | Rama | URL | Base de datos |
 |---|---|---|---|
 | Producción | `main` | `epic-wallet-v2.vercel.app` | Supabase · esquema `public` |
-| Preview | cualquier otra rama o PR | URL automática por rama | Supabase · esquema `dev` |
-| Local | — | `localhost:3000` + `localhost:8000` | Supabase · esquema `dev` |
+| Preview | cualquier otra rama o PR | URL automática por rama | Supabase · esquema `public` |
+| Local | — | `localhost:3000` + `localhost:8000` | Supabase · esquema `public` |
 
-Los tres entornos apuntan al **mismo proyecto de Supabase** y se diferencian por `DB_SCHEMA` (§4.1.1). En Vercel eso significa cargar `DB_SCHEMA=public` sólo en el entorno de producción, y `DB_SCHEMA=dev` en preview y development.
+Los tres apuntan al mismo proyecto y al mismo esquema (§4.1.1). La diferencia entre ellos es el código que corre, no los datos.
 
 **Esto es lo que te permite probar en el celular en el momento:** cada push genera una URL de preview; cuando una tarea se aprueba, se integra a `main` y queda en la URL de producción. Nunca hay que esperar al final de una fase para ver algo funcionando.
+
+**Consecuencia a tener presente:** una preview escribe sobre los datos reales. Las tareas que prueban escritura usan una **segunda cuenta de prueba**, no la tuya; RLS garantiza que no se cruzan.
 
 ### 16.3 Flujo de trabajo por tarea
 
@@ -1486,22 +1487,29 @@ rama feat/F04-T03-alta-movimiento
 
 ### 16.4 Migraciones
 
-Las migraciones **no** corren automáticamente en el despliegue: una migración fallida en una función serverless dejaría la base a medio camino. Se ejecutan a mano desde local contra el entorno correspondiente, antes de integrar el código que las necesita.
+Las migraciones **no** corren automáticamente en el despliegue: una migración fallida en una función serverless dejaría la base a medio camino. Se ejecutan a mano desde local, antes de integrar el código que las necesita.
+
+Con un solo esquema (§4.1.1), **una migración toca los datos reales**. El procedimiento no es negociable:
 
 ```bash
-# 1 · generar la migración mirando el esquema de desarrollo
-DB_SCHEMA=dev alembic revision --autogenerate -m "F03 meses y categorias"
+# 1 · respaldo primero, siempre
+#     (desde el panel de Supabase, o GET /api/export)
 
-# 2 · aplicarla en desarrollo y verificar
-DB_SCHEMA=dev alembic upgrade head
+# 2 · generar la migración
+DB_SCHEMA=public APP_ENV=production alembic revision --autogenerate -m "F03 meses"
 
-# 3 · recién entonces, producción
+# 3 · revisar a mano el archivo generado: que el downgrade esté escrito
+#     y que no haya un drop que no esperabas
+
+# 4 · aplicar
 DB_SCHEMA=public APP_ENV=production alembic upgrade head
+
+# 5 · verificar con /api/health, y recién entonces publicar el código
 ```
 
-`DB_SCHEMA` es obligatorio y explícito en cada comando de Alembic: no tiene valor por defecto que pueda hacer que una migración caiga en el esquema equivocado. La tabla `alembic_version` vive dentro de cada esquema, así que los dos entornos llevan su propio control de versiones.
+`DB_SCHEMA` y `APP_ENV` van explícitos en cada comando de Alembic. `migrations/env.py` los exige y no asume un valor por defecto: migrar es la operación destructiva del proyecto, y que pida ser explícita es deliberado.
 
-Toda migración tiene su `downgrade` probado. Ninguna borra datos sin una copia previa.
+**Toda migración tiene su `downgrade` escrito y revisado.** El orden en cada despliegue con migración es: respaldo, migrar, publicar. Nunca al revés, porque el código nuevo espera tablas que el viejo no usa.
 
 ### 16.5 Puesta en marcha inicial
 
@@ -1519,26 +1527,29 @@ Recién cuando eso funciona de punta a punta empieza la Fase 1.
 
 ## 17. Seguridad
 
-Implementa la sección 57 del documento general.
+Implementa la sección 57 del documento general, **a la escala del proyecto**: pocos usuarios conocidos, cada uno viendo sus propios datos. No es un producto público.
+
+### 17.1 Lo que está y se mantiene
+
+Todo esto ya está implementado o es gratuito, así que no se discute:
 
 | Requisito | Implementación |
 |---|---|
 | HTTPS en producción | Vercel lo fuerza, más HSTS por cabecera |
 | Contraseñas nunca en texto plano | No las almacenamos: Supabase Auth (bcrypt) |
-| Recuperación de contraseña segura | Enlace de un solo uso con vencimiento, enviado por Supabase; nunca se revela si un email tiene cuenta |
-| Registro sin enumerar usuarios | El alta y la recuperación responden igual con un email existente o no |
-| Aislamiento entre cuentas | `user_id` en toda consulta **y** RLS como segunda barrera; se verifica con un segundo usuario de prueba |
+| **Aislamiento entre cuentas** | `user_id` en toda consulta **y RLS como segunda barrera**. Es la defensa que importa acá |
 | Sesiones seguras | JWT de vida corta (1 h) con refresh automático |
-| Protección CSRF | No aplica con token en cabecera `Authorization` en lugar de cookie de sesión |
+| Protección CSRF | No aplica: token en cabecera `Authorization`, no cookie de sesión |
 | Validación en servidor | Pydantic en toda entrada, más `CHECK` en la base |
 | Consultas parametrizadas | SQLAlchemy siempre; **prohibido** construir SQL por concatenación |
-| Aislamiento entre usuarios | `user_id` en toda consulta **y** RLS como segunda barrera |
-| Tokens externos fuera del frontend | Las claves de proveedores viven sólo en variables de entorno del backend |
+| Protección contra XSS | `esc()` obligatorio en todo dato que venga del servidor |
+| Recuperación de contraseña segura | Enlace de un solo uso con vencimiento; nunca se revela si un email tiene cuenta |
+| Registro sin enumerar usuarios | El alta y la recuperación responden igual exista o no el email |
 | Secretos por entorno | Variables de Vercel; `.env` en `.gitignore`; `.env.example` sin valores |
-| Backups protegidos | Supabase automático, más exportación bajo autenticación |
-| Protección contra XSS | CSP estricta y `esc()` obligatorio en todo dato del servidor |
-| Límite de peticiones | 60 por minuto por usuario; el refresco de cotizaciones, 1 cada 15 minutos |
-| Registro sin datos sensibles | Nunca se loguean tokens, contraseñas ni importes con identificación personal |
+| Permisos mínimos en la base | `anon` y `authenticated` con sólo los permisos que la aplicación usa (cerrado en F02-T16) |
+| Registro sin datos sensibles | Nunca se loguean tokens, contraseñas ni importes identificables |
+
+La CSP se envía por cabecera desde `vercel.json` y es la razón por la que no hay JavaScript en línea en el HTML: todo va en módulos.
 
 ```text
 Content-Security-Policy:
@@ -1552,7 +1563,23 @@ Content-Security-Policy:
   base-uri 'self'
 ```
 
-La CSP sin `'unsafe-inline'` en `script-src` es la razón por la que no hay JavaScript en línea en el HTML: todo va en módulos.
+### 17.2 Lo que se decidió no hacer
+
+Recortado en la revisión del 07/10/2026 (roadmap v2.0, F11-T04). No es que sea mala práctica: es trabajo de aplicación bancaria pública, y acá no compra nada.
+
+| Descartado | Por qué |
+|---|---|
+| Límite de peticiones (60/min, respuesta 429) | Los usuarios son conocidos y pocos. Supabase ya limita el abuso contra Auth |
+| Auditoría del historial de Git buscando secretos | `.env` estuvo ignorado desde el primer commit. Se verifica el estado actual, no el historial |
+| Endurecer la CSP más allá de lo que ya hay | Ya no hay JavaScript en línea; la cabecera actual alcanza |
+| Prueba de rendimiento con volumen | El volumen real son unos cientos de movimientos por año y por usuario |
+| Auditoría formal de accesibilidad | Se respetan áreas táctiles de 44 px, `aria-label` y contraste al construir cada componente, sin una auditoría aparte |
+
+**Cuándo se revisa esto:** si la aplicación se abre al registro de desconocidos, o si alguna vez guarda credenciales de terceros (el camino A de Mercado Pago, General §27). Hasta entonces, la combinación de RLS, JWT y validación en servidor es proporcionada.
+
+### 17.3 Lo único que no se negocia
+
+**Que una cuenta no pueda ver ni tocar los datos de otra.** Se verifica dos veces: en F02-T14 con los endpoints que existan entonces, y en F11-T04 con todos. RLS está activo en cada tabla de datos de usuario desde su migración, y eso no es opcional ni para una tabla nueva.
 
 ---
 
@@ -1570,37 +1597,51 @@ La restauración (`POST /api/import`) valida la versión de esquema, muestra una
 
 ## 19. Pruebas
 
-| Nivel | Herramienta | Qué cubre | Dónde corre |
-|---|---|---|---|
-| Unitario | pytest | `calc.py` y servicios con funciones puras. Casos borde de la sección 7.1. | Local y CI, contra SQLite |
-| API | pytest + httpx | Cada endpoint: éxito, validación, 401, 403, 404 y aislamiento entre usuarios | CI contra Postgres |
-| Interfaz | Playwright | Flujos completos: login, alta de gasto, navegación de meses, venta de inversión | CI, a 390 px y 1440 px |
-| Manual | Vos, en el celular | Criterios de aceptación de cada tarea del roadmap | URL de preview |
+Se testea **lo que da un número o protege un dato**. Nada más.
 
-Reglas: toda función de `calc.py` tiene test antes del endpoint que la usa. Todo bug encontrado deja primero un test que falla. Cobertura mínima exigida en `services/`: 90 %.
+| Nivel | Herramienta | Qué cubre |
+|---|---|---|
+| Cálculo | pytest | `services/calc.py` y los servicios con funciones puras, con los casos borde de §7.1 |
+| API | pytest + httpx | Cada endpoint: éxito, validación, 401, 404 y **aislamiento entre cuentas** |
+| Manual | Vos, en el celular | Los criterios de aceptación de cada tarea del roadmap, en la URL de preview |
 
-Pruebas obligatorias que no pueden faltar:
+Reglas:
+
+1. **Toda función de `calc.py` tiene su test antes del endpoint que la usa.** Es la capa donde un error se traduce directamente en una cifra equivocada en tu pantalla.
+2. **Todo bug encontrado deja primero un test que falla**, y después se arregla.
+3. **No hay exigencia de porcentaje de cobertura.** Un número de cobertura premia testear lo fácil.
+
+Pruebas que no pueden faltar:
 
 - El mes histórico devuelve `transactions: null` y la interfaz **no** muestra movimientos inventados.
-- Alta de movimiento recalcula el mes y **todos los saldos posteriores**.
+- Alta de movimiento recalcula el mes **y todos los saldos posteriores**.
 - Tasa de ahorro con ingresos en 0 devuelve `null`, no un error.
-- Un usuario no puede leer ni escribir datos de otro, ni aunque pase un `id` ajeno.
-- Una cuenta recién creada nace con su perfil y sus 21 categorías, sin pasar por nuestra API.
-- Dos cuentas distintas no ven nada la una de la otra: meses, movimientos, inversiones ni alertas.
+- Un usuario no puede leer ni escribir datos de otro, ni pasando un `id` ajeno.
+- Una cuenta recién creada nace con su perfil y sus 21 categorías.
 - Comprar una inversión no cambia el patrimonio neto.
-- El importe negativo o cero es rechazado por la API, no sólo por el formulario.
+- El importe negativo o cero lo rechaza la API, no sólo el formulario.
+
+### 19.1 Lo que no se testea
+
+Decidido en la revisión del 07/10/2026. Estos tests existían y consumían más mantenimiento que el código que vigilaban: cualquier ajuste visual los rompía, y ninguno detectaba un error de cálculo.
+
+- **La estructura del HTML** y la presencia de componentes en la página.
+- **Los tokens de CSS**, sus valores y el contraste calculado por expresiones regulares.
+- **La configuración del despliegue** (`.vercelignore`, `vercel.json`, variables de entorno).
+- **El contenido de la documentación**: que un documento mencione lo que menciona.
+- **Flujos de interfaz con Playwright en CI.**
+
+Todo eso se verifica **mirando la pantalla en el celular**, que es el paso que ya cierra cada tarea del roadmap. Si una pantalla se ve bien y se usa bien, está bien.
+
+**El criterio para decidir en el futuro:** si el test falla, ¿me enteré de algo que la pantalla no me hubiera mostrado? Si la respuesta es no, el test no se escribe.
 
 ---
 
 ## 20. Rendimiento
 
-| Métrica | Objetivo |
-|---|---|
-| JavaScript (comprimido) | < 150 KB |
-| CSS (comprimido) | < 50 KB |
-| Primera pintura útil en 4G | < 1,5 s |
-| Respuesta de `/api/dashboard` | < 400 ms en el percentil 95, medido desde la función |
-| Lighthouse móvil (rendimiento y accesibilidad) | ≥ 90 |
+**Un solo objetivo medido:** `/api/dashboard` por debajo de **400 ms** en el percentil 95, medido desde la función desplegada. Se conserva porque es el número que justificó poner la base y la función en São Paulo (§20.1), y porque es el que se nota al abrir la aplicación.
+
+Los presupuestos de KB de JavaScript y CSS y el puntaje de Lighthouse se quitaron como exigencias en la revisión del 07/10/2026: generaban trabajo de medición sin cambiar la experiencia. Las prácticas que los conseguían se mantienen igual, porque no cuestan nada.
 
 Cómo se consigue: una sola llamada para todo el dashboard; caché por mes en memoria; `font-display: swap` con precarga; fondo con `background-attachment: fixed` y una única capa de ruido en SVG embebido en lugar de imágenes; `content-visibility: auto` en los paneles que están fuera de pantalla; estáticos con cache inmutable; pooler de conexiones en Supabase.
 
@@ -1673,10 +1714,10 @@ Al cerrar cada fase se escribe `docs/FASE_XX_<nombre>.md` con qué se hizo en le
 | Tema | Decisión | Dónde se amplía |
 |---|---|---|
 | Framework backend | FastAPI sobre Vercel Python Functions | 3, 16.1 |
-| Base de datos | Supabase Postgres, un proyecto y dos esquemas; SQLite sólo para tests | 4.1, 4.1.1, 6 |
+| Base de datos | Supabase Postgres, un proyecto y un esquema (`public`); SQLite sólo para tests de cálculo | 4.1, 4.1.1, 6 |
 | ORM | SQLAlchemy 2.0 + Alembic | 3, 16.4 |
 | Autenticación | Supabase Auth; el JWT se verifica con la clave pública del JWKS (ES256), no con secreto compartido | 8.8 |
-| Cuentas | Registro abierto, multiusuario desde el MVP, con confirmación por email | 8.2, 8.3 |
+| Cuentas | Registro abierto, multiusuario desde el MVP. La confirmación por email se activa en F11-T03 | 8.2, 8.3 |
 | Perfil y categorías iniciales | Trigger de Postgres sobre `auth.users`, no el backend | 8.4 |
 | Envío de mails | SMTP propio obligatorio; el de Supabase sólo sirve para pruebas | 8.5 |
 | Aislamiento de datos | `user_id` en consultas + RLS | 6.5 |
@@ -1686,8 +1727,10 @@ Al cerrar cada fase se escribe `docs/FASE_XX_<nombre>.md` con qué se hizo en le
 | Gráfico diario | Barras de ingreso y egreso + línea de ahorro acumulado con doble eje | 14.1 |
 | Dinero | `numeric(14,2)` en base, `Decimal` en Python, string en JSON | 6.1, 12.5 |
 | Dos tipos de mes | `transactions: null` para los consolidados | 6.6 |
-| Offline | Lectura sí, escritura no | 15.1 |
+| Offline | Diferido a después del MVP; hoy la PWA se instala y se abre, sin caché de lectura | 15.1 |
 | Despliegue | Preview por rama, producción en `main` | 16.2, 16.3 |
+| Pruebas | Cálculos y endpoints con pytest; la interfaz, a mano en el celular | 19 |
+| Seguridad | RLS como defensa central; sin límite de peticiones ni auditorías formales | 17 |
 
 ---
 
@@ -1696,6 +1739,8 @@ Al cerrar cada fase se escribe `docs/FASE_XX_<nombre>.md` con qué se hizo en le
 Confirmado con la sección 4.2 del documento general. La arquitectura lo deja preparado, pero no se construye:
 
 Presupuestos · gestión detallada de tarjetas · múltiples cuentas bancarias · conciliación bancaria · historial de operaciones de inversión · dólar y multimoneda · deudas, cuotas y préstamos · contabilidad formal · facturación · importación del Excel histórico · integración con Mercado Pago · escritura offline · restauración de respaldo desde la app · inicio de sesión con Google u otros proveedores · verificación en dos pasos · roles y permisos · cuentas compartidas entre usuarios.
+
+**Diferido a «Después del MVP» en la revisión del 07/10/2026** (roadmap v2.0), sin salir del alcance del producto: cotizaciones automáticas de inversiones · alertas analíticas · historial salarial y métricas históricas · caché offline de lectura y atajos de la PWA. Son temas del documento general que la aplicación no necesita para servir todos los días.
 
 **El alta de usuarios sí entra en el MVP** (§8.2): registro abierto, confirmación por email y recuperación de contraseña. Era un punto diferido en la primera versión de este documento y se incorporó por pedido expreso.
 

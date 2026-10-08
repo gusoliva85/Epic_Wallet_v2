@@ -1,11 +1,12 @@
-"""Verifica las protecciones de arranque de la aplicación.
+"""Verifica las protecciones de arranque y de conexión.
 
-Nacieron de un problema real detectado en F00-T09: una preview quedó
-desplegada **sin `DB_SCHEMA`**, y sin esquema las consultas caen en el
-que Postgres tenga por defecto —normalmente `public`, los datos
-reales— sin que nada lo avise.
+El proyecto usa **un solo esquema** (`public`) desde la revisión del
+07/10/2026, así que las guardias que vigilaban el cruce entre `dev` y
+`public` ya no tienen qué vigilar y se quitaron con ellas.
 
-Estas pruebas son la red para que no vuelva a pasar.
+Queda una sola protección de arranque —que haya un esquema donde
+escribir— y las dos del pooler, que son las que nacieron de errores
+reales en producción y siguen vigentes.
 """
 
 from __future__ import annotations
@@ -46,43 +47,34 @@ def _recargar_con(monkeypatch: pytest.MonkeyPatch, **entorno: str) -> object:
 
 
 @pytest.mark.unit
-def test_aborta_si_falta_db_schema(monkeypatch: pytest.MonkeyPatch) -> None:
-    """El caso de la preview mal configurada: sin esquema, no arranca."""
-    main = _recargar_con(monkeypatch, APP_ENV="preview")
+def test_aborta_si_el_esquema_queda_vacio(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Sin esquema no hay dónde leer ni escribir: no arranca.
+
+    `DB_SCHEMA` tiene 'public' por defecto, así que para llegar acá hay
+    que vaciarla a propósito. Es lo que pasaría con la variable cargada
+    en blanco en Vercel.
+    """
+    main = _recargar_con(monkeypatch, APP_ENV="production", DB_SCHEMA="")
     with pytest.raises(SystemExit) as salida:
         main._verificar_arranque()  # type: ignore[attr-defined]
     assert salida.value.code == 1
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize("entorno", ["development", "preview"])
-def test_aborta_si_no_produccion_apunta_a_public(
-    monkeypatch: pytest.MonkeyPatch, entorno: str
-) -> None:
+def test_sin_db_schema_asume_public(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Con un solo esquema, no definir la variable es el caso normal."""
+    from app.core import config
+
+    main = _recargar_con(monkeypatch, APP_ENV="production")
+    assert config.settings.esquema == "public"
+    main._verificar_arranque()  # type: ignore[attr-defined]  # no debe lanzar
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("entorno", ["development", "preview", "production"])
+def test_arranca_en_cualquier_entorno(monkeypatch: pytest.MonkeyPatch, entorno: str) -> None:
+    """Los tres entornos comparten esquema: ninguna combinación está vedada."""
     main = _recargar_con(monkeypatch, APP_ENV=entorno, DB_SCHEMA="public")
-    with pytest.raises(SystemExit) as salida:
-        main._verificar_arranque()  # type: ignore[attr-defined]
-    assert salida.value.code == 1
-
-
-@pytest.mark.unit
-def test_aborta_si_produccion_no_apunta_a_public(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Producción sobre 'dev' no destruye nada, pero nadie vería sus datos."""
-    main = _recargar_con(monkeypatch, APP_ENV="production", DB_SCHEMA="dev")
-    with pytest.raises(SystemExit) as salida:
-        main._verificar_arranque()  # type: ignore[attr-defined]
-    assert salida.value.code == 1
-
-
-@pytest.mark.unit
-@pytest.mark.parametrize(
-    ("entorno", "esquema"),
-    [("development", "dev"), ("preview", "dev"), ("production", "public")],
-)
-def test_arranca_con_las_combinaciones_validas(
-    monkeypatch: pytest.MonkeyPatch, entorno: str, esquema: str
-) -> None:
-    main = _recargar_con(monkeypatch, APP_ENV=entorno, DB_SCHEMA=esquema)
     main._verificar_arranque()  # type: ignore[attr-defined]  # no debe lanzar
 
 

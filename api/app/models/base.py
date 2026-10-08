@@ -28,16 +28,12 @@ CONVENCION_DE_NOMBRES = {
 
 
 def esquema_actual() -> str | None:
-    """Esquema donde viven las tablas, o None si el motor no los soporta.
-
-    No tiene valor por defecto a propósito: que una migración caiga en
-    el esquema equivocado es justamente lo que hay que evitar.
-    """
+    """Esquema donde viven las tablas, o None si el motor no los soporta."""
     url = os.getenv("DATABASE_URL", "")
     if url.startswith("sqlite"):
         return None
-    esquema = os.getenv("DB_SCHEMA", "").strip()
-    return esquema or None
+    esquema = os.getenv("DB_SCHEMA", "public").strip()
+    return esquema or "public"
 
 
 metadata = MetaData(naming_convention=CONVENCION_DE_NOMBRES, schema=esquema_actual())
