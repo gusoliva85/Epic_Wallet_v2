@@ -590,6 +590,145 @@
           hidden
         >
           <h2 id="t-cfg" class="solo-lector">Ajustes</h2>
+
+          <!-- ======================= CUENTA · F02-T11 =======================
+               Única tarjeta de esta vista con datos reales: el resto
+               (categorías, preferencias, datos laborales, backup) sigue
+               con los de muestra de F01-T13 hasta que les llegue su
+               tarea (F03-T10, F11-T01, F12-T05, F11-T02).
+
+               Dos formularios, no uno: guardar el nombre no debería
+               pedir la contraseña, y cambiar la contraseña no debería
+               arriesgar el nombre si algo sale mal a mitad de camino. -->
+          <article class="card shell">
+            <div class="card-head">
+              <div>
+                <h2>Cuenta</h2>
+                <p>Tu correo, tu nombre visible y tu contraseña.</p>
+              </div>
+            </div>
+
+            <div class="kv-grid" style="grid-template-columns: 1fr">
+              <div class="kv cg">
+                <span>Correo</span>
+                <b id="cuenta-email">—</b>
+              </div>
+            </div>
+
+            <div class="day-sep">Nombre visible</div>
+            <form id="form-nombre" novalidate>
+              <div class="campo">
+                <label for="cuenta-nombre" class="solo-lector">Nombre visible</label>
+                <input
+                  class="inp"
+                  id="cuenta-nombre"
+                  name="nombre"
+                  type="text"
+                  autocomplete="name"
+                  maxlength="120"
+                  placeholder="Cómo te saluda la aplicación"
+                />
+              </div>
+              <p
+                class="acceso-error"
+                id="nombre-error"
+                role="alert"
+                aria-live="assertive"
+                hidden
+              ></p>
+              <button class="btn" id="nombre-guardar" type="submit">
+                <span class="btn-texto">Guardar nombre</span>
+                <span class="btn-girador" aria-hidden="true"></span>
+              </button>
+            </form>
+
+            <div class="day-sep">Cambiar contraseña</div>
+            <form id="form-clave" novalidate>
+              <div class="campo">
+                <label for="clave-actual">Contraseña actual</label>
+                <div class="clave-wrap">
+                  <input
+                    class="inp"
+                    id="clave-actual"
+                    type="password"
+                    autocomplete="current-password"
+                    required
+                  />
+                  <button
+                    class="clave-ojo"
+                    id="ojo-actual"
+                    type="button"
+                    aria-label="Mostrar contraseña"
+                    aria-pressed="false"
+                    aria-controls="clave-actual"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true"></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="campo">
+                <label for="clave-nueva">Contraseña nueva</label>
+                <div class="clave-wrap">
+                  <input
+                    class="inp"
+                    id="clave-nueva"
+                    type="password"
+                    autocomplete="new-password"
+                    minlength="8"
+                    required
+                  />
+                  <button
+                    class="clave-ojo"
+                    id="ojo-nueva"
+                    type="button"
+                    aria-label="Mostrar contraseña"
+                    aria-pressed="false"
+                    aria-controls="clave-nueva"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true"></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="campo">
+                <label for="clave-nueva2">Repetir contraseña nueva</label>
+                <div class="clave-wrap">
+                  <input
+                    class="inp"
+                    id="clave-nueva2"
+                    type="password"
+                    autocomplete="new-password"
+                    required
+                  />
+                  <button
+                    class="clave-ojo"
+                    id="ojo-nueva2"
+                    type="button"
+                    aria-label="Mostrar contraseña"
+                    aria-pressed="false"
+                    aria-controls="clave-nueva2"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true"></svg>
+                  </button>
+                </div>
+                <span class="campo-nota" id="clave-coincide" aria-live="polite"></span>
+              </div>
+
+              <p
+                class="acceso-error"
+                id="clave-error"
+                role="alert"
+                aria-live="assertive"
+                hidden
+              ></p>
+              <button class="btn btn--principal" id="clave-guardar" type="submit">
+                <span class="btn-texto">Cambiar contraseña</span>
+                <span class="btn-girador" aria-hidden="true"></span>
+              </button>
+            </form>
+          </article>
+
           <div class="grid-2">
             <article class="card shell">
               <div class="card-head">
@@ -1123,6 +1262,7 @@
     <script type="module" src="/src/js/views/vistas.js"></script>
     <script type="module" src="/src/js/acceso.js"></script>
     <script type="module" src="/src/js/registro.js"></script>
+    <script type="module" src="/src/js/config-cuenta.js"></script>
     <script type="module" src="/src/js/app.js"></script>
     <script type="module" src="/src/js/registrar-sw.js"></script>
   </body>

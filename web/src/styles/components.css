@@ -2684,15 +2684,26 @@
   opacity: 0.35;
 }
 
+/* Color por defecto pensado para un `.btn` liso (vidrio neutro,
+   `--color-ink` encima): el girador toma el mismo color de la letra.
+   `.btn--principal` lo pisa abajo con `--color-on-accent`, que es lo
+   que corresponde sobre su fondo degradado — hasta F02-T11 el
+   girador sólo se había usado dentro de un `.btn--principal`, y nadie
+   notó que la versión blanca es invisible sobre un `.btn` liso. */
 .btn-girador {
   position: absolute;
   width: 19px;
   height: 19px;
-  border: 2px solid color-mix(in srgb, var(--color-on-accent) 35%, transparent);
-  border-top-color: var(--color-on-accent);
+  border: 2px solid color-mix(in srgb, var(--color-ink) 30%, transparent);
+  border-top-color: var(--color-ink);
   border-radius: 50%;
   opacity: 0;
   animation: girar 0.75s linear infinite;
+}
+
+.btn--principal .btn-girador {
+  border-color: color-mix(in srgb, var(--color-on-accent) 35%, transparent);
+  border-top-color: var(--color-on-accent);
 }
 
 .btn.cargando .btn-girador {
