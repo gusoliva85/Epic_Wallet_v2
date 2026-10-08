@@ -42,7 +42,7 @@ def _del_env(clave: str) -> str | None:
 URL_BASE = _del_env("DATABASE_URL")
 SUPABASE = (_del_env("SUPABASE_URL") or "").rstrip("/")
 ANON = _del_env("SUPABASE_ANON_KEY")
-ESQUEMA = os.getenv("DB_SCHEMA", "dev").strip() or "dev"
+ESQUEMA = _del_env("DB_SCHEMA") or "public"
 
 sin_entorno = pytest.mark.skipif(
     not (URL_BASE and SUPABASE and ANON) or str(URL_BASE).startswith("sqlite"),

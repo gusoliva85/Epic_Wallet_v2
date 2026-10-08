@@ -44,7 +44,7 @@ def _del_env(clave: str) -> str | None:
 
 
 URL = _del_env("DATABASE_URL")
-ESQUEMA = os.getenv("DB_SCHEMA", "dev").strip() or "dev"
+ESQUEMA = _del_env("DB_SCHEMA") or "public"
 
 sin_base = pytest.mark.skipif(
     not URL or str(URL).startswith("sqlite"),

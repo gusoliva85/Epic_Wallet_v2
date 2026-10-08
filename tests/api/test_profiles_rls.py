@@ -43,9 +43,15 @@ def _url() -> str | None:
 
 
 def _esquema() -> str:
-    # `dev` por defecto: estas pruebas escriben, y escribir en `public`
-    # tocaría los datos reales.
-    return os.getenv("DB_SCHEMA", "dev").strip() or "dev"
+    valor = os.getenv("DB_SCHEMA", "").strip()
+    if valor:
+        return valor
+    archivo = RAIZ / ".env"
+    if archivo.exists():
+        m = re.search(r"^DB_SCHEMA=(.+)$", archivo.read_text(encoding="utf-8"), re.M)
+        if m:
+            return m.group(1).strip()
+    return "public"
 
 
 pytestmark = pytest.mark.api
