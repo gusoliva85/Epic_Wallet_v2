@@ -1,17 +1,17 @@
 """Lógica de meses: identidad, estado y las dos naturalezas · F03-T01.
+Mes actual con base de datos desde F03-T03.
 
-Referencia: 02_Documento_Tecnico.md §6.6 · 01_Documento_General.md §6, §12.1, §50 (R1, R3)
+Referencia: 02_Documento_Tecnico.md §5.1, §6.6 · General §6, §12.1, §50 (R1, R3)
 
-Funciones puras, sin base de datos: reciben números (o una fecha, para
-`mes_actual`) y devuelven números. Se testean antes de que exista la
-tabla `months`, que es F03-T03, y antes de que exista el endpoint, que
-es F03-T05 — el orden que pide el roadmap en cada tarea.
+Casi todo el archivo es cálculo puro, sin base de datos: recibe
+números (o una fecha, para `mes_actual`) y devuelve números. Se
+testeó así, antes de que existiera la tabla `months` (F03-T01).
 
-Lo que NO vive acá: nada que lea o escriba `months` o `transactions`.
-Eso es el repositorio y el servicio con base de datos de F03-T03, que
-van a llamar a `origen_de_totales` y a `transacciones_del_mes` de este
-archivo para decidir qué consulta correr y qué devolver — no van a
-repetir el `if status == ...` por su cuenta.
+La excepción es `abrir_mes_actual`, al final: la única función de acá
+que toca la base, porque orquesta una regla de negocio —crear el mes o
+devolver el que ya hay— y no una consulta suelta. Por eso vive en el
+servicio y no en el repositorio (`app.repos.months`), que sólo sabe
+consultar y no decide nada.
 """
 
 from __future__ import annotations
@@ -19,6 +19,11 @@ from __future__ import annotations
 import datetime as dt
 from typing import Literal, NamedTuple
 from zoneinfo import ZoneInfo
+
+from sqlalchemy.orm import Session
+
+from ..models import Month
+from ..repos import months as repos
 
 # La aplicación muestra todo en esta zona (Técnico §6.1), no en la del
 # servidor: Vercel corre en UTC, y sin esto el mes cambiaría unas horas
@@ -126,3 +131,29 @@ def transacciones_del_mes(
     if status == HISTORICO:
         return None
     return movimientos if movimientos is not None else []
+
+
+# ===================================================================
+#  Desde acá, la única función que toca la base · F03-T03
+# ===================================================================
+
+
+def abrir_mes_actual(sesion: Session, user_id: str, *, ahora: dt.datetime | None = None) -> Month:
+    """El mes actual del usuario: lo busca y, si es la primera vez que
+    se lo pide, lo crea abierto con los totales en cero.
+
+    Llamarla dos veces seguidas no duplica nada —la segunda encuentra
+    el mes que creó la primera—, y eso es justo lo que garantiza
+    `months_unique_per_user` del lado de la base: aunque dos pedidos
+    llegaran a la vez, el segundo `insert` fallaría por la restricción
+    en lugar de crear un duplicado.
+
+    `ahora` es para las pruebas, igual que en `mes_actual`.
+    """
+    periodo = mes_actual(ahora)
+    existente = repos.buscar_por_periodo(sesion, periodo.year, periodo.month)
+    if existente is not None:
+        return existente
+    return repos.crear(
+        sesion, user_id=user_id, year=periodo.year, month=periodo.month, status=ABIERTO
+    )

@@ -9,6 +9,7 @@ en `autogenerate`, y la migración saldría vacía sin avisar.
 from . import supabase as _supabase  # noqa: F401
 from .base import Base, esquema_actual, metadata
 from .category import Category
+from .month import Month
 from .profile import Profile
 
-__all__ = ["Base", "Category", "Profile", "esquema_actual", "metadata"]
+__all__ = ["Base", "Category", "Month", "Profile", "esquema_actual", "metadata"]

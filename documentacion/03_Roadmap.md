@@ -189,12 +189,12 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 
 **Al cerrar esta fase:** te movés entre meses de verdad, el mes actual se abre solo, y agregás o renombrás una categoría.
 
-- [~] **F03-T01 · Lógica de meses: identidad, estado y las dos naturalezas**
+- [x] **F03-T01 · Lógica de meses: identidad, estado y las dos naturalezas**
   **Tipo:** Cálculo · **Ref:** Técnico §6.6 · General §6, §50 R1, R3 · *fusiona F03-T01 y F03-T02*
   **Hacer:** funciones puras de identidad (`año`/`mes`), mes actual según la zona `America/Argentina/Buenos_Aires`, navegación anterior/siguiente con cruce de año, y la resolución de las dos naturalezas: de dónde salen los totales según `status` sea `open` o `historical`.
   **Aceptación:** · diciembre → siguiente da enero del año que viene · un mes futuro se rechaza · un mes `historical` devuelve sus totales de los campos del mes y **`transactions: null`**, distinto de `[]`.
 
-- [ ] **F03-T03 · Tabla `months`, repositorio y servicio**
+- [~] **F03-T03 · Tabla `months`, repositorio y servicio**
   **Tipo:** Backend · **Ref:** Técnico §6.2 · *fusiona F03-T03 y F03-T04*
   **Hacer:** modelo y migración de `months` con `unique (user_id, year, month)`, RLS y trigger de `updated_at`; repositorio con las consultas; servicio que abre el mes actual si no existe.
   **Aceptación:** · dos meses iguales del mismo usuario se rechazan en la base · el mes actual se crea solo la primera vez y no se duplica · `downgrade` probado.
