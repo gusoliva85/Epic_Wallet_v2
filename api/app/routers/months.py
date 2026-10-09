@@ -1,0 +1,52 @@
+"""Meses · F03-T05.
+
+Referencia: 02_Documento_Tecnico.md §9.1, §6.6
+
+    GET  /api/months       la lista, con su saldo acumulado
+    GET  /api/months/{id}  el detalle, respetando las dos naturalezas
+
+Ninguno de los dos filtra por usuario en su consulta: la sesión que
+llega acá es una `SesionDeUsuario` (F02-T05), así que RLS ya deja ver
+sólo lo del usuario del token — el mismo patrón que `GET`/`PATCH
+/api/me`.
+"""
+
+from __future__ import annotations
+
+from fastapi import APIRouter, status
+
+from ..core.db import SesionDeUsuario
+from ..core.errors import NOT_FOUND, ErrorDeApi
+from ..models import Month
+from ..repos import months as repos
+from ..schemas.months import MesDetalle, MesResumen
+from ..services.months import transacciones_del_mes
+
+router = APIRouter(prefix="/months", tags=["meses"])
+
+
+def _sin_mes() -> ErrorDeApi:
+    """404 también para el mes de otro usuario: no se revela que
+    existe (Técnico §17, mismo criterio que `_sin_perfil` en
+    `routers/me.py`). RLS ya lo sacó de la consulta; esto sólo traduce
+    "no encontré nada" al código correcto — nunca es un 403."""
+    return ErrorDeApi(status.HTTP_404_NOT_FOUND, NOT_FOUND, "No se encontró el mes.")
+
+
+@router.get("", response_model=list[MesResumen], summary="Los meses del usuario")
+def listar_meses(sesion: SesionDeUsuario) -> list[Month]:
+    return repos.listar(sesion)
+
+
+@router.get("/{month_id}", response_model=MesDetalle, summary="El detalle de un mes")
+def leer_mes(month_id: int, sesion: SesionDeUsuario) -> MesDetalle:
+    mes = sesion.get(Month, month_id)
+    if mes is None:
+        raise _sin_mes()
+
+    detalle = MesDetalle.model_validate(mes, from_attributes=True)
+    # Sin movimientos todavía (F04 crea `transactions`): un mes abierto
+    # devuelve la lista vacía que ya resuelve `transacciones_del_mes`
+    # para "sin movimientos que pasarle", y uno histórico sigue dando
+    # `None` sin importar qué se le pase.
+    return detalle.model_copy(update={"transactions": transacciones_del_mes(mes.status, None)})

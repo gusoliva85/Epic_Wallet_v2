@@ -194,12 +194,12 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Hacer:** funciones puras de identidad (`año`/`mes`), mes actual según la zona `America/Argentina/Buenos_Aires`, navegación anterior/siguiente con cruce de año, y la resolución de las dos naturalezas: de dónde salen los totales según `status` sea `open` o `historical`.
   **Aceptación:** · diciembre → siguiente da enero del año que viene · un mes futuro se rechaza · un mes `historical` devuelve sus totales de los campos del mes y **`transactions: null`**, distinto de `[]`.
 
-- [~] **F03-T03 · Tabla `months`, repositorio y servicio**
+- [x] **F03-T03 · Tabla `months`, repositorio y servicio**
   **Tipo:** Backend · **Ref:** Técnico §6.2 · *fusiona F03-T03 y F03-T04*
   **Hacer:** modelo y migración de `months` con `unique (user_id, year, month)`, RLS y trigger de `updated_at`; repositorio con las consultas; servicio que abre el mes actual si no existe.
   **Aceptación:** · dos meses iguales del mismo usuario se rechazan en la base · el mes actual se crea solo la primera vez y no se duplica · `downgrade` probado.
 
-- [ ] **F03-T05 · Endpoints de meses**
+- [~] **F03-T05 · Endpoints de meses**
   **Tipo:** Backend · **Ref:** Técnico §9.1
   **Hacer:** `GET /api/months` con la lista y `GET /api/months/{id}` con el detalle, respetando las dos naturalezas.
   **Aceptación:** · sin token devuelve 401 · un mes de otro usuario devuelve 404, no 403 · el mes histórico devuelve `transactions: null`.

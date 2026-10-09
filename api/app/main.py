@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
 from .core.errors import registrar_manejadores
 from .core.security import current_user_id
-from .routers import health, me
+from .routers import health, me, months
 
 logging.basicConfig(
     level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO),
@@ -91,6 +91,7 @@ def crear_app() -> FastAPI:
     # guardia, y así ese olvido no es posible.
     privado = APIRouter(prefix="/api", dependencies=[Depends(current_user_id)])
     privado.include_router(me.router)
+    privado.include_router(months.router)
     app.include_router(privado)
 
     return app
