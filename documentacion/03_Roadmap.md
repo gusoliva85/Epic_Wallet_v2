@@ -222,7 +222,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 
 **Al cerrar esta fase:** apretás `+`, cargás un gasto en el celular, y los totales del mes cambian al instante.
 
-- [ ] **F04-T01 · Lógica de validación y recálculo del mes**
+- [~] **F04-T01 · Lógica de validación y recálculo del mes**
   **Tipo:** Cálculo · **Ref:** General §8, §37, §51 · *fusiona F04-T01 y F04-T02*
   **Hacer:** validación pura de un movimiento (importe > 0, fecha dentro del mes, categoría del tipo correcto, descripción opcional con límite) y la función de recálculo que, dados los movimientos, devuelve los totales por tipo y por categoría.
   **Aceptación:** · importe cero o negativo se rechaza · una fecha fuera del mes se rechaza · una categoría de ingreso en un egreso se rechaza · el recálculo de un mes sin movimientos da todos los totales en cero, no error.
