@@ -277,19 +277,9 @@ function analisis() {
 /* ----------------------------------------------------------- ajustes */
 
 function config() {
-  escribir(
-    "config-categorias",
-    D.CATEGORIAS_CONFIG.map(
-      (c) =>
-        '<div class="cfg-row cg">' +
-        `<div><b>${esc(c.nombre)}</b><span>${esc(c.tipo)}</span></div>` +
-        // El interruptor es un botón con `aria-checked`: un `div` con
-        // clase no se alcanza con teclado ni dice si está activado.
-        `<button class="toggle" type="button" role="switch" ` +
-        `aria-checked="${c.activa}" aria-label="${esc(c.nombre)}"></button>` +
-        "</div>",
-    ).join(""),
-  );
+  // Categorías: F03-T10 las reemplazó por datos reales de
+  // `GET /api/categories`, pintados por config-categorias.js. Ya no
+  // hay nada de muestra que escribir acá.
 
   escribir(
     "config-preferencias",
@@ -326,13 +316,19 @@ export function pintarVistas() {
 function conectarControles() {
   document.addEventListener("click", (ev) => {
     const sw = ev.target.closest(".toggle");
-    if (sw) {
+    // Las categorías tienen datos reales desde F03-T10: su propio
+    // interruptor (config-categorias.js) llama a la API y pinta de
+    // nuevo; si este delegado genérico lo tocara también, el segundo
+    // cambio de `aria-checked` dejaría el botón mintiendo sobre el
+    // estado real.
+    if (sw && !sw.closest("#config-categorias")) {
       sw.setAttribute(
         "aria-checked",
         sw.getAttribute("aria-checked") !== "true",
       );
       return;
     }
+    if (sw) return;
     const boton = ev.target.closest(".view-switch button");
     if (boton) {
       for (const otro of boton.parentElement.children)

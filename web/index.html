@@ -747,8 +747,13 @@
                   <h2>Categorías</h2>
                   <p>Se desactivan, nunca se borran si tienen histórico.</p>
                 </div>
-                <button class="link-btn" type="button">+ Nueva</button>
+                <button class="link-btn" type="button" id="btn-nueva-categoria">
+                  + Nueva
+                </button>
               </div>
+              <!-- F03-T10: datos reales de GET /api/categories, pintados
+                   por config-categorias.js. Ya no son las de muestra de
+                   F01-T13. -->
               <div class="rows" id="config-categorias"></div>
             </article>
 
@@ -914,6 +919,84 @@
           movimientos. Fase 4 y fase 5.
         </p>
         <div class="relleno-hoja" aria-hidden="true"></div>
+      </div>
+    </aside>
+
+    <!-- Alta y edición de categoría · F03-T10.
+         Una sola hoja para las dos cosas: crear y renombrar comparten
+         el mismo campo de nombre. El selector de tipo sólo se ve al
+         crear —`config-categorias.js` lo esconde al editar—: el tipo
+         no es un campo de PATCH (Técnico, F03-T08), cambiarlo con
+         histórico cargado dejaría incoherentes los movimientos que ya
+         usan esa categoría. Modal y no cajón: es un formulario, pide
+         atención completa. -->
+    <aside
+      class="hoja hoja--modal"
+      id="hoja-categoria"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="hoja-categoria-titulo"
+      aria-hidden="true"
+      tabindex="-1"
+    >
+      <div class="hoja-asa" aria-hidden="true"></div>
+      <div class="hoja-cabeza">
+        <div>
+          <h2 id="hoja-categoria-titulo">Nueva categoría</h2>
+        </div>
+        <button
+          class="hoja-cerrar"
+          type="button"
+          data-cerrar
+          aria-label="Cerrar"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
+      <div class="hoja-cuerpo">
+        <form id="form-categoria" novalidate>
+          <div class="campo">
+            <label for="categoria-nombre">Nombre</label>
+            <input
+              class="inp"
+              id="categoria-nombre"
+              name="nombre"
+              type="text"
+              maxlength="60"
+              required
+              placeholder="Ej.: Gimnasio"
+            />
+          </div>
+
+          <div class="campo" id="categoria-tipo-campo">
+            <label id="categoria-tipo-etiqueta">Tipo</label>
+            <div
+              class="view-switch"
+              role="group"
+              aria-labelledby="categoria-tipo-etiqueta"
+            >
+              <button type="button" data-tipo="income">Ingreso</button>
+              <button type="button" data-tipo="expense" class="activa">
+                Egreso
+              </button>
+            </div>
+          </div>
+
+          <p
+            class="acceso-error"
+            id="categoria-error"
+            role="alert"
+            aria-live="assertive"
+            hidden
+          ></p>
+
+          <button class="btn btn--principal" id="categoria-guardar" type="submit">
+            <span class="btn-texto">Guardar</span>
+            <span class="btn-girador" aria-hidden="true"></span>
+          </button>
+        </form>
       </div>
     </aside>
 
@@ -1274,6 +1357,7 @@
     <script type="module" src="/src/js/acceso.js"></script>
     <script type="module" src="/src/js/registro.js"></script>
     <script type="module" src="/src/js/config-cuenta.js"></script>
+    <script type="module" src="/src/js/config-categorias.js"></script>
     <script type="module" src="/src/js/app.js"></script>
     <script type="module" src="/src/js/registrar-sw.js"></script>
   </body>

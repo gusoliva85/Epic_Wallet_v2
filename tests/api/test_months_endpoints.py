@@ -165,6 +165,38 @@ def test_sin_token_devuelve_401(cliente) -> None:
 
 
 @sin_entorno
+def test_una_cuenta_sin_meses_recibe_el_mes_actual_ya_abierto(
+    cliente, cuentas: tuple[Cuenta, Cuenta], limpiar_meses
+) -> None:
+    """Sin esto, la cuenta más nueva de todas vería una lista vacía al
+    abrir la aplicación por primera vez, y la barra de mes (F03-T10)
+    no tendría nada que mostrar."""
+    import datetime as dt
+    from zoneinfo import ZoneInfo
+
+    a, _ = cuentas
+    hoy = dt.datetime.now(ZoneInfo("America/Argentina/Buenos_Aires"))
+
+    r = cliente.get("/api/months", headers=a.cabeceras)
+    assert r.status_code == 200
+    meses = r.json()
+    assert len(meses) == 1
+    assert meses[0]["year"] == hoy.year
+    assert meses[0]["month"] == hoy.month
+    assert meses[0]["status"] == "open"
+
+
+@sin_entorno
+def test_llamarlo_dos_veces_no_duplica_el_mes_actual(
+    cliente, cuentas: tuple[Cuenta, Cuenta], limpiar_meses
+) -> None:
+    a, _ = cuentas
+    cliente.get("/api/months", headers=a.cabeceras)
+    r = cliente.get("/api/months", headers=a.cabeceras)
+    assert len(r.json()) == 1
+
+
+@sin_entorno
 def test_devuelve_solo_los_meses_de_esa_cuenta(
     cliente, cuentas: tuple[Cuenta, Cuenta], limpiar_meses
 ) -> None:

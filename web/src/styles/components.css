@@ -2130,6 +2130,19 @@
   color: var(--color-ink-3);
 }
 
+.cfg-row .cfg-nombre {
+  display: block;
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  background: none;
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
 .toggle {
   position: relative;
   flex: none;

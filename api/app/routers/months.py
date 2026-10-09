@@ -1,4 +1,4 @@
-"""Meses · F03-T05.
+"""Meses · F03-T05. `GET /api/months` abre el mes actual desde F03-T10.
 
 Referencia: 02_Documento_Tecnico.md §9.1, §6.6
 
@@ -17,10 +17,11 @@ from fastapi import APIRouter, status
 
 from ..core.db import SesionDeUsuario
 from ..core.errors import NOT_FOUND, ErrorDeApi
+from ..core.security import UsuarioActual
 from ..models import Month
 from ..repos import months as repos
 from ..schemas.months import MesDetalle, MesResumen
-from ..services.months import transacciones_del_mes
+from ..services.months import abrir_mes_actual, transacciones_del_mes
 
 router = APIRouter(prefix="/months", tags=["meses"])
 
@@ -34,7 +35,14 @@ def _sin_mes() -> ErrorDeApi:
 
 
 @router.get("", response_model=list[MesResumen], summary="Los meses del usuario")
-def listar_meses(sesion: SesionDeUsuario) -> list[Month]:
+def listar_meses(sesion: SesionDeUsuario, usuario: UsuarioActual) -> list[Month]:
+    # Sin esto, la cuenta más nueva de todas —la que todavía no tiene
+    # ni un mes— recibiría una lista vacía, y la barra de mes (F03-T10)
+    # no tendría nada que mostrar al abrir la aplicación por primera
+    # vez. `abrir_mes_actual` ya es idempotente (F03-T03): en cualquier
+    # visita posterior esto no inserta una fila de más, sólo encuentra
+    # la que ya estaba.
+    abrir_mes_actual(sesion, usuario)
     return repos.listar(sesion)
 
 

@@ -204,12 +204,12 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Hacer:** `GET /api/months` con la lista y `GET /api/months/{id}` con el detalle, respetando las dos naturalezas.
   **Aceptación:** · sin token devuelve 401 · un mes de otro usuario devuelve 404, no 403 · el mes histórico devuelve `transactions: null`.
 
-- [~] **F03-T08 · Categorías: validación, siembra y endpoints**
+- [x] **F03-T08 · Categorías: validación, siembra y endpoints**
   **Tipo:** Cálculo → Backend · **Ref:** General §7, §34, §51 · *fusiona F03-T06, F03-T08 y F03-T09*
   **Hacer:** validación de nombre y tipo, con `unique (user_id, type, name)`; verificar que la siembra del trigger de `F02-T04` dejó las 21 categorías en orden; `GET`, `POST`, `PATCH` y `DELETE` de categorías, con `on delete restrict` si tiene histórico.
   **Aceptación:** · dos categorías con el mismo nombre y tipo se rechazan · una categoría con movimientos no se puede borrar y el mensaje lo explica · una categoría de ingreso no sirve para un egreso.
 
-- [ ] **F03-T10 · Barra de mes conectada y administración de categorías**
+- [~] **F03-T10 · Barra de mes conectada y administración de categorías**
   **Tipo:** Frontend · **Ref:** Técnico §12.2 · *fusiona F03-T10, F03-T11 y F03-T12*
   **Hacer:** la barra de mes consumiendo la API, con flechas deshabilitadas en los extremos y botón «Hoy»; caché por mes en memoria que se invalida al escribir; pantalla de administración de categorías en configuración.
   **Aceptación:** · navegar entre meses no recarga la página · volver a un mes ya visto no vuelve a pedirlo · después de dar de alta un movimiento el mes se vuelve a pedir · se agrega, renombra y archiva una categoría desde el celular.

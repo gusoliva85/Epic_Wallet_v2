@@ -275,17 +275,6 @@ export const PIE_DIARIO = [
 
 /* Las categorías de configuración, con su estado. Se desactivan, nunca
    se borran si tienen histórico. */
-export const CATEGORIAS_CONFIG = [
-  { id: "sueldo", nombre: "Sueldo", tipo: "Ingreso", activa: true },
-  { id: "venta", nombre: "Venta", tipo: "Ingreso", activa: true },
-  { id: "alquiler", nombre: "Alquiler", tipo: "Egreso", activa: true },
-  { id: "supermercado", nombre: "Supermercado", tipo: "Egreso", activa: true },
-  { id: "transporte", nombre: "Transporte", tipo: "Egreso", activa: true },
-  { id: "servicios", nombre: "Servicios", tipo: "Egreso", activa: true },
-  { id: "ocio", nombre: "Ocio", tipo: "Egreso", activa: true },
-  { id: "mascota", nombre: "Mascota", tipo: "Egreso", activa: false },
-];
-
 export const PREFERENCIAS = [
   {
     id: "alertas",
