@@ -154,27 +154,21 @@
   min-width: 0;
 }
 
+/* Una sola línea desde que se sacó la bajada "Mes en curso": un poco
+   más de tamaño y el mismo `letter-spacing` ajustado que ya usa
+   `.acceso-nombre` en las pantallas de cuenta, para que el nombre solo
+   se lea con la misma confianza que antes se repartía entre las dos
+   líneas. */
 .marca-texto b {
   display: block;
   font-family: var(--font-display);
-  font-size: var(--text-section);
+  font-size: var(--text-sheet);
   font-weight: 700;
+  letter-spacing: -0.015em;
   line-height: 1.1;
   color: var(--color-ink);
   /* En 320 px el nombre y las tres acciones compiten por el ancho:
      antes de desbordar, el nombre se recorta. */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.marca-texto span {
-  display: block;
-  margin-top: 2px;
-  font-size: var(--text-label);
-  letter-spacing: var(--tracking-caps);
-  text-transform: uppercase;
-  color: var(--color-ink-3);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

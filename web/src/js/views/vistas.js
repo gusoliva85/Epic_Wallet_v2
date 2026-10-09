@@ -40,13 +40,13 @@ function escribir(id, html) {
 
 function inicio() {
   pintarTarjetas($("kpis-inicio"), [
+    // Sin pie de ingresos/egresos: las dos tarjetas de color de abajo
+    // ya los muestran, y repetirlos acá era la misma cifra dos veces.
     tarjetaHeroe({
       etiqueta: "Ahorro del mes",
       cifra: D.RESUMEN.ahorro,
       sub: `${D.RESUMEN.tasa} de los ingresos del mes`,
       porcentaje: 61,
-      pieIzq: `Ingresos ${D.RESUMEN.ingresos}`,
-      pieDer: `Egresos ${D.RESUMEN.egresos}`,
       color: "sav",
     }),
     tarjetaMetrica({

@@ -110,11 +110,19 @@ export function tarjetaMetrica({
 }
 
 /**
- * Tarjeta héroe: cifra grande, barra de progreso y pie de dos datos.
+ * Tarjeta héroe: cifra grande, barra de progreso y, opcionalmente, un
+ * pie de dos datos.
  *
  * `porcentaje` es cuánto se llena la barra. Se recorta a 0–100: un
  * ahorro negativo daría una barra de ancho negativo, que el navegador
  * ignora, y un 140 % desbordaría el surco.
+ *
+ * El pie es opcional a propósito: la de "Ahorro del mes" no lo lleva
+ * —ingreso y egreso ya están en las tarjetas de color de abajo, y
+ * repetirlos acá era decirlo dos veces— pero la de "Patrimonio" sí
+ * (invertido y cantidad de posiciones no están en ningún otro lado).
+ * Sin `pieIzq` ni `pieDer`, no se renderiza el `<div>` del pie: dejarlo
+ * vacío igual sumaría un hueco en blanco, por el `margin-top` que trae.
  *
  * @param {{etiqueta: string, cifra: string, sub?: string,
  *          porcentaje?: number, pieIzq?: string, pieDer?: string,
@@ -130,6 +138,10 @@ export function tarjetaHeroe({
   color: c,
 }) {
   const ancho = Math.min(100, Math.max(0, Number(porcentaje) || 0));
+  const pie =
+    pieIzq || pieDer
+      ? `<div class="fin-foot"><span>${esc(pieIzq)}</span><span>${esc(pieDer)}</span></div>`
+      : "";
 
   return (
     `<article class="kpi kpi--hero shell" style="--c:${color(c)}">` +
@@ -141,9 +153,7 @@ export function tarjetaHeroe({
     '<div class="fin-track" aria-hidden="true">' +
     `<div class="fin-fill" data-ancho="${ancho}"></div>` +
     "</div>" +
-    '<div class="fin-foot">' +
-    `<span>${esc(pieIzq)}</span><span>${esc(pieDer)}</span>` +
-    "</div>" +
+    pie +
     "</article>"
   );
 }

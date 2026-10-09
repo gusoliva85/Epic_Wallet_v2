@@ -214,6 +214,27 @@ describe("tarjetas de indicador", () => {
     assert.equal(t.querySelectorAll(".fin-foot span").length, 2);
   });
 
+  test("sin pie, no se renderiza el hueco del pie", async () => {
+    // La de "Ahorro del mes" no lleva pie: ingreso y egreso ya están
+    // en las tarjetas de color de abajo. Sin esto, `.fin-foot` se
+    // renderizaría vacío igual, y su `margin-top` dejaría un hueco en
+    // blanco debajo de la barra.
+    const { kpi, rejilla } = await montar();
+    kpi.pintarTarjetas(rejilla, [
+      kpi.tarjetaHeroe({ etiqueta: "Ahorro del mes", cifra: "$1", porcentaje: 61 }),
+    ]);
+    const t = rejilla.querySelector(".kpi--hero");
+    assert.equal(t.querySelector(".fin-foot"), null);
+  });
+
+  test("con un solo lado del pie, igual se muestra", async () => {
+    const { kpi, rejilla } = await montar();
+    kpi.pintarTarjetas(rejilla, [
+      kpi.tarjetaHeroe({ etiqueta: "x", cifra: "$1", pieIzq: "Invertido $1" }),
+    ]);
+    assert.ok(rejilla.querySelector(".fin-foot"));
+  });
+
   test("la cifra lleva ancho fijo", async () => {
     // Sin `num`, al actualizarse un importe las cifras cambian de ancho
     // y la tarjeta entera se mueve.
