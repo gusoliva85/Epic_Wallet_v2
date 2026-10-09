@@ -75,7 +75,7 @@ cd api && uvicorn app.main:app --reload --port 8000
 
 ## Convenciones
 
-- **Código, tablas y columnas en inglés**, `snake_case`. **Textos visibles y documentación en español** (voseo argentino: «podés», «tenés»).
+- **Tablas y columnas en inglés**, `snake_case` (es lo que define el DDL en Postgres). **El resto del código —funciones, clases, variables, docstrings— va en español**, como ya está en `routers/`, `schemas/` y `core/`. **Textos visibles y documentación en español** (voseo argentino: «podés», «tenés»).
 - Commits: `tipo(F0X-TYY): descripción en minúscula`. Tipos: `feat`, `fix`, `docs`, `chore`, `merge`.
 - Importes se muestran en pesos argentinos con `tabular-nums` para que las cifras no cambien de ancho.
 - Zona horaria de presentación: `America/Argentina/Buenos_Aires`.
