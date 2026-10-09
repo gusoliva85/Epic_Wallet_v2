@@ -8,8 +8,12 @@ no puede leer Python, y `bootstrap` corre en el backend y no puede
 llamar al trigger.
 
 Lo que sí se puede evitar es que se desincronicen sin que nadie se
-entere: `tests/unit/test_categorias_iniciales.py` compara las dos
-listas contra el documento general y falla si alguna se mueve.
+entere: `tests/api/test_categories_endpoints.py` crea una cuenta real,
+pide `GET /api/categories` y compara la respuesta contra esta misma
+lista. Compararla contra el texto del documento general sería un test
+de documentación, y esos se sacaron en la revisión v2.0 (CLAUDE.md):
+lo que importa es que el trigger de Postgres y este archivo sigan de
+acuerdo entre sí, no que el documento no haya cambiado una coma.
 """
 
 from __future__ import annotations
