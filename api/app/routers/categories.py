@@ -26,10 +26,11 @@ from sqlalchemy.exc import IntegrityError
 
 from ..core.db import SesionDeUsuario
 from ..core.errors import NOT_FOUND, ErrorDeApi, conflicto
-from ..core.security import UsuarioActual
+from ..core.security import UsuarioDelToken
 from ..models import Category
 from ..repos import categories as repos
 from ..schemas.categories import AltaDeCategoria, CambioDeCategoria, Categoria
+from .me import asegurar_perfil_y_categorias
 
 router = APIRouter(prefix="/categories", tags=["categorías"])
 
@@ -44,9 +45,15 @@ def _sin_categoria() -> ErrorDeApi:
 @router.get("", response_model=list[Categoria], summary="Las categorías del usuario")
 def listar_categorias(
     sesion: SesionDeUsuario,
+    usuario: UsuarioDelToken,
     type: str | None = None,
     active: bool | None = None,
 ) -> list[Category]:
+    # Misma red de seguridad que `GET /api/months`: una cuenta creada
+    # antes del trigger de F02-T04 no tiene perfil ni categorías, y acá
+    # es donde F03-T10 la deja ver las 21 iniciales sin tener que saber
+    # que existe `/api/me/bootstrap`.
+    asegurar_perfil_y_categorias(sesion, usuario)
     return repos.listar(sesion, type_=type, active=active)
 
 
@@ -56,14 +63,20 @@ def listar_categorias(
     status_code=status.HTTP_201_CREATED,
     summary="Crear una categoría",
 )
-def crear_categoria(datos: AltaDeCategoria, usuario: UsuarioActual, sesion: SesionDeUsuario) -> Category:
+def crear_categoria(datos: AltaDeCategoria, usuario: UsuarioDelToken, sesion: SesionDeUsuario) -> Category:
+    # Sin perfil, este insert fallaría con una violación de clave
+    # foránea (`categories.user_id` referencia `profiles.id`) en vez de
+    # crear la categoría. No alcanza con que `listar_categorias` ya la
+    # llame: nada garantiza que el cliente haya pedido la lista antes
+    # de dar de alta.
+    asegurar_perfil_y_categorias(sesion, usuario)
     try:
         orden = repos.siguiente_orden(sesion, datos.type)
         # `user_id` sale del token, nunca de la entrada: no hay un
         # campo para eso en `AltaDeCategoria` a propósito, la misma
         # disciplina que `bootstrap` en routers/me.py.
         return repos.crear(
-            sesion, user_id=usuario, name=datos.name, type_=datos.type, sort_order=orden
+            sesion, user_id=usuario.id, name=datos.name, type_=datos.type, sort_order=orden
         )
     except IntegrityError as exc:
         if isinstance(exc.orig, UniqueViolation):

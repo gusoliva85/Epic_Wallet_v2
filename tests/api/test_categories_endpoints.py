@@ -159,6 +159,42 @@ def test_sin_token_devuelve_401(cliente) -> None:
 
 
 @sin_entorno
+def test_una_cuenta_sin_perfil_se_arregla_sola_al_listar(
+    cliente, motor, cuentas: tuple[Cuenta, Cuenta], limpiar_categorias_extra
+) -> None:
+    """El bug real que esto evita: `categories.user_id` referencia
+    `profiles.id`, así que una cuenta creada antes del trigger de
+    F02-T04 —sin perfil, sin categorías— se quedaba viendo una lista
+    vacía para siempre, sin saber que `/api/me/bootstrap` existe. Es
+    exactamente el estado de la cuenta real de Gustavo, creada desde
+    el panel en F00. Se simula borrando el perfil, igual que en
+    `test_me.py::test_bootstrap_rehace_lo_que_falta`."""
+    a, _ = cuentas
+    with escritura(motor) as con:
+        con.execute(text(f'delete from "{ESQUEMA}".profiles where id = :id'), {"id": a.uid})
+
+    r = cliente.get("/api/categories", headers=a.cabeceras)
+    assert r.status_code == 200, r.text
+    assert len(r.json()) == 21
+
+
+@sin_entorno
+def test_una_cuenta_sin_perfil_tambien_puede_crear_sin_haber_listado_antes(
+    cliente, motor, cuentas: tuple[Cuenta, Cuenta], limpiar_categorias_extra
+) -> None:
+    """Mismo bug, pero por `POST`: no alcanza con que `GET` se arregle
+    solo si nadie garantiza que el cliente lo haya llamado primero."""
+    a, _ = cuentas
+    with escritura(motor) as con:
+        con.execute(text(f'delete from "{ESQUEMA}".profiles where id = :id'), {"id": a.uid})
+
+    r = cliente.post(
+        "/api/categories", json={"name": "Gimnasio", "type": "expense"}, headers=a.cabeceras
+    )
+    assert r.status_code == 201, r.text
+
+
+@sin_entorno
 def test_la_cuenta_nueva_trae_las_21_categorias_en_orden(
     cliente, cuentas: tuple[Cuenta, Cuenta]
 ) -> None:

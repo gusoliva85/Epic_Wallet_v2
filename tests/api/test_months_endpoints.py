@@ -197,6 +197,27 @@ def test_llamarlo_dos_veces_no_duplica_el_mes_actual(
 
 
 @sin_entorno
+def test_una_cuenta_sin_perfil_tambien_recibe_el_mes_actual(
+    cliente, motor, cuentas: tuple[Cuenta, Cuenta], limpiar_meses
+) -> None:
+    """El bug real que esto evita: `months.user_id` referencia
+    `profiles.id`, así que una cuenta creada antes del trigger de
+    F02-T04 —sin perfil— hacía que `abrir_mes_actual` fallara con una
+    violación de clave foránea, un 500 sin explicación. Es exactamente
+    el estado de la cuenta real de Gustavo, creada desde el panel en
+    F00. Se simula borrando el perfil, igual que en
+    `test_me.py::test_bootstrap_rehace_lo_que_falta`."""
+    a, _ = cuentas
+    with escritura(motor) as con:
+        con.execute(text(f'delete from "{ESQUEMA}".profiles where id = :id'), {"id": a.uid})
+
+    r = cliente.get("/api/months", headers=a.cabeceras)
+    assert r.status_code == 200, r.text
+    assert len(r.json()) == 1
+    assert r.json()[0]["status"] == "open"
+
+
+@sin_entorno
 def test_devuelve_solo_los_meses_de_esa_cuenta(
     cliente, cuentas: tuple[Cuenta, Cuenta], limpiar_meses
 ) -> None:

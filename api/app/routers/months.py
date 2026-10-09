@@ -17,11 +17,12 @@ from fastapi import APIRouter, status
 
 from ..core.db import SesionDeUsuario
 from ..core.errors import NOT_FOUND, ErrorDeApi
-from ..core.security import UsuarioActual
+from ..core.security import UsuarioDelToken
 from ..models import Month
 from ..repos import months as repos
 from ..schemas.months import MesDetalle, MesResumen
 from ..services.months import abrir_mes_actual, transacciones_del_mes
+from .me import asegurar_perfil_y_categorias
 
 router = APIRouter(prefix="/months", tags=["meses"])
 
@@ -35,14 +36,22 @@ def _sin_mes() -> ErrorDeApi:
 
 
 @router.get("", response_model=list[MesResumen], summary="Los meses del usuario")
-def listar_meses(sesion: SesionDeUsuario, usuario: UsuarioActual) -> list[Month]:
+def listar_meses(sesion: SesionDeUsuario, usuario: UsuarioDelToken) -> list[Month]:
+    # `months.user_id` referencia `profiles.id`: sin perfil, abrir el
+    # mes actual de una cuenta nueva fallaría con una violación de
+    # clave foránea (un 500 sin explicación). `asegurar_perfil_y_categorias`
+    # es la misma red de seguridad de `POST /api/me/bootstrap`, acá
+    # obligatoria y no opcional — ninguna cuenta puede depender de
+    # haberla llamado antes a mano (Técnico §6.2; encontrado en
+    # F03-T10 con la cuenta real de Gustavo).
+    asegurar_perfil_y_categorias(sesion, usuario)
     # Sin esto, la cuenta más nueva de todas —la que todavía no tiene
     # ni un mes— recibiría una lista vacía, y la barra de mes (F03-T10)
     # no tendría nada que mostrar al abrir la aplicación por primera
     # vez. `abrir_mes_actual` ya es idempotente (F03-T03): en cualquier
     # visita posterior esto no inserta una fila de más, sólo encuentra
     # la que ya estaba.
-    abrir_mes_actual(sesion, usuario)
+    abrir_mes_actual(sesion, usuario.id)
     return repos.listar(sesion)
 
 

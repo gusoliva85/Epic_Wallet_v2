@@ -14,13 +14,16 @@ de quien pregunta.
 
 from __future__ import annotations
 
+from typing import NamedTuple
+
 from fastapi import APIRouter, status
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from ..core.categorias_iniciales import INICIALES
 from ..core.db import SesionDeUsuario
 from ..core.errors import NOT_FOUND, ErrorDeApi
-from ..core.security import UsuarioDelToken
+from ..core.security import Usuario, UsuarioDelToken
 from ..models import Category, Profile
 from ..schemas.me import CambioDePerfil, Perfil, ResultadoDeBootstrap
 
@@ -70,18 +73,30 @@ def cambiar_perfil(cambios: CambioDePerfil, sesion: SesionDeUsuario) -> Profile:
     return perfil
 
 
-@router.post(
-    "/bootstrap",
-    response_model=ResultadoDeBootstrap,
-    summary="Crear lo que falte de la cuenta",
-)
-def bootstrap(usuario: UsuarioDelToken, sesion: SesionDeUsuario) -> ResultadoDeBootstrap:
+class _Bootstrap(NamedTuple):
+    perfil: Profile
+    perfil_creado: bool
+    categorias_creadas: int
+    total_categorias: int
+
+
+def asegurar_perfil_y_categorias(sesion: Session, usuario: Usuario) -> _Bootstrap:
     """Crea el perfil y las categorías que falten. Idempotente.
 
     Es una red de seguridad para dos casos: una cuenta creada antes de
-    que existiera el trigger, y la hipótesis de que el trigger no corra.
-    Llamarlo dos veces seguidas no duplica nada, y el resultado dice qué
-    hizo para que eso se pueda comprobar.
+    que existiera el trigger —la de Gustavo, creada desde el panel en
+    F00— y la hipótesis de que el trigger no corra. Llamarla dos veces
+    seguidas no duplica nada.
+
+    No es sólo el cuerpo de `POST /api/me/bootstrap`: cualquier
+    escritura que dependa de que el perfil ya exista tiene que llamar a
+    esto primero, no sólo confiar en que alguien haya llamado a
+    bootstrap antes. `months.user_id` referencia `profiles.id`
+    (`on delete cascade`), así que abrir el mes actual de una cuenta sin
+    perfil fallaba con una violación de clave foránea — un 500 sin
+    explicación, en vez de arreglarse solo como debería (Técnico
+    §6.2; encontrado en F03-T10 con la cuenta real de Gustavo, que
+    nunca pasó por el trigger).
     """
     perfil = sesion.scalars(select(Profile)).one_or_none()
     perfil_creado = False
@@ -113,8 +128,25 @@ def bootstrap(usuario: UsuarioDelToken, sesion: SesionDeUsuario) -> ResultadoDeB
     sesion.flush()
     total = len(existentes) + creadas
 
+    return _Bootstrap(
+        perfil=perfil,
+        perfil_creado=perfil_creado,
+        categorias_creadas=creadas,
+        total_categorias=total,
+    )
+
+
+@router.post(
+    "/bootstrap",
+    response_model=ResultadoDeBootstrap,
+    summary="Crear lo que falte de la cuenta",
+)
+def bootstrap(usuario: UsuarioDelToken, sesion: SesionDeUsuario) -> ResultadoDeBootstrap:
+    r = asegurar_perfil_y_categorias(sesion, usuario)
     return ResultadoDeBootstrap(
-        perfil_creado=perfil_creado, categorias_creadas=creadas, total_categorias=total
+        perfil_creado=r.perfil_creado,
+        categorias_creadas=r.categorias_creadas,
+        total_categorias=r.total_categorias,
     )
 
 
