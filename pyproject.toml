@@ -128,5 +128,7 @@ source = ["api/app"]
 omit = ["*/migrations/*", "*/tests/*"]
 
 [tool.coverage.report]
-# El documento técnico exige 90% en services.
+# Sin umbral obligatorio desde la revisión v2.0 (CLAUDE.md): cada
+# función de calc.py y de services/ tiene su test, pero no hay un
+# porcentaje que perseguir.
 exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:", "raise NotImplementedError"]

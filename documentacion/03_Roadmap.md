@@ -176,7 +176,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Hacer:** separar rutas públicas de privadas, con redirección en los dos sentidos; botón de cerrar sesión que limpia estado y caché; `api.js` con el token en la cabecera, que ante un 401 renueva la sesión y reintenta **una sola vez** y si falla cierra sesión; clase `ApiError` y traducción de los códigos a mensajes en español.
   **Aceptación:** · `#/inversiones` sin sesión lleva al login y `#/login` con sesión lleva al dashboard · al cerrar sesión no queda nada del usuario anterior, ni volviendo atrás · un token vencido se recupera solo · dos 401 seguidos cierran sesión sin bucle.
 
-- [~] **F02-T14 · Aislamiento entre cuentas**
+- [x] **F02-T14 · Aislamiento entre cuentas**
   **Tipo:** QA · **Ref:** Técnico §6.5, §8.2
   **Hacer:** segunda cuenta de prueba con datos propios; verificar desde la interfaz que ninguna ve nada de la otra; y con el token de la segunda intentar leer y escribir por identificador directo los recursos de la primera en todos los endpoints.
   **Aceptación:** · ningún recurso ajeno es accesible, ni pasando su `id` a mano · RLS bloquea incluso salteando el filtro del endpoint · la prueba queda automatizada.
@@ -189,7 +189,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 
 **Al cerrar esta fase:** te movés entre meses de verdad, el mes actual se abre solo, y agregás o renombrás una categoría.
 
-- [ ] **F03-T01 · Lógica de meses: identidad, estado y las dos naturalezas**
+- [~] **F03-T01 · Lógica de meses: identidad, estado y las dos naturalezas**
   **Tipo:** Cálculo · **Ref:** Técnico §6.6 · General §6, §50 R1, R3 · *fusiona F03-T01 y F03-T02*
   **Hacer:** funciones puras de identidad (`año`/`mes`), mes actual según la zona `America/Argentina/Buenos_Aires`, navegación anterior/siguiente con cruce de año, y la resolución de las dos naturalezas: de dónde salen los totales según `status` sea `open` o `historical`.
   **Aceptación:** · diciembre → siguiente da enero del año que viene · un mes futuro se rechaza · un mes `historical` devuelve sus totales de los campos del mes y **`transactions: null`**, distinto de `[]`.
