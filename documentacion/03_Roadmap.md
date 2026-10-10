@@ -260,7 +260,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 
 **Al cerrar esta fase:** abrís la aplicación y ves tu mes de verdad.
 
-- [ ] **F05-T01 · Módulo de cálculos puros**
+- [~] **F05-T01 · Módulo de cálculos puros**
   **Tipo:** Cálculo · **Ref:** Técnico §7, §7.1 · General §52 · *fusiona F05-T01, F05-T02 y F05-T03*
   **Hacer:** `services/calc.py` con ingresos, gastos, ahorro del mes, tasa de ahorro, ahorro acumulado, total de inversiones y patrimonio; la serie diaria del mes con el ahorro acumulado día a día; y los casos borde obligatorios de la sección 7.1.
   **Aceptación:** · **tasa de ahorro con ingresos en cero devuelve `null`, no un error ni una división** · un mes vacío da ceros · la serie diaria de un mes histórico es `null` · cada función tiene su test y son todas puras: reciben números y devuelven números.
