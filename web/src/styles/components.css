@@ -159,12 +159,16 @@
    `.acceso-nombre` en las pantallas de cuenta, para que el nombre solo
    se lea con la misma confianza que antes se repartía entre las dos
    líneas. */
-/* El nombre de la marca con un degradado que se desliza despacio,
-   siempre dentro de los azules del acento —nunca un color que no esté
-   ya en el sistema (skill §13, "no gradientes estridentes")—, pedido
-   de Gustavo después de cerrar la Fase 4. Mismo tamaño y lugar que
-   antes: sólo cambia el color, que ahora es `background-clip: text`
-   en vez de un `color` fijo. */
+/* El nombre de la marca con un degradado animado de varios colores
+   (pedido de Gustavo, después de cerrar la Fase 4: la primera versión
+   sólo usaba azules y no se parecía al efecto "aurora" de la
+   referencia). Los cuatro tonos salen de la paleta semántica que ya
+   existe —acento, ingreso, alerta y crítico—, nunca un color fuera
+   del sistema (skill §13), pero son lo bastante distintos entre sí
+   como para que se note un degradado de verdad, no una variación de
+   un solo azul. Mismo tamaño y lugar que el título de siempre: sólo
+   cambia el color, que ahora es `background-clip: text` en vez de un
+   `color` fijo. */
 .marca-texto b {
   display: block;
   font-family: var(--font-display);
@@ -173,17 +177,18 @@
   letter-spacing: -0.015em;
   line-height: 1.1;
   background: linear-gradient(
-    100deg,
+    110deg,
     var(--color-accent),
-    var(--color-sav),
-    var(--color-accent-2),
+    var(--color-inc),
+    var(--color-warn),
+    var(--color-crit),
     var(--color-accent)
   );
-  background-size: 300% 100%;
+  background-size: 400% 100%;
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
-  animation: aurora-marca 7s linear infinite;
+  animation: aurora-marca 8s linear infinite;
   /* En 320 px el nombre y las tres acciones compiten por el ancho:
      antes de desbordar, el nombre se recorta. */
   overflow: hidden;
@@ -193,7 +198,7 @@
 
 @keyframes aurora-marca {
   to {
-    background-position: -300% 0;
+    background-position: -400% 0;
   }
 }
 
@@ -400,15 +405,15 @@
   }
 }
 
-/* La transición entre temas: un fundido, no un barrido.
-   Un barrido en una pantalla llena de vidrio se ve sucio. */
-@media (prefers-reduced-motion: no-preference) {
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    animation-duration: 0.32s;
-    animation-timing-function: var(--ease);
-  }
-}
+/* La transición entre temas —el círculo que sale del botón, no este
+   fundido parejo que era el tratamiento original— vive entera en
+   `base.css` desde que se construyó el efecto, para no tener dos
+   reglas sobre `::view-transition-*(root)` en archivos distintos
+   pisándose la duración entre sí. Es justo el bug que apareció al
+   bajarle la velocidad a pedido de Gustavo: esta regla vieja fijaba
+   0,32s con `animation-duration` suelto, que le ganaba a los 0,9s del
+   `animation` compuesto de `base.css` porque las propiedades sueltas
+   no se "deshacen" solas cuando otra regla usa la forma corta. */
 
 /* ============================================================
    BARRA INFERIOR Y BOTÓN FLOTANTE · F01-T06

@@ -238,7 +238,13 @@ a {
     clip-path: circle(
       0px at var(--origen-tema-x, 50%) var(--origen-tema-y, 50%)
     );
-    animation: circulo-de-tema 0.5s var(--ease) forwards;
+    /* Más lento que el resto de la interfaz a propósito (pedido de
+       Gustavo: con los 0,5s de antes casi no se alcanzaba a ver) y con
+       `ease-in-out`, no `--ease`: esa curva arranca rápido y el radio
+       —que cubre pantalla según su CUADRADO— hacía que a los 2/3 del
+       camino ya pareciera terminado. Pareja de punta a punta, el
+       crecimiento se nota todo el recorrido. */
+    animation: circulo-de-tema 0.9s ease-in-out forwards;
   }
 
   @keyframes circulo-de-tema {
