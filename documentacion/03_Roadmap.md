@@ -237,12 +237,12 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Hacer:** servicio que al escribir un movimiento recalcula en **una sola transacción** los totales del mes y los totales por categoría.
   **Aceptación:** · si el recálculo falla, el movimiento no queda guardado a medias · cargar un movimiento deja los totales coherentes con la suma de los movimientos.
 
-- [~] **F04-T06 · Endpoints de movimientos**
+- [x] **F04-T06 · Endpoints de movimientos**
   **Tipo:** Backend · **Ref:** Técnico §9.1 · *fusiona F04-T06, F04-T07 y F04-T08*
   **Hacer:** `POST`, `PUT` y `DELETE /api/transactions`, y `GET` con filtros por mes, tipo, categoría, rango de fechas y texto en la descripción.
   **Aceptación:** · cada escritura devuelve los totales nuevos del mes · un movimiento de otro usuario devuelve 404 · los filtros combinan · el borrado queda registrado con su metadata técnica (General §59).
 
-- [ ] **F04-T09 · Formulario de alta rápida**
+- [~] **F04-T09 · Formulario de alta rápida**
   **Tipo:** Frontend · **Ref:** General §9, §10 · *fusiona F04-T09, F04-T10 y F04-T11*
   **Hacer:** hoja inferior desde el botón `+` con tipo, importe, categoría, fecha (hoy por defecto) y descripción opcional; teclado numérico en el importe; validación en vivo; al guardar, actualización inmediata de los indicadores sin recargar.
   **Aceptación:** · un gasto se carga en menos de cinco toques · el teclado del celular abre en numérico · un importe vacío no permite enviar · los indicadores cambian al guardar.

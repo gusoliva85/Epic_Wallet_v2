@@ -1000,6 +1000,130 @@
       </div>
     </aside>
 
+    <!-- Alta de movimiento · F04-T09.
+         La abre el botón flotante #btn-nuevo. Modal y no cajón: es un
+         formulario, pide atención completa (mismo criterio que
+         #hoja-categoria). Tipo "Egreso" y fecha de hoy quedan
+         puestos de entrada: son los valores más frecuentes y evitan
+         un toque de más en cada carga (criterio de la tarea: menos de
+         cinco toques). -->
+    <aside
+      class="hoja hoja--modal"
+      id="hoja-movimiento"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="hoja-movimiento-titulo"
+      aria-hidden="true"
+      tabindex="-1"
+    >
+      <div class="hoja-asa" aria-hidden="true"></div>
+      <div class="hoja-cabeza">
+        <div>
+          <h2 id="hoja-movimiento-titulo">Nuevo movimiento</h2>
+          <p>Categoría, importe y listo.</p>
+        </div>
+        <button
+          class="hoja-cerrar"
+          type="button"
+          data-cerrar
+          aria-label="Cerrar"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
+      <div class="hoja-cuerpo">
+        <form id="form-movimiento" novalidate>
+          <div class="campo">
+            <label id="movimiento-tipo-etiqueta">Tipo</label>
+            <div
+              class="view-switch"
+              role="group"
+              aria-labelledby="movimiento-tipo-etiqueta"
+            >
+              <button type="button" data-tipo="expense" class="activa">
+                Egreso
+              </button>
+              <button type="button" data-tipo="income">Ingreso</button>
+            </div>
+          </div>
+
+          <div class="campo">
+            <label for="movimiento-importe">Importe</label>
+            <input
+              class="inp num inp-importe"
+              id="movimiento-importe"
+              name="amount"
+              type="number"
+              inputmode="decimal"
+              step="0.01"
+              min="0.01"
+              placeholder="0"
+              required
+            />
+          </div>
+
+          <div class="campo">
+            <label for="movimiento-categoria">Categoría</label>
+            <select
+              class="inp"
+              id="movimiento-categoria"
+              name="category_id"
+              required
+            ></select>
+          </div>
+
+          <div class="campo">
+            <label for="movimiento-fecha">Fecha</label>
+            <input
+              class="inp"
+              id="movimiento-fecha"
+              name="transaction_date"
+              type="date"
+              required
+            />
+          </div>
+
+          <div class="campo">
+            <label for="movimiento-descripcion">
+              Descripción
+              <span
+                style="text-transform: none; letter-spacing: 0; color: var(--color-ink-4); font-weight: 500"
+                >(opcional)</span
+              >
+            </label>
+            <input
+              class="inp"
+              id="movimiento-descripcion"
+              name="description"
+              type="text"
+              maxlength="500"
+              placeholder="Ej.: Compra supermercado"
+            />
+          </div>
+
+          <p
+            class="acceso-error"
+            id="movimiento-error"
+            role="alert"
+            aria-live="assertive"
+            hidden
+          ></p>
+
+          <button class="btn btn--principal" id="movimiento-guardar" type="submit">
+            <span class="btn-texto">Guardar</span>
+            <span class="btn-girador" aria-hidden="true"></span>
+          </button>
+
+          <div class="ghost-note">
+            <b>El importe siempre se ingresa positivo.</b> El sistema decide
+            si contablemente suma o resta según el tipo elegido.
+          </div>
+        </form>
+      </div>
+    </aside>
+
     <!-- =================== PANTALLAS DE CUENTA · F02-T09 y F02-T10 ===================
          Va encima de la aplicación, no dentro: no tiene barras, ni mes,
          ni botón de alta. El enrutador la muestra en `#/login` y
@@ -1358,6 +1482,7 @@
     <script type="module" src="/src/js/registro.js"></script>
     <script type="module" src="/src/js/config-cuenta.js"></script>
     <script type="module" src="/src/js/config-categorias.js"></script>
+    <script type="module" src="/src/js/alta-movimiento.js"></script>
     <script type="module" src="/src/js/app.js"></script>
     <script type="module" src="/src/js/registrar-sw.js"></script>
   </body>
