@@ -138,22 +138,31 @@ def transacciones_del_mes(
 # ===================================================================
 
 
-def abrir_mes_actual(sesion: Session, user_id: str, *, ahora: dt.datetime | None = None) -> Month:
-    """El mes actual del usuario: lo busca y, si es la primera vez que
-    se lo pide, lo crea abierto con los totales en cero.
+def abrir_mes(sesion: Session, user_id: str, periodo: Periodo) -> Month:
+    """El mes de `periodo`: lo busca y, si es la primera vez que se lo
+    pide, lo crea abierto con los totales en cero.
+
+    Generaliza `abrir_mes_actual` a cualquier período, no sólo el de
+    hoy: la hace falta `POST /api/transactions` (F04-T06) para poder
+    cargar un movimiento con una fecha de un mes que todavía no tiene
+    fila en `months`, sin que el usuario tenga que pasar por la barra
+    de mes primero.
 
     Llamarla dos veces seguidas no duplica nada —la segunda encuentra
     el mes que creó la primera—, y eso es justo lo que garantiza
     `months_unique_per_user` del lado de la base: aunque dos pedidos
     llegaran a la vez, el segundo `insert` fallaría por la restricción
     en lugar de crear un duplicado.
-
-    `ahora` es para las pruebas, igual que en `mes_actual`.
     """
-    periodo = mes_actual(ahora)
     existente = repos.buscar_por_periodo(sesion, periodo.year, periodo.month)
     if existente is not None:
         return existente
     return repos.crear(
         sesion, user_id=user_id, year=periodo.year, month=periodo.month, status=ABIERTO
     )
+
+
+def abrir_mes_actual(sesion: Session, user_id: str, *, ahora: dt.datetime | None = None) -> Month:
+    """El mes actual del usuario. `ahora` es para las pruebas, igual
+    que en `mes_actual`."""
+    return abrir_mes(sesion, user_id, mes_actual(ahora))

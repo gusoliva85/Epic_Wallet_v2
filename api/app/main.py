@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
 from .core.errors import registrar_manejadores
 from .core.security import current_user_id
-from .routers import categories, health, me, months
+from .routers import categories, health, me, months, transactions
 
 logging.basicConfig(
     level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO),
@@ -93,6 +93,7 @@ def crear_app() -> FastAPI:
     privado.include_router(me.router)
     privado.include_router(months.router)
     privado.include_router(categories.router)
+    privado.include_router(transactions.router)
     app.include_router(privado)
 
     return app
