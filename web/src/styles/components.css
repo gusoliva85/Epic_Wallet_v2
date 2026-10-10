@@ -159,6 +159,12 @@
    `.acceso-nombre` en las pantallas de cuenta, para que el nombre solo
    se lea con la misma confianza que antes se repartía entre las dos
    líneas. */
+/* El nombre de la marca con un degradado que se desliza despacio,
+   siempre dentro de los azules del acento —nunca un color que no esté
+   ya en el sistema (skill §13, "no gradientes estridentes")—, pedido
+   de Gustavo después de cerrar la Fase 4. Mismo tamaño y lugar que
+   antes: sólo cambia el color, que ahora es `background-clip: text`
+   en vez de un `color` fijo. */
 .marca-texto b {
   display: block;
   font-family: var(--font-display);
@@ -166,12 +172,43 @@
   font-weight: 700;
   letter-spacing: -0.015em;
   line-height: 1.1;
-  color: var(--color-ink);
+  background: linear-gradient(
+    100deg,
+    var(--color-accent),
+    var(--color-sav),
+    var(--color-accent-2),
+    var(--color-accent)
+  );
+  background-size: 300% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: aurora-marca 7s linear infinite;
   /* En 320 px el nombre y las tres acciones compiten por el ancho:
      antes de desbordar, el nombre se recorta. */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@keyframes aurora-marca {
+  to {
+    background-position: -300% 0;
+  }
+}
+
+/* Sin degradado de texto donde no hay soporte de background-clip:
+   text (muy poco frecuente, pero sin esto el nombre quedaría
+   invisible: texto transparente sobre un fondo que no se recortó). */
+@supports not (
+  (background-clip: text) or (-webkit-background-clip: text)
+) {
+  .marca-texto b {
+    background: none;
+    -webkit-text-fill-color: unset;
+    color: var(--color-ink);
+    animation: none;
+  }
 }
 
 /* ---- las acciones de la derecha ---- */
@@ -250,7 +287,7 @@
   border-radius: 99px;
   border: 2px solid var(--color-bg-1);
   background: var(--color-crit);
-  color: var(--color-on-accent);
+  color: var(--color-on-solid);
   font-size: var(--text-badge);
   font-weight: 800;
   line-height: 1;
@@ -278,7 +315,7 @@
     var(--color-avatar-2)
   );
   box-shadow: var(--glass-in);
-  color: var(--color-on-accent);
+  color: var(--color-on-solid);
   font-size: var(--text-avatar);
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -1197,15 +1234,16 @@
 .kpi-color {
   background: var(--c-card);
   border-color: transparent;
-  color: var(--color-on-accent);
+  color: var(--color-on-solid);
 }
 
 /* El texto, todo del mismo blanco. Los cuatro fondos están elegidos
-   para que el blanco encima dé 5:1 o más. */
+   para que el blanco encima dé 5:1 o más — `--color-on-solid`, fijo
+   en los dos temas, porque la tarjeta tampoco cambia de uno a otro. */
 .kpi-color .kpi-label,
 .kpi-color .kpi-num,
 .kpi-color .kpi-sub {
-  color: var(--color-on-accent);
+  color: var(--color-on-solid);
 }
 
 /* El brillo diagonal del vidrio, fuera: sobre un fondo sólido es un
@@ -1249,7 +1287,7 @@
   stroke-width: 1.9;
   stroke-linecap: round;
   stroke-linejoin: round;
-  color: var(--color-on-accent);
+  color: var(--color-on-solid);
   opacity: var(--glifo-op);
   pointer-events: none;
 }
@@ -1809,7 +1847,11 @@
 
 .view-switch button {
   position: relative;
-  padding: 7px 12px;
+  /* Más compacto que antes (pedido de Gustavo, después de cerrar la
+     Fase 4): el área táctil real sigue en 44 px por el ::after de
+     abajo, así que esto sólo achica lo que se ve, no lo que se
+     puede tocar. */
+  padding: 5px 10px;
   border: 0;
   border-radius: 99px;
   background: transparent;
@@ -1957,21 +1999,24 @@
    --text-amount está reservado para esto desde los tokens: es la
    única cifra que se escribe, no que se lee, y por eso pide el peso
    visual de una cifra de verdad en vez del tamaño parejo del resto
-   de los campos. */
+   de los campos.
+
+   `type="text"` y no `type="number"` a propósito: el importe se
+   escribe en pesos enteros con "." de miles mientras se tipea
+   (`alta-movimiento.js`), y un campo numérico nativo no deja
+   mostrar eso — muestra el numero crudo, sin el punto. */
 .inp-importe {
   text-align: center;
   font-family: var(--font-display);
   font-size: var(--text-amount);
   font-weight: 700;
-  -moz-appearance: textfield;
 }
 
-/* Las flechas nativas de type="number" no siguen el estilo del
-   sistema y sobran en un campo pensado para teclado numérico. */
-.inp-importe::-webkit-outer-spin-button,
-.inp-importe::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+/* El placeholder "0" desaparece apenas se toca el campo, no recién
+   al escribir el primer dígito (pedido de Gustavo): entrar a un
+   campo que todavía dice "0" se lee como si ya tuviera ese valor. */
+.inp-importe:focus::placeholder {
+  opacity: 0;
 }
 
 .filtros {
@@ -2187,7 +2232,11 @@
   border-radius: 50%;
   background: var(--mix-tint);
   box-shadow: var(--sh-sm);
-  transition: transform 0.22s var(--ease);
+  /* Curva con un poquito de rebote al final, no la pareja del resto
+     de la interfaz: es lo que hace que el interruptor se sienta como
+     un control físico y no un cuadrado que se desliza (pedido de
+     Gustavo, después de cerrar la Fase 4). */
+  transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .toggle[aria-checked="true"] {

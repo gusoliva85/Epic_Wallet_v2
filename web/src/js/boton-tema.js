@@ -23,11 +23,32 @@ function pintar(boton) {
   boton.setAttribute("aria-pressed", String(oscuro));
 }
 
+/* El círculo que revela el tema nuevo sale del botón que se tocó, no
+   del centro de la pantalla (pedido de Gustavo, después de cerrar la
+   Fase 4): se guarda su posición en variables CSS antes de cambiar el
+   tema, y `base.css` las usa para el `clip-path` de la transición.
+   El radio es la distancia a la esquina más lejana, para que el
+   círculo término de cubrir toda la pantalla y no se note el borde. */
+function marcarOrigen(boton) {
+  const r = boton.getBoundingClientRect();
+  const x = r.left + r.width / 2;
+  const y = r.top + r.height / 2;
+  const radio = Math.hypot(
+    Math.max(x, window.innerWidth - x),
+    Math.max(y, window.innerHeight - y),
+  );
+  const raiz = document.documentElement.style;
+  raiz.setProperty("--origen-tema-x", `${x}px`);
+  raiz.setProperty("--origen-tema-y", `${y}px`);
+  raiz.setProperty("--origen-tema-r", `${radio}px`);
+}
+
 function conectar() {
   const botones = document.querySelectorAll("[data-tema]");
   botones.forEach((boton) => {
     pintar(boton);
     boton.addEventListener("click", () => {
+      marcarOrigen(boton);
       window.EpicTema.alternar();
       botones.forEach(pintar);
     });

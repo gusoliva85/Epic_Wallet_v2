@@ -62,6 +62,21 @@
 
     <link rel="stylesheet" href="/public/app.css" />
 
+    <!-- Sin bundler (CLAUDE.md), cada módulo es su propio pedido: el
+     navegador descubre un import recién cuando termina de parsear el
+     que lo trae, así que una dependencia honda —como el cliente de
+     Supabase Auth, que varias pantallas importan a través de dos o
+     tres niveles— se pedía varios viajes de ida y vuelta después de
+     lo necesario. Estos adelantan el pedido de lo que SÍ hace falta
+     en (casi) cualquier ruta, en paralelo con el resto. -->
+    <link rel="modulepreload" href="/src/js/router.js" />
+    <link rel="modulepreload" href="/src/js/nav.js" />
+    <link rel="modulepreload" href="/src/js/auth.js" />
+    <link rel="modulepreload" href="/src/js/vendor/auth-js.js" />
+    <link rel="modulepreload" href="/src/js/api.js" />
+    <link rel="modulepreload" href="/src/js/format.js" />
+    <link rel="modulepreload" href="/src/js/iconos.js" />
+
     <!-- Bloqueante y sin defer a propósito: aplica el tema antes del primer
      pintado para que no haya un fogonazo blanco al cargar en oscuro.
      En archivo aparte porque la política de contenido no admite
@@ -1056,10 +1071,9 @@
               class="inp num inp-importe"
               id="movimiento-importe"
               name="amount"
-              type="number"
-              inputmode="decimal"
-              step="0.01"
-              min="0.01"
+              type="text"
+              inputmode="numeric"
+              autocomplete="off"
               placeholder="0"
               required
             />

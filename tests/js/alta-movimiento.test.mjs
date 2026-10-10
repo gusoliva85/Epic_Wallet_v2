@@ -99,6 +99,21 @@ async function cargarConDobles() {
     .replace(
       'import { invalidarMeses } from "./cache-meses.js";',
       "const invalidarMeses = (...a) => globalThis.__espia.invalidarMeses(...a);",
+    )
+    .replace(
+      'import { categorias as categoriasCacheadas, activas as activasCacheadas } from "./cache-categorias.js";',
+      // Misma forma que la caché de verdad (cache-categorias.js,
+      // probada aparte en cache-categorias.test.mjs): un solo pedido a
+      // /categories, compartido; "activas" se filtra en el cliente a
+      // partir de esa misma lista, sin pedido propio.
+      "let __catPromesa = null;\n" +
+        "function categoriasCacheadas() {\n" +
+        '  if (!__catPromesa) __catPromesa = globalThis.__espia.apiGet("/categories");\n' +
+        "  return __catPromesa;\n" +
+        "}\n" +
+        "async function activasCacheadas() {\n" +
+        "  return (await categoriasCacheadas()).filter((c) => c.active);\n" +
+        "}",
     );
 
   const unico = `\n// ${Math.random()}\n`;
@@ -123,14 +138,9 @@ const CATEGORIAS_DE_PRUEBA = [
  * @param {(path:string)=>Promise<null>} [opciones.apiDel]
  */
 async function montar({
-  // El alta pide `?active=true` (sólo activas); la edición pide todas
-  // — mismo filtro que hace el servidor de verdad (F04-T06).
-  apiGet = async (path) =>
-    structuredClone(
-      path === "/categories?active=true"
-        ? CATEGORIAS_DE_PRUEBA.filter((c) => c.active)
-        : CATEGORIAS_DE_PRUEBA,
-    ),
+  // Un solo pedido a /categories, activas e inactivas: el alta
+  // filtra las activas en el cliente (cache-categorias.js).
+  apiGet = async () => structuredClone(CATEGORIAS_DE_PRUEBA),
   apiPost = async () => ({ transaction: {}, month_totals: {} }),
   apiPut = async () => ({ transaction: {}, month_totals: {} }),
   apiDel = async () => null,
@@ -212,24 +222,55 @@ describe("abrir la hoja", () => {
     );
   });
 
-  test("el importe abre en teclado numérico", async () => {
+  test("el importe abre en teclado numérico, sin punto decimal", async () => {
+    // `type="text"` y no `type="number"`: es lo que permite mostrar el
+    // "." de miles mientras se escribe (un campo numérico nativo no
+    // lo deja). `inputmode="numeric"` igual da el teclado numérico, y
+    // sin el punto decimal que "decimal" sí ofrecería — acá no hacen
+    // falta los centavos.
     const { dom } = await montar();
     await esperar();
     const campo = $(dom, "movimiento-importe");
-    assert.equal(campo.getAttribute("type"), "number");
-    assert.equal(campo.getAttribute("inputmode"), "decimal");
+    assert.equal(campo.getAttribute("type"), "text");
+    assert.equal(campo.getAttribute("inputmode"), "numeric");
   });
 
-  test("pide las categorías activas la primera vez que se abre", async () => {
+  test("al escribir, separa los miles con punto y no deja decimales", async () => {
+    const { dom } = await montar();
+    await esperar();
+    abrir(dom);
+    await esperar();
+
+    const campo = /** @type {HTMLInputElement} */ ($(dom, "movimiento-importe"));
+    campo.value = "1500000";
+    campo.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+
+    assert.equal(campo.value, "1.500.000");
+  });
+
+  test("letras y un punto decimal se descartan solos, sólo quedan los dígitos", async () => {
+    const { dom } = await montar();
+    await esperar();
+    abrir(dom);
+    await esperar();
+
+    const campo = /** @type {HTMLInputElement} */ ($(dom, "movimiento-importe"));
+    campo.value = "1a5b00.50";
+    campo.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+
+    assert.equal(campo.value, "150.050");
+  });
+
+  test("pide las categorías la primera vez que se abre, y filtra las activas en el cliente", async () => {
     const { dom, llamadas } = await montar();
     await esperar();
     abrir(dom);
     await esperar();
 
-    assert.deepEqual(llamadas.apiGet[0], ["/categories?active=true"]);
+    assert.deepEqual(llamadas.apiGet[0], ["/categories"]);
 
     const opciones = [...$(dom, "movimiento-categoria").options].map((o) => o.textContent);
-    assert.deepEqual(opciones, ["Alquiler", "Gas"], "por defecto, sólo las de egreso");
+    assert.deepEqual(opciones, ["Alquiler", "Gas"], "por defecto, sólo las activas de egreso");
   });
 
   test("abrir, cerrar y abrir de nuevo no vuelve a pedir las categorías", async () => {
@@ -306,13 +347,15 @@ describe("validación antes de enviar", () => {
 // ===================================================================
 
 describe("guardar", () => {
-  test("manda category_id numérico, la fecha, el tipo y el importe con dos decimales", async () => {
+  test("manda category_id numérico, la fecha, el tipo y el importe en pesos enteros con .00", async () => {
     const { dom, llamadas } = await montar();
     await esperar();
     abrir(dom);
     await esperar();
 
-    $(dom, "movimiento-importe").value = "1500.5";
+    // Ya con los puntos de miles puestos, como lo deja `enmascararImporte`
+    // mientras se escribe: a la API igual le llegan sólo los dígitos.
+    $(dom, "movimiento-importe").value = "1.500.000";
     $(dom, "movimiento-categoria").value = "3"; // Gas
     $(dom, "movimiento-descripcion").value = "  Super  ";
     enviar(dom);
@@ -325,7 +368,7 @@ describe("guardar", () => {
         category_id: 3,
         transaction_date: HOY,
         transaction_type: "expense",
-        amount: "1500.50",
+        amount: "1500000.00",
         description: "Super",
       },
     ]);
@@ -437,7 +480,9 @@ describe("abrirEdicion", () => {
     assert.equal(hoja.classList.contains("abierta"), true);
     assert.equal($(dom, "hoja-movimiento-titulo").textContent, "Editar movimiento");
     assert.equal($(dom, "movimiento-borrar").hidden, false);
-    assert.equal($(dom, "movimiento-importe").value, "150000.00");
+    // "150000.00" del servidor se redondea y se separa en miles para
+    // mostrarlo: el campo sólo admite pesos enteros.
+    assert.equal($(dom, "movimiento-importe").value, "150.000");
     assert.equal($(dom, "movimiento-descripcion").value, "Alquiler de octubre");
     assert.equal($(dom, "movimiento-fecha").value, "2026-10-05");
     assert.equal($(dom, "movimiento-categoria").value, "2");

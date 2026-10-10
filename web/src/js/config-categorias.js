@@ -28,6 +28,7 @@ import { esc } from "./format.js";
 import { toast } from "./components/toast.js";
 import { crearHoja } from "./components/sheet.js";
 import { bloqueCargando, error as estadoError, vacio } from "./components/estados.js";
+import { categorias as categoriasCacheadas, invalidarCategorias } from "./cache-categorias.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -82,7 +83,10 @@ async function cargar() {
   pintar();
 
   try {
-    categorias = await api.get("/categories");
+    // Misma caché que `movimientos.js` y `alta-movimiento.js`
+    // (`cache-categorias.js`): no vuelve a pedir si ya la tienen
+    // pedida ellos, ni al revés.
+    categorias = await categoriasCacheadas();
     cargandoLista = false;
   } catch (e) {
     categorias = [];
@@ -173,6 +177,7 @@ async function alGuardar(evento, control) {
       toast("Categoría renombrada.");
     }
     control.cerrar();
+    invalidarCategorias();
     await cargar();
   } catch (e) {
     mostrarError(
@@ -194,6 +199,7 @@ async function archivar(id, activa) {
     await api.patch(`/categories/${id}`, { active: activa });
     const categoria = categorias.find((c) => c.id === id);
     if (categoria) categoria.active = activa;
+    invalidarCategorias();
     toast(activa ? "Categoría reactivada." : "Categoría archivada.");
   } catch (e) {
     // El interruptor ya se movió a ojo (abajo, antes de llamar acá);

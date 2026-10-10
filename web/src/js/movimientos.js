@@ -25,6 +25,7 @@ import { esc } from "./format.js";
 import { filaMovimiento, separadorDia, pintarFilas } from "./components/rows.js";
 import { bloqueCargando, error as estadoError, vacio, consolidado } from "./components/estados.js";
 import { EVENTO_CAMBIO } from "./barra-mes.js";
+import { categorias as categoriasCacheadas } from "./cache-categorias.js";
 import { abrirEdicion } from "./alta-movimiento.js";
 
 const $ = (id) => document.getElementById(id);
@@ -71,39 +72,22 @@ function pesos(importeDecimal) {
 //  Categorías, para mostrar el nombre en cada fila
 // ===================================================================
 
-/** Todas (activas e inactivas): un movimiento puede referenciar una
- * ya archivada, y tiene que poder seguir mostrando su nombre. */
+/** La misma caché que usan `config-categorias.js` y
+ * `alta-movimiento.js` (`cache-categorias.js`): comparten un sólo
+ * `GET /api/categories` por sesión en vez de pedirlo cada una por su
+ * cuenta. Si el pedido falla (típico al registrarse: `arrancar()`
+ * corre antes de que la sesión nueva exista todavía), la caché se
+ * limpia sola y el próximo `mes:cambiado` lo reintenta — no hace
+ * falta un botón de "reintentar". */
 let categorias = [];
-let categoriasListo = false;
-let pedidoCategorias = null;
 
-/**
- * Pide las categorías una sola vez — pero si el primer intento falla
- * (típico al registrarse: `arrancar()` corre en `DOMContentLoaded`,
- * antes de que la sesión nueva exista todavía, y ese primer pedido da
- * 401), vuelve a intentarlo en el siguiente `mes:cambiado` en lugar
- * de quedarse con la lista vacía para siempre. No hace falta que
- * nadie toque un botón de "reintentar": para cuando llega el próximo
- * cambio de mes la sesión ya existe.
- */
-function categoriasPorId() {
-  if (categoriasListo) return Promise.resolve();
-  if (!pedidoCategorias) {
-    pedidoCategorias = api
-      .get("/categories")
-      .then((datos) => {
-        categorias = datos;
-        categoriasListo = true;
-      })
-      .catch((e) => {
-        categorias = [];
-        console.error("movimientos: no se pudieron pedir las categorías", e);
-      })
-      .finally(() => {
-        pedidoCategorias = null;
-      });
+async function pedirCategorias() {
+  try {
+    categorias = await categoriasCacheadas();
+  } catch (e) {
+    categorias = [];
+    console.error("movimientos: no se pudieron pedir las categorías", e);
   }
-  return pedidoCategorias;
 }
 
 function nombreCategoria(id) {
@@ -280,19 +264,22 @@ export async function arrancar() {
   conectarFiltros();
   conectarFilas();
 
-  // `categoriasPorId()` reintenta sola si el primer pedido falló (ver
-  // su comentario): por eso se vuelve a llamar en cada evento, no
-  // sólo una vez al arrancar.
+  // Todo el trabajo de verdad —pedir categorías, pintar el filtro,
+  // pedir movimientos— vive acá adentro y sólo acá: antes también se
+  // repetía al final de `arrancar()` "por si acaso", y las dos copias
+  // podían disparar el mismo `GET /api/transactions` dos veces cuando
+  // el evento llegaba mientras `arrancar()` todavía esperaba el
+  // primer pedido de categorías. `pedirCategorias()` reintenta sola
+  // si el primer pedido falló, así que alcanza con llamarla acá.
   document.addEventListener(EVENTO_CAMBIO, async (ev) => {
     periodo = /** @type {CustomEvent} */ (ev).detail;
-    await categoriasPorId();
+    await pedirCategorias();
     pintarFiltroCategoria();
     cargar();
   });
 
-  await categoriasPorId();
+  await pedirCategorias();
   pintarFiltroCategoria();
-  if (periodo) cargar();
 }
 
 if (document.readyState === "loading") {

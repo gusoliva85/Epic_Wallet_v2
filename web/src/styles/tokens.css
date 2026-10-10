@@ -34,9 +34,20 @@
   --color-accent: #47799c;
   --color-accent-2: #335c78;
   --color-accent-soft: #dfeaf0;
-  /* Contenido sobre una superficie de acento. Es blanco en los dos
-     temas: el acento siempre es lo bastante oscuro. */
+  /* Contenido sobre una superficie de acento (botones, el sello de la
+     marca, el `chip` sólido). Blanco acá; se redefine oscuro en modo
+     oscuro, porque ahí el acento se aclara (línea ~272) y el blanco
+     dejaría de alcanzar el contraste mínimo. */
   --color-on-accent: #ffffff;
+  /* Contenido sobre una superficie de color FIJA: las tarjetas de
+     indicador (inc/egr/dia/pat), el avatar de la cuenta y el globo de
+     alertas. Esas superficies no cambian de claro a oscuro (son su
+     propio color, no el acento — skill §8, "tarjeta de color"), así
+     que su texto tampoco: siempre blanco, nunca se redefine. Usar
+     `--color-on-accent` ahí por error es justo el bug que se corrigió
+     después de cerrar la Fase 4: en modo oscuro esas tarjetas se
+     quedaban con letra negra sobre su propio color. */
+  --color-on-solid: #ffffff;
 
   /* ---- avatar de la cuenta ----
      Grafito neutro a propósito: es lo único de la barra que no es
@@ -155,13 +166,13 @@
   --glass-shell-blur: 22px;
   --glass-shell-fallback: rgba(255, 255, 255, 0.92);
 
-  /* Las dos barras de navegación son un caso aparte: llevan texto chico
-     y pasan por delante de todo el contenido al hacer scroll. Con el
-     vidrio de una tarjeta, las letras se mezclan con lo que pasa por
-     detrás y dejan de leerse. Acá el vidrio es casi opaco y el
-     desenfoque, el mínimo que todavía da sensación de profundidad. */
-  --glass-bar-bg: rgba(255, 255, 255, 0.94);
-  --glass-bar-blur: 10px;
+  /* Todo lo que queda flotando por encima del contenido —las dos
+     barras, las hojas, el toast— va con fondo sólido, sin vidrio: a
+     pedido de Gustavo, después de cerrar la Fase 4. El resto de la
+     interfaz (tarjetas, paneles, filas) sigue usando `--glass-shell-*`
+     y `--glass-content-*`, que no cambian. */
+  --glass-bar-bg: rgb(255, 255, 255);
+  --glass-bar-blur: 0px;
 
   /* El signo pesos de fondo de una tarjeta de color va OSCURO, no
      claro como se ve en muchos diseños. Aclarando el fondo, la cifra
@@ -289,7 +300,7 @@ html[data-theme="dark"] {
 
   --glass-shell-bg: rgba(22, 25, 28, 0.5);
   --glass-shell-fallback: rgba(13, 15, 17, 0.94);
-  --glass-bar-bg: rgba(16, 19, 22, 0.95);
+  --glass-bar-bg: rgb(16, 19, 22);
   --glass-bar-fallback: rgba(14, 17, 20, 0.99);
   --glass-content-bg: rgba(22, 25, 28, 0.72);
   --glass-content-fallback: rgba(13, 15, 17, 0.96);
@@ -362,7 +373,7 @@ html[data-theme="dark"] {
 
     --glass-shell-bg: rgba(22, 25, 28, 0.5);
     --glass-shell-fallback: rgba(13, 15, 17, 0.94);
-    --glass-bar-bg: rgba(16, 19, 22, 0.95);
+    --glass-bar-bg: rgb(16, 19, 22);
     --glass-bar-fallback: rgba(14, 17, 20, 0.99);
     --glass-content-bg: rgba(22, 25, 28, 0.72);
     --glass-content-fallback: rgba(13, 15, 17, 0.96);

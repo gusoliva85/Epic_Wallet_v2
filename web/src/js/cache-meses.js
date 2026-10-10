@@ -24,9 +24,20 @@ let pedido = null;
 
 /** La lista de meses, pedida una sola vez y reusada. Dos llamadas
  * simultáneas antes de que la primera responda comparten el mismo
- * pedido en vez de duplicarlo. */
+ * pedido en vez de duplicarlo.
+ *
+ * Si el pedido falla, `pedido` se limpia solo: sin esto, un 401 al
+ * arrancar —típico de un registro recién hecho, antes de que la
+ * sesión nueva exista todavía— dejaba la barra de mes mostrando "—"
+ * para siempre, porque la próxima llamada encontraba el mismo pedido
+ * ya rechazado y nunca volvía a intentar. */
 export function meses() {
-  if (!pedido) pedido = api.get("/months");
+  if (!pedido) {
+    pedido = api.get("/months").catch((e) => {
+      pedido = null;
+      throw e;
+    });
+  }
   return pedido;
 }
 

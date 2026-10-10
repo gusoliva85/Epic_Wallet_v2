@@ -210,6 +210,47 @@ a {
   }
 }
 
+/* ---- cambio de tema: círculo que sale del botón ----
+   `tema.js` ya envuelve el cambio en `document.startViewTransition()`
+   cuando existe (y no hay `prefers-reduced-motion`); por defecto esa
+   API hace un fundido cruzado parejo, no un círculo. Acá se lo
+   reemplaza: la vista NUEVA se recorta con un círculo que arranca en
+   0 en el punto del botón (guardado por `boton-tema.js` en
+   `--origen-tema-*`) y crece hasta `--origen-tema-r`, la distancia a
+   la esquina más lejana — así termina de cubrir toda la pantalla sin
+   que se note el borde del círculo. La vista VIEJA se queda quieta
+   debajo, sin animación propia: si las dos animaran a la vez, se
+   verían los dos fundidos mezclados y el círculo no se notaría. */
+@supports (view-transition-name: root) or
+  (-webkit-view-transition-name: root) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+
+  ::view-transition-old(root) {
+    z-index: 1;
+  }
+
+  ::view-transition-new(root) {
+    z-index: 2;
+    clip-path: circle(
+      0px at var(--origen-tema-x, 50%) var(--origen-tema-y, 50%)
+    );
+    animation: circulo-de-tema 0.5s var(--ease) forwards;
+  }
+
+  @keyframes circulo-de-tema {
+    to {
+      clip-path: circle(
+        var(--origen-tema-r, 150%) at var(--origen-tema-x, 50%)
+          var(--origen-tema-y, 50%)
+      );
+    }
+  }
+}
+
 /* ---- texto sólo para lectores de pantalla ----
    Se oye pero no se ve. No se usa `display:none` ni `visibility`:
    los dos lo sacan también del árbol de accesibilidad, que es

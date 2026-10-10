@@ -75,6 +75,13 @@ async function cargarConDobles() {
       'const EVENTO_CAMBIO = "mes:cambiado";',
     )
     .replace(
+      'import { categorias as categoriasCacheadas } from "./cache-categorias.js";',
+      // La de verdad comparte caché con config-categorias.js y
+      // alta-movimiento.js (probado en cache-categorias.test.mjs);
+      // acá alcanza con que pida /categories, igual que antes.
+      'const categoriasCacheadas = () => globalThis.__espia.apiGet("/categories");',
+    )
+    .replace(
       'import { abrirEdicion } from "./alta-movimiento.js";',
       "const abrirEdicion = (...a) => globalThis.__espia.abrirEdicion(...a);",
     );

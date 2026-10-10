@@ -24,9 +24,13 @@
    F04-T09.
 
    Dos listas de categorías, no una: el alta sólo ofrece las activas
-   (`active=true`, Técnico F04-T06); la edición pide todas, porque un
-   movimiento viejo puede tener una categoría ya archivada y el
-   selector tiene que poder seguir mostrándola en vez de vaciarse sola.
+   (Técnico F04-T06); la edición pide todas, porque un movimiento
+   viejo puede tener una categoría ya archivada y el selector tiene
+   que poder seguir mostrándola en vez de vaciarse sola. Las dos salen
+   de `cache-categorias.js` —la misma caché que usan
+   `config-categorias.js` y `movimientos.js`—, así que entre los tres
+   módulos arman a lo sumo un solo `GET /api/categories` por sesión en
+   vez de uno cada uno.
 
    Al guardar o borrar, se invalida el caché de meses
    (`cache-meses.js`): es el mismo mecanismo que ya usa la barra de
@@ -39,6 +43,7 @@ import { esc } from "./format.js";
 import { toast } from "./components/toast.js";
 import { crearHoja } from "./components/sheet.js";
 import { invalidarMeses } from "./cache-meses.js";
+import { categorias as categoriasCacheadas, activas as activasCacheadas } from "./cache-categorias.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -59,18 +64,34 @@ function hoyArgentina() {
   return FORMATO_FECHA_ARG.format(new Date());
 }
 
-/** Categorías activas, para el alta — pedidas una sola vez y reusadas
- * entre aperturas de la hoja, 21 filas no justifican pedirlas cada vez. */
+/* Importe en pesos enteros, sin decimales (pedido de Gustavo): el
+   campo es `type="text"` justo para poder mostrar el "." de miles
+   mientras se escribe, algo que un `type="number"` nativo no permite.
+   Lo que se manda a la API sale siempre de los dígitos solos. */
+function soloDigitos(texto) {
+  return texto.replace(/\D/g, "");
+}
+
+function formatearImporte(digitos) {
+  return digitos ? Number(digitos).toLocaleString("es-AR") : "";
+}
+
+/** Reescribe el campo con el importe ya separado por miles, a partir
+ * de lo que haya escrito — se usa en cada tecla. */
+function enmascararImporte(campo) {
+  campo.value = formatearImporte(soloDigitos(campo.value));
+}
+
+/** Categorías activas, para el alta — derivadas de la misma caché que
+ * `movimientos.js` y `config-categorias.js`, sin pedido propio. */
 let categoriasActivasCache = null;
 
 async function categoriasActivas() {
-  if (!categoriasActivasCache) {
-    try {
-      categoriasActivasCache = await api.get("/categories?active=true");
-    } catch (e) {
-      categoriasActivasCache = [];
-      console.error("alta-movimiento: no se pudieron pedir las categorías", e);
-    }
+  try {
+    categoriasActivasCache = await activasCacheadas();
+  } catch (e) {
+    categoriasActivasCache = [];
+    console.error("alta-movimiento: no se pudieron pedir las categorías", e);
   }
   return categoriasActivasCache;
 }
@@ -80,13 +101,11 @@ async function categoriasActivas() {
 let categoriasTodasCache = null;
 
 async function categoriasTodas() {
-  if (!categoriasTodasCache) {
-    try {
-      categoriasTodasCache = await api.get("/categories");
-    } catch (e) {
-      categoriasTodasCache = [];
-      console.error("alta-movimiento: no se pudieron pedir las categorías (edición)", e);
-    }
+  try {
+    categoriasTodasCache = await categoriasCacheadas();
+  } catch (e) {
+    categoriasTodasCache = [];
+    console.error("alta-movimiento: no se pudieron pedir las categorías (edición)", e);
   }
   return categoriasTodasCache;
 }
@@ -196,7 +215,11 @@ export async function abrirEdicion(movimiento) {
   $("hoja-movimiento-titulo").textContent = "Editar movimiento";
   $("movimiento-borrar").hidden = false;
 
-  /** @type {HTMLInputElement} */ ($("movimiento-importe")).value = movimiento.amount;
+  // `movimiento.amount` llega con dos decimales ("150000.00"); el
+  // campo sólo admite pesos enteros, así que se redondea al mostrar.
+  /** @type {HTMLInputElement} */ ($("movimiento-importe")).value = formatearImporte(
+    String(Math.round(Number(movimiento.amount))),
+  );
   /** @type {HTMLInputElement} */ ($("movimiento-descripcion")).value = movimiento.description ?? "";
   const fecha = /** @type {HTMLInputElement} */ ($("movimiento-fecha"));
   fecha.value = movimiento.transaction_date;
@@ -224,9 +247,10 @@ async function alGuardar(evento) {
   const campoDescripcion = /** @type {HTMLInputElement} */ ($("movimiento-descripcion"));
   mostrarError(null);
 
-  // `valueAsNumber` da `NaN` con el campo vacío: alcanza con un sólo
-  // chequeo para "vacío" y "cero o negativo" a la vez.
-  const importe = campoImporte.valueAsNumber;
+  // `Number("")` da 0, no `NaN`: alcanza con un sólo chequeo para
+  // "vacío" y "cero" a la vez. Los dígitos ya vienen limpios de
+  // puntos porque `enmascararImporte` los saca en cada tecla.
+  const importe = Number(soloDigitos(campoImporte.value));
   if (!Number.isFinite(importe) || importe <= 0) {
     mostrarError("Ingresá un importe mayor a cero.");
     campoImporte.focus();
@@ -255,9 +279,9 @@ async function alGuardar(evento) {
     category_id: Number(campoCategoria.value),
     transaction_date: campoFecha.value,
     transaction_type: tipo,
-    // Dos decimales siempre: lo que manda el servidor en sus
-    // respuestas, y lo que espera `numeric(14,2)` del otro lado.
-    amount: importe.toFixed(2),
+    // El campo sólo junta pesos enteros; el servidor igual espera
+    // dos decimales (`numeric(14,2)`), así que se agregan acá.
+    amount: `${importe}.00`,
     description: campoDescripcion.value.trim(),
   };
 
@@ -344,6 +368,10 @@ export function arrancar() {
   for (const b of hoja.querySelectorAll(".view-switch button[data-tipo]")) {
     b.addEventListener("click", () => elegirTipo(b.dataset.tipo));
   }
+
+  $("movimiento-importe")?.addEventListener("input", (ev) => {
+    enmascararImporte(/** @type {HTMLInputElement} */ (ev.target));
+  });
 
   form.addEventListener("submit", alGuardar);
   form.addEventListener("input", () => mostrarError(null));

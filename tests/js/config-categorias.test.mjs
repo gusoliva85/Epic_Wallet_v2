@@ -92,6 +92,14 @@ async function cargarConDobles() {
     .replace(
       'import { esc } from "./format.js";',
       `import { esc } from "file:///${resolve(RAIZ, "web", "src", "js", "format.js").replace(/\\/g, "/")}";`,
+    )
+    .replace(
+      'import { categorias as categoriasCacheadas, invalidarCategorias } from "./cache-categorias.js";',
+      // La de verdad comparte caché con movimientos.js y
+      // alta-movimiento.js (probado en cache-categorias.test.mjs);
+      // acá alcanza con que pida /categories, igual que antes.
+      'const categoriasCacheadas = () => globalThis.__espia.apiGet("/categories");\n' +
+        "const invalidarCategorias = () => globalThis.__espia.invalidarCategorias();",
     );
 
   const unico = `\n// ${Math.random()}\n`;
@@ -130,7 +138,7 @@ async function montar({
   globalThis.HTMLElement = dom.window.HTMLElement;
   globalThis.CustomEvent = dom.window.CustomEvent;
 
-  const llamadas = { apiGet: [], apiPost: [], apiPatch: [], toasts: [] };
+  const llamadas = { apiGet: [], apiPost: [], apiPatch: [], toasts: [], invalidaciones: 0 };
   globalThis.__espia = {
     apiGet: async (...a) => {
       llamadas.apiGet.push(a);
@@ -145,6 +153,9 @@ async function montar({
       return apiPatch(...a);
     },
     toast: (...a) => llamadas.toasts.push(a),
+    invalidarCategorias: () => {
+      llamadas.invalidaciones++;
+    },
   };
 
   const mod = await cargarConDobles();
