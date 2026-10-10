@@ -39,41 +39,10 @@ function escribir(id, html) {
 /* ------------------------------------------------------------ inicio */
 
 function inicio() {
-  pintarTarjetas($("kpis-inicio"), [
-    // Sin pie de ingresos/egresos: las dos tarjetas de color de abajo
-    // ya los muestran, y repetirlos acá era la misma cifra dos veces.
-    tarjetaHeroe({
-      etiqueta: "Ahorro del mes",
-      cifra: D.RESUMEN.ahorro,
-      sub: `${D.RESUMEN.tasa} de los ingresos del mes`,
-      porcentaje: 61,
-      color: "sav",
-    }),
-    tarjetaMetrica({
-      etiqueta: "Ingresos",
-      cifra: D.RESUMEN.ingresos,
-      sub: "4 movimientos",
-      tarjeta: "inc",
-    }),
-    tarjetaMetrica({
-      etiqueta: "Egresos",
-      cifra: D.RESUMEN.egresos,
-      sub: "37 movimientos",
-      tarjeta: "egr",
-    }),
-    tarjetaMetrica({
-      etiqueta: "Gasto de hoy",
-      cifra: D.RESUMEN.gastoHoy,
-      sub: "2 movimientos",
-      tarjeta: "dia",
-    }),
-    tarjetaMetrica({
-      etiqueta: "Patrimonio",
-      cifra: D.RESUMEN.patrimonio,
-      sub: "Ahorro e inversiones",
-      tarjeta: "pat",
-    }),
-  ]);
+  // Los seis indicadores de #kpis-inicio son datos reales desde
+  // F05-T07 (dashboard.js, GET /api/dashboard). Ya no hay nada de
+  // muestra que escribir acá — mismo caso que las categorías de
+  // config() y la lista de #movimientos-lista, más abajo.
 
   escribir(
     "pie-diario",

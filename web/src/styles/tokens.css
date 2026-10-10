@@ -74,6 +74,10 @@
   --color-card-egr: #aa4c55; /* egresos       5,41:1 */
   --color-card-dia: #7c6838; /* gasto de hoy  5,41:1 */
   --color-card-pat: #416f90; /* patrimonio    5,40:1 */
+  /* Violeta: quinto color de tarjeta, F05-T07. Ninguno de los otros
+     cuatro quedaba libre para "total de ahorros" sin confundirse con
+     patrimonio (mismo azul grafito) o con ingresos (mismo verde). */
+  --color-card-aho: #7d5a94; /* total de ahorros 5,59:1 */
 
   --color-avatar-1: #5c6469;
   --color-avatar-2: #33383c;

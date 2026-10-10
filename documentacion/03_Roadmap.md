@@ -270,7 +270,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Hacer:** el contrato central de la sección 9.2 en **una sola llamada** que trae indicadores, serie diaria, últimos seis meses, desglose por categoría y últimos movimientos.
   **Aceptación:** · una sola petición alimenta todo el dashboard · un mes histórico responde con `transactions: null` y sin serie diaria · responde en menos de 400 ms desde la función desplegada.
 
-- [ ] **F05-T07 · Los seis indicadores conectados**
+- [~] **F05-T07 · Los seis indicadores conectados**
   **Tipo:** Frontend · **Ref:** General §12.2 · *fusiona F05-T07, F05-T08, F05-T09 y F05-T10*
   **Hacer:** las seis tarjetas con datos reales; animación de conteo; estados de carga, error y vacío; formato de importes en pesos argentinos con `tabular-nums` para que las cifras no bailen.
   **Aceptación:** · los seis indicadores muestran lo mismo que la API · con la red caída se ve un error entendible, no una pantalla rota · un mes sin datos muestra ceros con su explicación · las cifras no cambian de ancho al actualizarse.

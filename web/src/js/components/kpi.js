@@ -47,6 +47,7 @@ const TARJETAS = {
   egr: { fondo: "var(--color-card-egr)", glifo: "baja" },
   dia: { fondo: "var(--color-card-dia)", glifo: "calendario" },
   pat: { fondo: "var(--color-card-pat)", glifo: "libro" },
+  aho: { fondo: "var(--color-card-aho)", glifo: "ahorro" },
 };
 
 export const TARJETAS_VALIDAS = Object.freeze(Object.keys(TARJETAS));
@@ -187,4 +188,56 @@ export function pintarTarjetas(contenedor, tarjetas) {
   if (!contenedor) return;
   contenedor.innerHTML = tarjetas.join("");
   animarBarras(contenedor);
+}
+
+/**
+ * Anima la cifra de un elemento desde 0 hasta `destino`, formateada
+ * con `formatear` en cada cuadro — así el signo y el símbolo de pesos
+ * ya están puestos durante toda la animación, no sólo al final.
+ *
+ * 900 ms, cúbica de salida (skill §6, "conteo de cifras").
+ * `prefers-reduced-motion` la anula: se pinta el valor final directo,
+ * sin pasos intermedios (skill, regla 6).
+ */
+export function animarCifra(el, destino, formatear, duracion = 900) {
+  if (!el) return;
+
+  const final = Number(destino) || 0;
+
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    el.textContent = formatear(final);
+    return;
+  }
+
+  // `window.performance`, no el global `performance` suelto: en los
+  // módulos de prueba (jsdom) `requestAnimationFrame` manda su propio
+  // reloj de `window`, y restar contra otro reloj daría un tiempo sin
+  // sentido. En un navegador de verdad son el mismo objeto.
+  const inicio = window.performance.now();
+  (function cuadro(ahora) {
+    const t = Math.min(1, (ahora - inicio) / duracion);
+    const salida = 1 - (1 - t) ** 3; // cúbica de salida
+    el.textContent = formatear(final * salida);
+    if (t < 1) requestAnimationFrame(cuadro);
+  })(inicio);
+}
+
+/**
+ * Cuenta las cifras de una tanda de tarjetas ya pintadas, en el mismo
+ * orden en que se pasaron a `pintarTarjetas`.
+ *
+ * Se llama DESPUÉS de `pintarTarjetas`, nunca antes: lee `.kpi-num` del
+ * contenedor en orden de documento y empareja cada uno con su entrada
+ * de `lista`. Una entrada `null` o `undefined` salta esa tarjeta —por
+ * ejemplo, un "—" que no es una cifra para contar.
+ *
+ * @param {Element} contenedor
+ * @param {Array<{valor: number, formatear: (n:number)=>string}|null|undefined>} lista
+ */
+export function animarCifras(contenedor, lista) {
+  if (!contenedor) return;
+  const nums = contenedor.querySelectorAll(".kpi-num");
+  lista.forEach((item, i) => {
+    if (item && nums[i]) animarCifra(nums[i], item.valor, item.formatear);
+  });
 }

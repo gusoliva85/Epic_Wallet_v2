@@ -15,15 +15,6 @@
 
 export const MES = "Octubre 2026";
 
-export const RESUMEN = {
-  ingresos: "$2.105.000",
-  egresos: "$820.700",
-  ahorro: "$1.284.300",
-  tasa: "61,0%",
-  gastoHoy: "$55.100",
-  patrimonio: "$14.902.500",
-};
-
 export const MOVIMIENTOS = [
   {
     id: 1,

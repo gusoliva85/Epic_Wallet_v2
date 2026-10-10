@@ -368,19 +368,96 @@ describe("tarjetas de indicador", () => {
     assert.equal(rejilla.querySelector(".fin-fill").style.width, "0%");
   });
 
-  // ------------------------------------------------------- la muestra
+  // ---------------------------------------------------- el conteo de cifras
 
-  test("las tarjetas de muestra de inicio se pintan todas", async () => {
-    const { rejilla } = await inicio();
-    assert.equal(
-      rejilla.querySelectorAll(".kpi").length,
-      5,
-      "una héroe y cuatro métricas",
-    );
-    assert.equal(rejilla.querySelectorAll(".kpi--hero").length, 1);
+  describe("animarCifra / animarCifras · F05-T07", () => {
+    test("nace en cero y termina exactamente en el valor final, formateado", async () => {
+      const { dom, kpi, rejilla } = await montar();
+      rejilla.innerHTML = '<div class="kpi-num"></div>';
+      const el = rejilla.querySelector(".kpi-num");
+
+      kpi.animarCifra(el, 1234, (n) => `$${Math.round(n)}`);
+      // Recién llamada: el primer cuadro todavía no corrió.
+      assert.notEqual(el.textContent, "$1234");
+
+      await esperar(dom, 1000);
+      assert.equal(el.textContent, "$1234");
+    });
+
+    test("un destino negativo mantiene el signo durante toda la animación", async () => {
+      const { dom, kpi, rejilla } = await montar();
+      rejilla.innerHTML = '<div class="kpi-num"></div>';
+      const el = rejilla.querySelector(".kpi-num");
+
+      kpi.animarCifra(el, -500, (n) => (n < 0 ? "−" : "") + `$${Math.round(Math.abs(n))}`);
+      await esperar(dom, 1000);
+      assert.equal(el.textContent, "−$500");
+    });
+
+    test("con movimiento reducido pinta el valor final directo, sin pasos", async () => {
+      const { kpi, rejilla } = await montar();
+      // `window` es el mismo objeto que `dom.window`: mutar uno alcanza.
+      window.matchMedia = () => ({ matches: true });
+      rejilla.innerHTML = '<div class="kpi-num"></div>';
+      const el = rejilla.querySelector(".kpi-num");
+
+      kpi.animarCifra(el, 500, (n) => `$${Math.round(n)}`);
+      // Sin esperar ningún cuadro: con movimiento reducido no hay RAF de por medio.
+      assert.equal(el.textContent, "$500");
+    });
+
+    test("animarCifras empareja cada .kpi-num con su entrada, en el mismo orden", async () => {
+      const { kpi, rejilla } = await montar();
+      window.matchMedia = () => ({ matches: true }); // sin esperar 900ms
+      kpi.pintarTarjetas(rejilla, [
+        kpi.tarjetaMetrica({ etiqueta: "a", cifra: "$0" }),
+        kpi.tarjetaMetrica({ etiqueta: "b", cifra: "$0" }),
+      ]);
+      kpi.animarCifras(rejilla, [
+        { valor: 10, formatear: (n) => `$${Math.round(n)}` },
+        { valor: 20, formatear: (n) => `$${Math.round(n)}` },
+      ]);
+      const nums = [...rejilla.querySelectorAll(".kpi-num")];
+      assert.equal(nums[0].textContent, "$10");
+      assert.equal(nums[1].textContent, "$20");
+    });
+
+    test("una entrada null o undefined salta esa tarjeta, sin tocarla", async () => {
+      // El "—" de una tarjeta que no tiene nada que contar (por ejemplo,
+      // "Gasto de hoy" mirando un mes que no es el actual) no es un
+      // número: contarlo escribiría encima el "—" con basura.
+      const { kpi, rejilla } = await montar();
+      window.matchMedia = () => ({ matches: true });
+      kpi.pintarTarjetas(rejilla, [
+        kpi.tarjetaMetrica({ etiqueta: "a", cifra: "—" }),
+        kpi.tarjetaMetrica({ etiqueta: "b", cifra: "$0" }),
+      ]);
+      kpi.animarCifras(rejilla, [
+        null,
+        { valor: 20, formatear: (n) => `$${Math.round(n)}` },
+      ]);
+      const nums = [...rejilla.querySelectorAll(".kpi-num")];
+      assert.equal(nums[0].textContent, "—", "no tenía que tocar la que es null");
+      assert.equal(nums[1].textContent, "$20");
+    });
+
+    test("sin contenedor o sin elemento, no rompe", async () => {
+      const { kpi } = await montar();
+      assert.doesNotThrow(() => kpi.animarCifra(null, 10, (n) => `${n}`));
+      assert.doesNotThrow(() => kpi.animarCifras(null, [{ valor: 1, formatear: (n) => `${n}` }]));
+    });
   });
 
-  // --------------------------------- las cuatro métricas identificables
+  // ------------------------------------------------------- la muestra
+
+  test("vistas.js ya no escribe tarjetas de muestra en #kpis-inicio", async () => {
+    // F05-T07 le dio ese contenedor a dashboard.js, con datos reales de
+    // GET /api/dashboard. Guarda de regresión: si alguien reintroduce
+    // el bloque de muestra acá, las dos fuentes de datos competirían
+    // por el mismo contenedor.
+    const { rejilla } = await inicio();
+    assert.equal(rejilla.innerHTML, "");
+  });
 
   /** Monta la vista de inicio: las vistas pintan en varios
       contenedores, así que hay que darle todos los que toca. */
@@ -404,46 +481,37 @@ describe("tarjetas de indicador", () => {
     return b;
   }
 
-  test("las cuatro metricas son las que quedaron", async () => {
-    // Se sacan «tasa de ahorro» y «cartera», que no decían nada, y
-    // «gasto diario» pasa a ser el gasto de HOY: un promedio del mes no
-    // sirve para decidir hoy.
-    const { rejilla } = await inicio();
-    const etiquetas = [
-      ...rejilla.querySelectorAll(".kpi-metric .kpi-label"),
-    ].map((e) => e.textContent);
-    assert.deepEqual(etiquetas, [
-      "Ingresos",
-      "Egresos",
-      "Gasto de hoy",
-      "Patrimonio",
-    ]);
-  });
+  // ------------------------------- las cinco tarjetas de color del catálogo
 
-  // ------------------------------- las cuatro tarjetas de color
-
-  test("las cuatro metricas son tarjetas de color", async () => {
-    const { rejilla } = await inicio();
-    const metricas = [...rejilla.querySelectorAll(".kpi-metric")];
-    assert.equal(metricas.length, 4);
-    for (const t of metricas) {
-      assert.ok(t.classList.contains("kpi-color"), "no es tarjeta de color");
-      assert.ok(t.querySelector(".kpi-peso"), "falta el signo pesos de fondo");
-      assert.ok(t.querySelector("svg.kpi-glifo path"), "falta el símbolo");
+  test("las tarjetas de color del catalogo son identificables", async () => {
+    const { kpi, rejilla } = await montar();
+    for (const nombre of kpi.TARJETAS_VALIDAS) {
+      kpi.pintarTarjetas(rejilla, [
+        kpi.tarjetaMetrica({ etiqueta: nombre, cifra: "$1", tarjeta: nombre }),
+      ]);
+      const t = rejilla.querySelector(".kpi");
+      assert.ok(t.classList.contains("kpi-color"), `${nombre}: no es tarjeta de color`);
+      assert.ok(t.querySelector(".kpi-peso"), `${nombre}: falta el signo pesos de fondo`);
+      assert.ok(t.querySelector("svg.kpi-glifo path"), `${nombre}: falta el símbolo`);
     }
   });
 
-  test("cada tarjeta tiene su fondo y su simbolo, sin repetir", async () => {
+  test("ninguna tarjeta del catalogo repite fondo ni simbolo", async () => {
     // Con el mismo fondo o el mismo símbolo dejarían de identificar
     // nada, que es para lo que están.
-    const { rejilla } = await inicio();
-    const metricas = [...rejilla.querySelectorAll(".kpi-metric")];
-    const fondos = metricas.map((t) => t.getAttribute("style"));
-    const simbolos = metricas.map(
-      (t) => t.querySelector(".kpi-glifo").innerHTML,
-    );
-    assert.equal(new Set(fondos).size, 4, "hay fondos repetidos");
-    assert.equal(new Set(simbolos).size, 4, "hay símbolos repetidos");
+    const { kpi, rejilla } = await montar();
+    const fondos = [];
+    const simbolos = [];
+    for (const nombre of kpi.TARJETAS_VALIDAS) {
+      kpi.pintarTarjetas(rejilla, [
+        kpi.tarjetaMetrica({ etiqueta: nombre, cifra: "$1", tarjeta: nombre }),
+      ]);
+      const t = rejilla.querySelector(".kpi");
+      fondos.push(t.getAttribute("style"));
+      simbolos.push(t.querySelector(".kpi-glifo").innerHTML);
+    }
+    assert.equal(new Set(fondos).size, kpi.TARJETAS_VALIDAS.length, "hay fondos repetidos");
+    assert.equal(new Set(simbolos).size, kpi.TARJETAS_VALIDAS.length, "hay símbolos repetidos");
   });
 
   test("el fondo sale del catalogo, no de un valor libre", async () => {
@@ -539,8 +607,13 @@ describe("tarjetas de indicador", () => {
 
   test("la heroe no se vuelve tarjeta de color", async () => {
     // Es la cifra principal y es de vidrio a propósito: el contraste
-    // entre ella y las cuatro de color es parte del diseño.
-    const { rejilla } = await inicio();
+    // entre ella y las de color es parte del diseño. `tarjetaHeroe` no
+    // tiene parámetro `tarjeta`; esto es una guarda de regresión por si
+    // alguna vez lo gana.
+    const { kpi, rejilla } = await montar();
+    kpi.pintarTarjetas(rejilla, [
+      kpi.tarjetaHeroe({ etiqueta: "Ahorro del mes", cifra: "$1" }),
+    ]);
     const heroe = rejilla.querySelector(".kpi--hero");
     assert.ok(!heroe.classList.contains("kpi-color"));
     assert.equal(heroe.querySelector(".kpi-peso"), null);
