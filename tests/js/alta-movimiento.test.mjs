@@ -80,6 +80,8 @@ async function cargarConDobles() {
         "const api = {\n" +
         "  get: (...a) => globalThis.__espia.apiGet(...a),\n" +
         "  post: (...a) => globalThis.__espia.apiPost(...a),\n" +
+        "  put: (...a) => globalThis.__espia.apiPut(...a),\n" +
+        "  del: (...a) => globalThis.__espia.apiDel(...a),\n" +
         "};",
     )
     .replace(
@@ -108,6 +110,7 @@ const CATEGORIAS_DE_PRUEBA = [
   { id: 1, name: "Sueldo", type: "income", active: true },
   { id: 2, name: "Alquiler", type: "expense", active: true },
   { id: 3, name: "Gas", type: "expense", active: true },
+  { id: 4, name: "Gimnasio viejo", type: "expense", active: false },
 ];
 
 /**
@@ -116,10 +119,21 @@ const CATEGORIAS_DE_PRUEBA = [
  * @param {object} opciones
  * @param {(path:string)=>Promise<object[]>} [opciones.apiGet]
  * @param {(path:string, datos:object)=>Promise<object>} [opciones.apiPost]
+ * @param {(path:string, datos:object)=>Promise<object>} [opciones.apiPut]
+ * @param {(path:string)=>Promise<null>} [opciones.apiDel]
  */
 async function montar({
-  apiGet = async () => structuredClone(CATEGORIAS_DE_PRUEBA),
+  // El alta pide `?active=true` (sólo activas); la edición pide todas
+  // — mismo filtro que hace el servidor de verdad (F04-T06).
+  apiGet = async (path) =>
+    structuredClone(
+      path === "/categories?active=true"
+        ? CATEGORIAS_DE_PRUEBA.filter((c) => c.active)
+        : CATEGORIAS_DE_PRUEBA,
+    ),
   apiPost = async () => ({ transaction: {}, month_totals: {} }),
+  apiPut = async () => ({ transaction: {}, month_totals: {} }),
+  apiDel = async () => null,
 } = {}) {
   const dom = new JSDOM(
     `<!doctype html><html><body>${htmlDelBoton()}${htmlDeLaHoja()}` +
@@ -133,7 +147,7 @@ async function montar({
   globalThis.HTMLElement = dom.window.HTMLElement;
   globalThis.CustomEvent = dom.window.CustomEvent;
 
-  const llamadas = { apiGet: [], apiPost: [], toasts: [], invalidaciones: 0 };
+  const llamadas = { apiGet: [], apiPost: [], apiPut: [], apiDel: [], toasts: [], invalidaciones: 0 };
   globalThis.__espia = {
     apiGet: async (...a) => {
       llamadas.apiGet.push(a);
@@ -142,6 +156,14 @@ async function montar({
     apiPost: async (...a) => {
       llamadas.apiPost.push(a);
       return apiPost(...a);
+    },
+    apiPut: async (...a) => {
+      llamadas.apiPut.push(a);
+      return apiPut(...a);
+    },
+    apiDel: async (...a) => {
+      llamadas.apiDel.push(a);
+      return apiDel(...a);
     },
     toast: (...a) => llamadas.toasts.push(a),
     invalidarMeses: () => {
@@ -383,6 +405,162 @@ describe("guardar", () => {
       $(dom, "movimiento-error").textContent,
       "No se puede cargar un movimiento en un mes futuro.",
     );
+    assert.equal(llamadas.invalidaciones, 0);
+  });
+});
+
+// ===================================================================
+//  Edición y baja · F04-T12
+// ===================================================================
+
+const MOVIMIENTO_DE_PRUEBA = {
+  id: 42,
+  category_id: 2, // Alquiler
+  transaction_date: "2026-10-05",
+  transaction_type: "expense",
+  amount: "150000.00",
+  description: "Alquiler de octubre",
+};
+
+async function editar(dom, mod, movimiento = MOVIMIENTO_DE_PRUEBA) {
+  await mod.abrirEdicion(movimiento);
+  await esperar();
+}
+
+describe("abrirEdicion", () => {
+  test("abre la hoja con los datos del movimiento ya puestos", async () => {
+    const { dom, mod } = await montar();
+    await esperar();
+    await editar(dom, mod);
+
+    const hoja = $(dom, "hoja-movimiento");
+    assert.equal(hoja.classList.contains("abierta"), true);
+    assert.equal($(dom, "hoja-movimiento-titulo").textContent, "Editar movimiento");
+    assert.equal($(dom, "movimiento-borrar").hidden, false);
+    assert.equal($(dom, "movimiento-importe").value, "150000.00");
+    assert.equal($(dom, "movimiento-descripcion").value, "Alquiler de octubre");
+    assert.equal($(dom, "movimiento-fecha").value, "2026-10-05");
+    assert.equal($(dom, "movimiento-categoria").value, "2");
+    assert.equal(
+      hoja.querySelector('[data-tipo="expense"]').classList.contains("activa"),
+      true,
+    );
+  });
+
+  test("pide TODAS las categorías, no sólo las activas", async () => {
+    const { dom, mod, llamadas } = await montar();
+    await esperar();
+    await editar(dom, mod);
+
+    assert.ok(
+      llamadas.apiGet.some((a) => a[0] === "/categories"),
+      "tiene que pedir /categories sin filtro para la edición",
+    );
+  });
+
+  test("una categoría ya archivada sigue apareciendo seleccionada", async () => {
+    const { dom, mod } = await montar();
+    await esperar();
+    await editar(dom, mod, { ...MOVIMIENTO_DE_PRUEBA, category_id: 4 });
+
+    const select = /** @type {HTMLSelectElement} */ ($(dom, "movimiento-categoria"));
+    assert.equal(select.value, "4");
+    assert.ok(
+      [...select.options].some((o) => o.textContent === "Gimnasio viejo"),
+      "la categoría archivada tiene que estar entre las opciones",
+    );
+  });
+
+  test("cerrar sin guardar y volver a abrir con + arranca en modo alta limpio", async () => {
+    const { dom, mod } = await montar();
+    await esperar();
+    await editar(dom, mod);
+
+    $(dom, "hoja-movimiento").querySelector("[data-cerrar]").click();
+    await esperar();
+
+    abrir(dom);
+    await esperar();
+
+    assert.equal($(dom, "hoja-movimiento-titulo").textContent, "Nuevo movimiento");
+    assert.equal($(dom, "movimiento-borrar").hidden, true);
+    assert.equal($(dom, "movimiento-importe").value, "");
+  });
+});
+
+describe("guardar una edición", () => {
+  test("manda PUT a /transactions/{id}, no POST", async () => {
+    const { dom, mod, llamadas } = await montar();
+    await esperar();
+    await editar(dom, mod);
+
+    $(dom, "movimiento-importe").value = "160000";
+    enviar(dom);
+    await esperar();
+
+    assert.equal(llamadas.apiPost.length, 0);
+    assert.equal(llamadas.apiPut.length, 1);
+    assert.equal(llamadas.apiPut[0][0], "/transactions/42");
+    assert.equal(llamadas.apiPut[0][1].amount, "160000.00");
+  });
+
+  test("el toast dice actualizado, no cargado", async () => {
+    const { dom, mod, llamadas } = await montar();
+    await esperar();
+    await editar(dom, mod);
+
+    enviar(dom);
+    await esperar();
+
+    assert.match(llamadas.toasts[0][0], /actualizado/i);
+    assert.equal(llamadas.invalidaciones, 1);
+  });
+});
+
+describe("borrar un movimiento (Regla 11)", () => {
+  test("si no se confirma, no borra nada", async () => {
+    const { dom, mod, llamadas } = await montar();
+    await esperar();
+    await editar(dom, mod);
+    dom.window.confirm = () => false;
+
+    $(dom, "movimiento-borrar").click();
+    await esperar();
+
+    assert.equal(llamadas.apiDel.length, 0);
+    assert.equal($(dom, "hoja-movimiento").classList.contains("abierta"), true);
+  });
+
+  test("confirmado: borra, cierra la hoja, invalida el caché y avisa", async () => {
+    const { dom, mod, llamadas } = await montar();
+    await esperar();
+    await editar(dom, mod);
+    dom.window.confirm = () => true;
+
+    $(dom, "movimiento-borrar").click();
+    await esperar();
+
+    assert.deepEqual(llamadas.apiDel[0], ["/transactions/42"]);
+    assert.equal($(dom, "hoja-movimiento").classList.contains("abierta"), false);
+    assert.equal(llamadas.invalidaciones, 1);
+    assert.match(llamadas.toasts[0][0], /borrado/i);
+  });
+
+  test("si la API rechaza, muestra el error y no cierra la hoja", async () => {
+    const { dom, mod, llamadas } = await montar({
+      apiDel: async () => {
+        throw new ApiError({ code: "CONFLICT", message: "No se pudo borrar." });
+      },
+    });
+    await esperar();
+    await editar(dom, mod);
+    dom.window.confirm = () => true;
+
+    $(dom, "movimiento-borrar").click();
+    await esperar();
+
+    assert.equal($(dom, "hoja-movimiento").classList.contains("abierta"), true);
+    assert.equal($(dom, "movimiento-error").textContent, "No se pudo borrar.");
     assert.equal(llamadas.invalidaciones, 0);
   });
 });

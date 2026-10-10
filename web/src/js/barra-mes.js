@@ -26,6 +26,14 @@
 
 import { meses, EVENTO_INVALIDADO } from "./cache-meses.js";
 
+/** Se dispara cada vez que la barra termina de pintar un mes real —al
+ * arrancar, al moverse y después de cada invalidación—, con ese mes
+ * en `detail`. `movimientos.js` (F04-T12) lo escucha para saber qué
+ * período pedirle a `GET /api/transactions`, sin que esta barra sepa
+ * que esa lista existe — mismo patrón que `EVENTO_INVALIDADO` en
+ * `cache-meses.js`. */
+export const EVENTO_CAMBIO = "mes:cambiado";
+
 /* Sólo el mes. Pidiendo mes y año juntos, `es-AR` devuelve «octubre de
    2026», y la barra muestra «Octubre 2026»: el «de» ocupa lugar en una
    pantalla angosta y no agrega nada. El año se pega aparte. */
@@ -73,6 +81,8 @@ function pintar(refs) {
   refs.hoy.disabled = indice === 0;
   // El último índice es el mes más viejo que la API mandó.
   refs.anterior.disabled = indice >= lista.length - 1;
+
+  document.dispatchEvent(new CustomEvent(EVENTO_CAMBIO, { detail: mes }));
 }
 
 /** @param {number} pasos -1 retrocede un mes (anterior), +1 avanza uno

@@ -242,12 +242,12 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Hacer:** `POST`, `PUT` y `DELETE /api/transactions`, y `GET` con filtros por mes, tipo, categoría, rango de fechas y texto en la descripción.
   **Aceptación:** · cada escritura devuelve los totales nuevos del mes · un movimiento de otro usuario devuelve 404 · los filtros combinan · el borrado queda registrado con su metadata técnica (General §59).
 
-- [~] **F04-T09 · Formulario de alta rápida**
+- [x] **F04-T09 · Formulario de alta rápida**
   **Tipo:** Frontend · **Ref:** General §9, §10 · *fusiona F04-T09, F04-T10 y F04-T11*
   **Hacer:** hoja inferior desde el botón `+` con tipo, importe, categoría, fecha (hoy por defecto) y descripción opcional; teclado numérico en el importe; validación en vivo; al guardar, actualización inmediata de los indicadores sin recargar.
   **Aceptación:** · un gasto se carga en menos de cinco toques · el teclado del celular abre en numérico · un importe vacío no permite enviar · los indicadores cambian al guardar.
 
-- [ ] **F04-T12 · Lista del mes, detalle, edición y baja**
+- [~] **F04-T12 · Lista del mes, detalle, edición y baja**
   **Tipo:** Frontend · **Ref:** General §11 · *fusiona F04-T12 y F04-T13*
   **Hacer:** lista de movimientos del mes agrupada por día, con los filtros de la API; al tocar una fila, hoja de detalle con editar y borrar, la baja con confirmación (R11).
   **Aceptación:** · la lista refleja lo cargado y ordena por fecha descendente · editar el importe actualiza los totales · borrar pide confirmación y no se puede deshacer por accidente · un mes sin movimientos muestra el estado vacío, no una lista en blanco.

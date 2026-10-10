@@ -344,4 +344,42 @@ describe("barra de mes", () => {
     assert.equal(b.siguiente.disabled, true);
     assert.equal(b.hoy.disabled, true);
   });
+
+  // ---------------------------------------------- mes:cambiado (F04-T12)
+
+  test("avisa el mes actual al terminar de cargar", async () => {
+    // `movimientos.js` escucha esto para saber qué período pedir:
+    // tiene que llegar ya en el primer pintado, sin que haga falta
+    // moverse para enterarse. Con `montarConPromesaControlada` el
+    // oyente queda puesto ANTES de que `meses()` resuelva — si no,
+    // con una `montar()` normal la carga inicial puede terminar antes
+    // de que la prueba llegue a escuchar.
+    const b = await montarConPromesaControlada();
+    let detalle = null;
+    b.dom.window.document.addEventListener(b.mod.EVENTO_CAMBIO, (ev) => {
+      detalle = ev.detail;
+    });
+    b.resolver(MESES_DE_PRUEBA);
+    await esperarCarga(b);
+    assert.deepEqual(detalle, MESES_DE_PRUEBA[0]);
+  });
+
+  test("avisa de nuevo al moverse de mes", async () => {
+    const b = await montar(MESES_DE_PRUEBA);
+    await esperarCarga(b);
+    let detalle = null;
+    b.dom.window.document.addEventListener(b.mod.EVENTO_CAMBIO, (ev) => {
+      detalle = ev.detail;
+    });
+    b.anterior.click();
+    assert.deepEqual(detalle, MESES_DE_PRUEBA[1]);
+  });
+
+  test("no avisa nada mientras no hay un mes para mostrar", async () => {
+    const b = await montar([], { falla: true });
+    let veces = 0;
+    b.dom.window.document.addEventListener(b.mod.EVENTO_CAMBIO, () => veces++);
+    await latir(b);
+    assert.equal(veces, 0);
+  });
 });

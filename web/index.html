@@ -366,10 +366,11 @@
                 class="view-switch"
                 role="group"
                 aria-label="Filtro por tipo"
+                id="mov-filtro-tipo"
               >
-                <button type="button" class="activa">Todos</button>
-                <button type="button">Egresos</button>
-                <button type="button">Ingresos</button>
+                <button type="button" class="activa" data-tipo="">Todos</button>
+                <button type="button" data-tipo="expense">Egresos</button>
+                <button type="button" data-tipo="income">Ingresos</button>
               </div>
             </div>
             <div class="filtros">
@@ -1116,6 +1117,18 @@
             <span class="btn-girador" aria-hidden="true"></span>
           </button>
 
+          <!-- Sólo al editar (Regla 11: la baja pide confirmación,
+               que resuelve movimientos.js con un confirm() nativo,
+               mismo criterio que el mockup aprobado). -->
+          <button
+            class="btn btn--peligro"
+            id="movimiento-borrar"
+            type="button"
+            hidden
+          >
+            Borrar movimiento
+          </button>
+
           <div class="ghost-note">
             <b>El importe siempre se ingresa positivo.</b> El sistema decide
             si contablemente suma o resta según el tipo elegido.
@@ -1483,6 +1496,7 @@
     <script type="module" src="/src/js/config-cuenta.js"></script>
     <script type="module" src="/src/js/config-categorias.js"></script>
     <script type="module" src="/src/js/alta-movimiento.js"></script>
+    <script type="module" src="/src/js/movimientos.js"></script>
     <script type="module" src="/src/js/app.js"></script>
     <script type="module" src="/src/js/registrar-sw.js"></script>
   </body>

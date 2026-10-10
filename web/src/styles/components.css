@@ -2690,6 +2690,17 @@
     var(--sh-sm);
 }
 
+/* ---- botón destructivo (F04-T12: borrar un movimiento, R11) ----
+   Tinte de `--color-crit`, la misma variable que ya usan las
+   severidades de alerta: borrar no es una acción más, pide la misma
+   alarma visual que un aviso crítico. */
+.btn--peligro {
+  margin-top: 10px;
+  border: 1px solid color-mix(in srgb, var(--color-crit) 38%, var(--line));
+  background: color-mix(in srgb, var(--color-crit) 12%, var(--glass-content-bg));
+  color: color-mix(in srgb, var(--color-crit) 75%, var(--color-ink));
+}
+
 .btn:hover:not(:disabled) {
   transform: translateY(-1px);
 }

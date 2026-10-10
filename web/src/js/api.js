@@ -132,7 +132,7 @@ async function request(path, options = {}, reintentar = true) {
   return cuerpo;
 }
 
-/** Las cuatro formas de pedir, listas para usar. Cada endpoint nuevo
+/** Las cinco formas de pedir, listas para usar. Cada endpoint nuevo
  * agrega una línea acá, no un `fetch` suelto en otro archivo: es lo
  * que mantiene el token, el reintento y el formato de error en un solo
  * lugar. */
@@ -144,6 +144,8 @@ export const api = {
     request(path, { method: "POST", body: datos === undefined ? undefined : JSON.stringify(datos) }),
   /** @param {string} path @param {object} datos */
   patch: (path, datos) => request(path, { method: "PATCH", body: JSON.stringify(datos) }),
+  /** @param {string} path @param {object} datos */
+  put: (path, datos) => request(path, { method: "PUT", body: JSON.stringify(datos) }),
   /** @param {string} path */
   del: (path) => request(path, { method: "DELETE" }),
 };

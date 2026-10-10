@@ -143,19 +143,11 @@ function filasDeMovimientos(lista) {
   return salida;
 }
 
-function movimientos() {
-  pintarFilas($("movimientos-lista"), filasDeMovimientos(D.MOVIMIENTOS));
-
-  const select = $("mov-categoria");
-  if (select) {
-    const nombres = [...new Set(D.MOVIMIENTOS.map((m) => m.categoria))].sort();
-    select.innerHTML =
-      '<option value="">Todas las categorías</option>' +
-      nombres
-        .map((n) => `<option value="${esc(n)}">${esc(n)}</option>`)
-        .join("");
-  }
-}
+// La lista de `#movimientos-lista` y el filtro `#mov-categoria`:
+// F04-T12 los reemplazó por datos reales de `GET /api/transactions` y
+// `GET /api/categories`, pintados por `movimientos.js`. Ya no hay
+// nada de muestra que escribir acá — mismo caso que las categorías de
+// `config()`, más abajo.
 
 /* --------------------------------------------------------- historial */
 
@@ -303,7 +295,6 @@ function config() {
 
 export function pintarVistas() {
   inicio();
-  movimientos();
   historial();
   cartera();
   patrimonio();
@@ -338,10 +329,18 @@ function conectarControles() {
   });
 }
 
-/* La hoja de detalle, que abre cualquier fila de las listas. El
-   contenido real —los datos del movimiento o de la categoría— es de la
-   fase 4; acá toma el nombre de la fila para que se vea que es ESA la
-   que se abrió. */
+/* La hoja de detalle, que abre cualquier fila de muestra. El
+   contenido real de una categoría es de la fase 7, todavía sin
+   construir; acá toma el nombre de la fila para que se vea que es ESA
+   la que se abrió.
+
+   Las filas de movimiento de `#movimientos-lista` NO pasan por acá
+   desde F04-T12: son datos reales y `movimientos.js` tiene su propio
+   oyente, scoped a esa lista, que abre `#hoja-movimiento` en modo
+   edición. Sin esta exclusión, un toque ahí abriría las dos hojas a
+   la vez — la de muestra y la real. Las de `#movimientos-inicio` (el
+   tablero) siguen siendo de muestra hasta la Fase 5 y mantienen este
+   stub. */
 function conectarDetalle() {
   const hoja = $("hoja-detalle");
   const control = hoja && crearHoja(hoja);
@@ -349,7 +348,7 @@ function conectarDetalle() {
 
   document.addEventListener("click", (ev) => {
     const fila = ev.target.closest("[data-movimiento], [data-categoria]");
-    if (!fila) return;
+    if (!fila || fila.closest("#movimientos-lista")) return;
 
     // textContent y no innerHTML: lo que se lee del DOM se trata como
     // dato, aunque lo haya escrito esta misma aplicación.
