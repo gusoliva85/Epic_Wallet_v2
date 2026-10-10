@@ -227,12 +227,12 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Hacer:** validación pura de un movimiento (importe > 0, fecha dentro del mes, categoría del tipo correcto, descripción opcional con límite) y la función de recálculo que, dados los movimientos, devuelve los totales por tipo y por categoría.
   **Aceptación:** · importe cero o negativo se rechaza · una fecha fuera del mes se rechaza · una categoría de ingreso en un egreso se rechaza · el recálculo de un mes sin movimientos da todos los totales en cero, no error.
 
-- [~] **F04-T03 · Tablas `transactions` y `monthly_category_totals`**
+- [x] **F04-T03 · Tablas `transactions` y `monthly_category_totals`**
   **Tipo:** Backend · **Ref:** Técnico §6.2 · *fusiona F04-T03 y F04-T04*
   **Hacer:** modelos y migración con `numeric(14,2)`, `check (amount > 0)`, `unique (user_id, source, external_id)` para la anti-duplicación futura, `is_manual_summary` en los totales, RLS y triggers.
   **Aceptación:** · un importe negativo lo rechaza la base, no sólo el servicio · `downgrade` probado · los centavos no se redondean solos.
 
-- [ ] **F04-T05 · Servicio de recálculo transaccional**
+- [~] **F04-T05 · Servicio de recálculo transaccional**
   **Tipo:** Backend · **Ref:** Técnico §7.2
   **Hacer:** servicio que al escribir un movimiento recalcula en **una sola transacción** los totales del mes y los totales por categoría.
   **Aceptación:** · si el recálculo falla, el movimiento no queda guardado a medias · cargar un movimiento deja los totales coherentes con la suma de los movimientos.

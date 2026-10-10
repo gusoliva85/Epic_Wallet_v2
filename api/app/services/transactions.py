@@ -1,19 +1,22 @@
 """Lógica de movimientos: validación y recálculo del mes · F04-T01.
+Servicio de recálculo transaccional desde F04-T05.
 
-Referencia: 02_Documento_Tecnico.md §6.2, §9.4 · General §8 (entidad,
-fecha, importe, descripción), Reglas 5 y 6 (ingreso aumenta el
-ahorro, egreso lo disminuye)
+Referencia: 02_Documento_Tecnico.md §6.2, §7.2, §9.4 · General §8
+(entidad, fecha, importe, descripción), Reglas 5 y 6 (ingreso aumenta
+el ahorro, egreso lo disminuye)
 
-Funciones puras, sin base de datos — mismo criterio que
-`services/months.py` y `services/categories.py`: reciben números (o
-una lista de movimientos ya armada) y devuelven números. Lo que SÍ
-necesita la base —que la categoría exista y esté activa— no vive
-acá; eso lo valida el repositorio cuando `transactions` exista
-(F04-T03).
+La parte de arriba es cálculo puro, sin base de datos — mismo
+criterio que `services/months.py` y `services/categories.py`: reciben
+números (o una lista de movimientos ya armada) y devuelven números.
 
-Si una categoría le sirve a un movimiento de cierto tipo ya lo
-resuelve `tipo_coincide` en `services/categories.py` (construida en
-F03-T08 justo para esto): no se repite acá, se importa.
+Desde "Escribir un movimiento y recalcular" para abajo, la excepción:
+`crear_movimiento`, `actualizar_movimiento` y `borrar_movimiento`
+tocan la base, igual que `services.months.abrir_mes_actual` es la
+única función de ese archivo que lo hace. No validan nada de
+`category_id` ni de tipo —eso es `tipo_coincide` de
+`services/categories.py`, y lo llama el router (F04-T06): acá sólo se
+garantiza que escribir y recalcular pasa junto, en la misma
+transacción.
 """
 
 from __future__ import annotations
@@ -22,6 +25,11 @@ import datetime as dt
 import decimal
 from typing import NamedTuple
 
+from sqlalchemy.orm import Session
+
+from ..models import Month, Transaction
+from ..repos import monthly_category_totals as repos_totales
+from ..repos import transactions as repos_movimientos
 from .months import Periodo
 
 # General §8.5: la descripción es opcional y no tiene mínimo, sólo
@@ -102,3 +110,85 @@ def recalcular_mes(movimientos: list[Movimiento]) -> TotalesDelMes:
         saving_total=income_total - expense_total,
         por_categoria=por_categoria,
     )
+
+
+# ===================================================================
+#  Escribir un movimiento y recalcular · F04-T05
+# ===================================================================
+
+
+def recalcular_y_guardar_mes(sesion: Session, mes: Month) -> TotalesDelMes:
+    """Relee los movimientos de `mes` desde la base, los recalcula con
+    `recalcular_mes` y deja el resultado guardado en `months` y en
+    `monthly_category_totals`.
+
+    No hace `sesion.commit()`: vive en la misma sesión que la
+    escritura que la llamó (`crear_movimiento`, etc.), así que si algo
+    de esto falla —la base abajo, una restricción— la excepción sube
+    y el `rollback` de `sesion_de_usuario` deshace también el
+    movimiento que lo disparó. Es lo que pide el criterio de
+    aceptación de la tarea: nunca un movimiento guardado a medias.
+    """
+    filas = repos_movimientos.listar_por_mes(sesion, mes.id)
+    movimientos = [
+        Movimiento(category_id=f.category_id, transaction_type=f.transaction_type, amount=f.amount)
+        for f in filas
+    ]
+    totales = recalcular_mes(movimientos)
+
+    mes.income_total = totales.income_total
+    mes.expense_total = totales.expense_total
+    mes.saving_total = totales.saving_total
+
+    repos_totales.reemplazar_automaticos(
+        sesion, user_id=mes.user_id, month_id=mes.id, totales=totales.por_categoria
+    )
+    sesion.flush()
+    return totales
+
+
+def crear_movimiento(
+    sesion: Session,
+    mes: Month,
+    *,
+    user_id: str,
+    category_id: int,
+    transaction_date: dt.date,
+    transaction_type: str,
+    amount: decimal.Decimal,
+    description: str | None = None,
+) -> Transaction:
+    """Inserta el movimiento y recalcula `mes` en la misma transacción."""
+    movimiento = repos_movimientos.crear(
+        sesion,
+        user_id=user_id,
+        month_id=mes.id,
+        category_id=category_id,
+        transaction_date=transaction_date,
+        transaction_type=transaction_type,
+        amount=amount,
+        description=description,
+    )
+    recalcular_y_guardar_mes(sesion, mes)
+    return movimiento
+
+
+def actualizar_movimiento(
+    sesion: Session, mes: Month, movimiento: Transaction, cambios: dict[str, object]
+) -> Transaction:
+    """Aplica `cambios` sobre `movimiento` y recalcula `mes`.
+
+    `cambios` ya viene filtrado por quien llama (el router de
+    F04-T06, con `exclude_unset`) — acá no se decide qué campos son
+    válidos, sólo se asignan y se recalcula."""
+    for campo, valor in cambios.items():
+        setattr(movimiento, campo, valor)
+    sesion.flush()
+    recalcular_y_guardar_mes(sesion, mes)
+    return movimiento
+
+
+def borrar_movimiento(sesion: Session, mes: Month, movimiento: Transaction) -> None:
+    """Borra el movimiento y recalcula `mes` en la misma transacción."""
+    repos_movimientos.eliminar(sesion, movimiento)
+    recalcular_y_guardar_mes(sesion, mes)
