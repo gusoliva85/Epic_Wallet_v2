@@ -209,7 +209,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Hacer:** validación de nombre y tipo, con `unique (user_id, type, name)`; verificar que la siembra del trigger de `F02-T04` dejó las 21 categorías en orden; `GET`, `POST`, `PATCH` y `DELETE` de categorías, con `on delete restrict` si tiene histórico.
   **Aceptación:** · dos categorías con el mismo nombre y tipo se rechazan · una categoría con movimientos no se puede borrar y el mensaje lo explica · una categoría de ingreso no sirve para un egreso.
 
-- [~] **F03-T10 · Barra de mes conectada y administración de categorías**
+- [x] **F03-T10 · Barra de mes conectada y administración de categorías**
   **Tipo:** Frontend · **Ref:** Técnico §12.2 · *fusiona F03-T10, F03-T11 y F03-T12*
   **Hacer:** la barra de mes consumiendo la API, con flechas deshabilitadas en los extremos y botón «Hoy»; caché por mes en memoria que se invalida al escribir; pantalla de administración de categorías en configuración.
   **Aceptación:** · navegar entre meses no recarga la página · volver a un mes ya visto no vuelve a pedirlo · después de dar de alta un movimiento el mes se vuelve a pedir · se agrega, renombra y archiva una categoría desde el celular.
@@ -222,12 +222,12 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 
 **Al cerrar esta fase:** apretás `+`, cargás un gasto en el celular, y los totales del mes cambian al instante.
 
-- [~] **F04-T01 · Lógica de validación y recálculo del mes**
+- [x] **F04-T01 · Lógica de validación y recálculo del mes**
   **Tipo:** Cálculo · **Ref:** General §8, §37, §51 · *fusiona F04-T01 y F04-T02*
   **Hacer:** validación pura de un movimiento (importe > 0, fecha dentro del mes, categoría del tipo correcto, descripción opcional con límite) y la función de recálculo que, dados los movimientos, devuelve los totales por tipo y por categoría.
   **Aceptación:** · importe cero o negativo se rechaza · una fecha fuera del mes se rechaza · una categoría de ingreso en un egreso se rechaza · el recálculo de un mes sin movimientos da todos los totales en cero, no error.
 
-- [ ] **F04-T03 · Tablas `transactions` y `monthly_category_totals`**
+- [~] **F04-T03 · Tablas `transactions` y `monthly_category_totals`**
   **Tipo:** Backend · **Ref:** Técnico §6.2 · *fusiona F04-T03 y F04-T04*
   **Hacer:** modelos y migración con `numeric(14,2)`, `check (amount > 0)`, `unique (user_id, source, external_id)` para la anti-duplicación futura, `is_manual_summary` en los totales, RLS y triggers.
   **Aceptación:** · un importe negativo lo rechaza la base, no sólo el servicio · `downgrade` probado · los centavos no se redondean solos.

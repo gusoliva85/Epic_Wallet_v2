@@ -10,6 +10,17 @@ from . import supabase as _supabase  # noqa: F401
 from .base import Base, esquema_actual, metadata
 from .category import Category
 from .month import Month
+from .monthly_category_total import MonthlyCategoryTotal
 from .profile import Profile
+from .transaction import Transaction
 
-__all__ = ["Base", "Category", "Month", "Profile", "esquema_actual", "metadata"]
+__all__ = [
+    "Base",
+    "Category",
+    "Month",
+    "MonthlyCategoryTotal",
+    "Profile",
+    "Transaction",
+    "esquema_actual",
+    "metadata",
+]
