@@ -64,6 +64,49 @@ def test_un_mes_sin_movimientos_da_todo_en_cero() -> None:
 
 
 # ===================================================================
+#  participacion · la forma general detrás de tasa_de_ahorro y share
+# ===================================================================
+
+
+@pytest.mark.unit
+def test_participacion_con_total_en_cero_da_none() -> None:
+    assert calc.participacion(D("500"), D("0")) is None
+
+
+@pytest.mark.unit
+def test_participacion_calcula_el_porcentaje() -> None:
+    assert calc.participacion(D("553000.00"), D("2419425.00")) == D("22.86")
+
+
+# ===================================================================
+#  variacion_porcentual · el vs_previous del dashboard
+# ===================================================================
+
+
+@pytest.mark.unit
+def test_variacion_con_el_mes_anterior_en_cero_da_none() -> None:
+    assert calc.variacion_porcentual(D("1000"), D("0")) is None
+
+
+@pytest.mark.unit
+def test_variacion_positiva_cuando_sube() -> None:
+    assert calc.variacion_porcentual(D("110"), D("100")) == D("10.00")
+
+
+@pytest.mark.unit
+def test_variacion_negativa_cuando_baja() -> None:
+    assert calc.variacion_porcentual(D("90"), D("100")) == D("-10.00")
+
+
+@pytest.mark.unit
+def test_variacion_con_base_negativa_usa_el_valor_absoluto() -> None:
+    # Pasar de -$100.000 a -$50.000 de ahorro es una mejora: tiene que
+    # dar positivo, no negativo (si se dividiera por el -100 tal cual
+    # daría -50%, lo contrario de lo que pasó).
+    assert calc.variacion_porcentual(D("-50"), D("-100")) == D("50.00")
+
+
+# ===================================================================
 #  tasa_de_ahorro · el caso borde central de la tarea
 # ===================================================================
 

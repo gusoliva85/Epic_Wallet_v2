@@ -126,6 +126,36 @@ def test_un_mes_pasado_no_es_futuro() -> None:
     assert months.es_mes_futuro(months.Periodo(2025, 12), actual) is False
 
 
+# ----------------------------------------------------- dias_transcurridos
+
+
+@pytest.mark.unit
+def test_el_mes_en_curso_da_el_dia_de_hoy() -> None:
+    ahora = dt.datetime(2026, 10, 15, 9, 0, tzinfo=months.ZONA_APP)
+    assert months.dias_transcurridos(months.Periodo(2026, 10), ahora) == 15
+
+
+@pytest.mark.unit
+def test_un_mes_anterior_da_todos_sus_dias() -> None:
+    # Septiembre ya terminó entero: no hay meses futuros (Regla 1), así
+    # que cualquier mes que no sea el actual ya pasó completo.
+    ahora = dt.datetime(2026, 10, 15, 9, 0, tzinfo=months.ZONA_APP)
+    assert months.dias_transcurridos(months.Periodo(2026, 9), ahora) == 30
+
+
+@pytest.mark.unit
+def test_un_mes_anterior_de_febrero_respeta_el_bisiesto() -> None:
+    ahora = dt.datetime(2026, 3, 1, 9, 0, tzinfo=months.ZONA_APP)
+    assert months.dias_transcurridos(months.Periodo(2024, 2), ahora) == 29  # bisiesto
+    assert months.dias_transcurridos(months.Periodo(2026, 2), ahora) == 28
+
+
+@pytest.mark.unit
+def test_el_primer_dia_del_mes_en_curso_da_uno() -> None:
+    ahora = dt.datetime(2026, 10, 1, 0, 30, tzinfo=months.ZONA_APP)
+    assert months.dias_transcurridos(months.Periodo(2026, 10), ahora) == 1
+
+
 # -------------------------------------------------------- estado_valido
 
 

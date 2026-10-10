@@ -265,7 +265,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Hacer:** `services/calc.py` con ingresos, gastos, ahorro del mes, tasa de ahorro, ahorro acumulado, total de inversiones y patrimonio; la serie diaria del mes con el ahorro acumulado día a día; y los casos borde obligatorios de la sección 7.1.
   **Aceptación:** · **tasa de ahorro con ingresos en cero devuelve `null`, no un error ni una división** · un mes vacío da ceros · la serie diaria de un mes histórico es `null` · cada función tiene su test y son todas puras: reciben números y devuelven números.
 
-- [ ] **F05-T04 · Servicio y endpoint `/api/dashboard`**
+- [~] **F05-T04 · Servicio y endpoint `/api/dashboard`**
   **Tipo:** Backend · **Ref:** Técnico §9.2 · *fusiona F05-T04, F05-T05 y F05-T06*
   **Hacer:** el contrato central de la sección 9.2 en **una sola llamada** que trae indicadores, serie diaria, últimos seis meses, desglose por categoría y últimos movimientos.
   **Aceptación:** · una sola petición alimenta todo el dashboard · un mes histórico responde con `transactions: null` y sin serie diaria · responde en menos de 400 ms desde la función desplegada.

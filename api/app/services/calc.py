@@ -43,6 +43,18 @@ def ahorro_del_mes(ingresos: decimal.Decimal, gastos: decimal.Decimal) -> decima
     return money(ingresos - gastos)
 
 
+def participacion(parte: decimal.Decimal, total: decimal.Decimal) -> decimal.Decimal | None:
+    """Qué porcentaje es `parte` de `total`. `None` con `total` en
+    cero — nunca una división (Técnico §7.1, primera fila). Es la
+    forma general detrás de `tasa_de_ahorro` (el ahorro sobre los
+    ingresos) y del `share` de cada categoría en el desglose del
+    dashboard (F05-T04): la misma cuenta, dos nombres según de dónde
+    se la mire."""
+    if total == 0:
+        return None
+    return money(parte / total * 100)
+
+
 def tasa_de_ahorro(
     ingresos: decimal.Decimal, ahorro: decimal.Decimal
 ) -> decimal.Decimal | None:
@@ -50,9 +62,26 @@ def tasa_de_ahorro(
     (criterio de aceptación de la tarea; Técnico §7.1, primera fila).
     La interfaz es quien decide mostrar «N/A» con ese `None`, acá sólo
     se evita la división por cero."""
-    if ingresos == 0:
+    return participacion(ahorro, ingresos)
+
+
+def variacion_porcentual(
+    actual: decimal.Decimal, anterior: decimal.Decimal
+) -> decimal.Decimal | None:
+    """Cuánto cambió `actual` respecto de `anterior`, en porcentaje —
+    el `vs_previous` del contrato del dashboard (Técnico §9.2).
+    `None` con `anterior` en cero: no hay variación que calcular desde
+    la nada, mismo criterio que el resto de esta familia.
+
+    Se divide por el `abs()` de `anterior` y no por `anterior` tal
+    cual: el ahorro de un mes puede ser negativo, y dividir por un
+    número negativo invierte el signo del resultado — pasar de
+    -$100.000 a -$50.000 es una mejora (el ahorro aumentó) y tiene que
+    dar positivo, no negativo.
+    """
+    if anterior == 0:
         return None
-    return money(ahorro / ingresos * 100)
+    return money((actual - anterior) / abs(anterior) * 100)
 
 
 def ahorro_acumulado(

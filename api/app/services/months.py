@@ -16,6 +16,7 @@ consultar y no decide nada.
 
 from __future__ import annotations
 
+import calendar
 import datetime as dt
 from typing import Literal, NamedTuple
 from zoneinfo import ZoneInfo
@@ -94,6 +95,28 @@ def es_mes_futuro(periodo: Periodo, referencia: Periodo) -> bool:
     "Hoy" cuando esto da `True` (skill, "Barra de mes").
     """
     return (periodo.year, periodo.month) > (referencia.year, referencia.month)
+
+
+def dias_transcurridos(periodo: Periodo, ahora: dt.datetime | None = None) -> int:
+    """Cuántos días de `periodo` ya pasaron — lo que necesita el
+    gráfico diario del dashboard (F05-T04, Técnico §9.2, campo
+    `daily.days`) para saber hasta qué día armar la serie.
+
+    El mes en curso da el día de hoy (no tiene sentido mostrar días
+    que todavía no llegaron); cualquier otro mes —siempre anterior,
+    porque no hay meses futuros (Regla 1)— ya terminó entero, así que
+    da la cantidad total de días de ese mes.
+
+    `ahora` es para las pruebas, igual que en `mes_actual`.
+    """
+    if periodo == mes_actual(ahora):
+        momento = ahora if ahora is not None else dt.datetime.now(ZONA_APP)
+        if momento.tzinfo is None:
+            momento = momento.replace(tzinfo=ZONA_APP)
+        else:
+            momento = momento.astimezone(ZONA_APP)
+        return momento.day
+    return calendar.monthrange(periodo.year, periodo.month)[1]
 
 
 def origen_de_totales(status: str) -> Literal["transactions", "stored"]:
