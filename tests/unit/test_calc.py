@@ -228,3 +228,24 @@ def test_la_serie_diaria_puede_bajar_de_cero() -> None:
 def test_la_serie_diaria_exige_las_dos_listas_del_mismo_largo() -> None:
     with pytest.raises(ValueError):
         calc.serie_de_ahorro_diaria(ABIERTO, [D("1"), D("2")], [D("1")])
+
+
+# ===================================================================
+#  serie_acumulada · modo "Acumulado" del gráfico diario (F06-T02)
+# ===================================================================
+
+
+@pytest.mark.unit
+def test_serie_acumulada_suma_dia_a_dia() -> None:
+    serie = calc.serie_acumulada([D("500000.00"), D("0"), D("15000.00")])
+    assert serie == [D("500000.00"), D("500000.00"), D("515000.00")]
+
+
+@pytest.mark.unit
+def test_serie_acumulada_con_la_lista_vacia_da_la_lista_vacia() -> None:
+    assert calc.serie_acumulada([]) == []
+
+
+@pytest.mark.unit
+def test_serie_acumulada_con_puros_ceros_da_ceros() -> None:
+    assert calc.serie_acumulada([D("0"), D("0")]) == [D("0.00"), D("0.00")]

@@ -85,6 +85,12 @@ export function vacio(titulo, texto = "") {
  * No se reusa `vacio()` a propósito: decir «no hay movimientos» de un
  * mes consolidado es falso. Los movimientos existieron; lo que se
  * guarda son los totales.
+ *
+ * El mismo estado sirve para la lista de movimientos (`movimientos.js`)
+ * y para el gráfico diario (`dashboard.js`, F06-T02): ninguno de los
+ * dos tiene de dónde sacar un detalle día a día de un mes histórico,
+ * así que el texto habla de «detalle día a día» y no de «lista», que
+ * sólo tendría sentido en uno de los dos lugares.
  */
 export function consolidado() {
   return estado({
@@ -93,7 +99,7 @@ export function consolidado() {
     titulo: "Información histórica consolidada",
     texto:
       "De este mes se conservan los totales. Un total histórico no se " +
-      "desglosa en movimientos, así que no hay una lista para mostrar.",
+      "desglosa en movimientos, así que no hay un detalle día a día para mostrar.",
   });
 }
 

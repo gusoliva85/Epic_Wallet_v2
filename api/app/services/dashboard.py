@@ -61,6 +61,8 @@ class SerieDiaria(NamedTuple):
     income: list[decimal.Decimal]
     expense: list[decimal.Decimal]
     saving_cumulative: list[decimal.Decimal]
+    income_cumulative: list[decimal.Decimal]
+    expense_cumulative: list[decimal.Decimal]
     peak_expense: PicoDeGasto | None
     days_without_expense: int
 
@@ -282,6 +284,8 @@ def armar(
             income=ingresos_por_dia,
             expense=egresos_por_dia,
             saving_cumulative=serie,
+            income_cumulative=calc.serie_acumulada(ingresos_por_dia),
+            expense_cumulative=calc.serie_acumulada(egresos_por_dia),
             peak_expense=_pico_de_gasto(egresos_por_dia),
             days_without_expense=sum(1 for e in egresos_por_dia if e == 0),
         )

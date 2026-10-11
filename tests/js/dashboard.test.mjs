@@ -1,18 +1,20 @@
-/* Pruebas de los seis indicadores del tablero · F05-T07
-   Se corren con `npm test` (`node --test tests/js/*.test.mjs`).
+/* Pruebas del tablero de Inicio: tarjetas (F05-T07) y gráfico diario
+   (F06-T02). Se corren con `npm test` (`node --test tests/js/*.test.mjs`).
 
    Misma técnica que `movimientos.test.mjs`: el módulo se carga con
    `api.get` doblado (para no depender de una red de verdad) y
    `EVENTO_CAMBIO` reemplazado por su valor literal, en vez de importar
-   `barra-mes.js` entero. `kpi.js`, `format.js` y `estados.js` SÍ se
-   importan de verdad: son los que deciden qué cifra va en qué tarjeta,
-   y es justo lo que estas pruebas tienen que proteger.
+   `barra-mes.js` entero. `kpi.js`, `format.js`, `estados.js` y
+   `charts/diario.js` SÍ se importan de verdad: son los que deciden qué
+   cifra va en qué tarjeta y cómo se dibuja el gráfico, y es justo lo
+   que estas pruebas tienen que proteger.
 
-   Los criterios de aceptación de la tarea, cada uno con su prueba: los
-   seis indicadores muestran lo mismo que la API, un mes sin datos
-   muestra ceros con su explicación (no una pantalla en blanco ni un
-   error), y con la red caída se ve un error entendible con botón para
-   reintentar. */
+   Los criterios de aceptación, cada uno con su prueba: las tarjetas y
+   el gráfico muestran lo mismo que la API, un mes sin datos muestra
+   ceros con su explicación (no una pantalla en blanco ni un error), un
+   mes histórico muestra el estado consolidado en vez de inventar una
+   serie diaria (Regla 4), y con la red caída se ve un error entendible
+   con botón para reintentar. */
 
 import { test, describe, after } from "node:test";
 import assert from "node:assert/strict";
@@ -47,20 +49,24 @@ async function cargarConDobles() {
       "const api = { get: (...a) => globalThis.__espia.apiGet(...a) };",
     )
     .replace(
-      'import { fmt, fmtS, pct, pctPlano } from "./format.js";',
-      `import { fmt, fmtS, pct, pctPlano } from "${rutaAbsoluta("format.js")}";`,
+      'import { esc, fmt, fmtS, pct, pctPlano } from "./format.js";',
+      `import { esc, fmt, fmtS, pct, pctPlano } from "${rutaAbsoluta("format.js")}";`,
     )
     .replace(
       'import { tarjetaHeroe, tarjetaMetrica, pintarTarjetas, animarCifras } from "./components/kpi.js";',
       `import { tarjetaHeroe, tarjetaMetrica, pintarTarjetas, animarCifras } from "${rutaAbsoluta("components", "kpi.js")}";`,
     )
     .replace(
-      'import { bloqueCargando, error as estadoError } from "./components/estados.js";',
-      `import { bloqueCargando, error as estadoError } from "${rutaAbsoluta("components", "estados.js")}";`,
+      'import { bloqueCargando, error as estadoError, consolidado } from "./components/estados.js";',
+      `import { bloqueCargando, error as estadoError, consolidado } from "${rutaAbsoluta("components", "estados.js")}";`,
     )
     .replace(
       'import { EVENTO_CAMBIO } from "./barra-mes.js";',
       'const EVENTO_CAMBIO = "mes:cambiado";',
+    )
+    .replace(
+      'import { dibujar as dibujarGraficoDiario, MODOS as MODOS_DIARIO } from "./charts/diario.js";',
+      `import { dibujar as dibujarGraficoDiario, MODOS as MODOS_DIARIO } from "${rutaAbsoluta("charts", "diario.js")}";`,
     );
 
   const unico = `\n// ${Math.random()}\n`;
@@ -110,7 +116,9 @@ function respuestaBase() {
       days: 10,
       income: Array(10).fill("0.00"),
       expense: Array(9).fill("0.00").concat(["15000.00"]),
-      saving_cumulative: Array(10).fill("0.00"),
+      saving_cumulative: Array(9).fill("0.00").concat(["-15000.00"]),
+      income_cumulative: Array(10).fill("0.00"),
+      expense_cumulative: Array(9).fill("0.00").concat(["15000.00"]),
       peak_expense: { day: 10, amount: "15000.00" },
       days_without_expense: 9,
     },
@@ -132,14 +140,23 @@ function conCambios(base, cambios) {
   return copia;
 }
 
+const HTML_INICIO = `<!doctype html><html><body>
+  <div class="kpi-grid stagger" id="kpis-inicio"></div>
+  <div class="view-switch" id="diario-modo">
+    <button type="button" class="activa" data-modo="ambos">Ambos</button>
+    <button type="button" data-modo="egresos">Egresos</button>
+    <button type="button" data-modo="ingresos">Ingresos</button>
+    <button type="button" data-modo="acumulado">Acumulado</button>
+  </div>
+  <div class="chart-wrap" id="grafico-diario"></div>
+  <div class="chart-foot" id="pie-diario"></div>
+</body></html>`;
+
 async function montar({ apiGet } = {}) {
-  const dom = new JSDOM(
-    `<!doctype html><html><body><div class="kpi-grid stagger" id="kpis-inicio"></div></body></html>`,
-    {
-      url: "https://epic-wallet-v2.vercel.app/#/inicio",
-      pretendToBeVisual: true,
-    },
-  );
+  const dom = new JSDOM(HTML_INICIO, {
+    url: "https://epic-wallet-v2.vercel.app/#/inicio",
+    pretendToBeVisual: true,
+  });
   ventanas.push(dom.window);
 
   globalThis.window = dom.window;
@@ -161,7 +178,16 @@ async function montar({ apiGet } = {}) {
   };
 
   const mod = await cargarConDobles();
-  return { dom, mod, llamadas, caja: dom.window.document.getElementById("kpis-inicio") };
+  const $$ = (id) => dom.window.document.getElementById(id);
+  return {
+    dom,
+    mod,
+    llamadas,
+    caja: $$("kpis-inicio"),
+    grafico: $$("grafico-diario"),
+    pie: $$("pie-diario"),
+    modoDiario: $$("diario-modo"),
+  };
 }
 
 const esperar = (ms = 10) => new Promise((listo) => setTimeout(listo, ms));
@@ -391,9 +417,126 @@ describe("mes nuevo sin movimientos", () => {
   });
 });
 
+describe("el gráfico diario (F06-T02)", () => {
+  test("dibuja un svg de verdad en #grafico-diario", async () => {
+    const { dom, grafico } = await montar();
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    assert.ok(grafico.querySelector("svg"), "tiene que haber un <svg>");
+  });
+
+  test("el pie de cifras muestra el ahorro acumulado hoy, el pico de gasto y los días sin gasto", async () => {
+    const { dom, pie } = await montar();
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    const texto = pie.textContent;
+    assert.match(texto, /Ahorro acumulado hoy/);
+    assert.match(texto, /−\$15\.000/); // saving_cumulative.at(-1) de la base
+    assert.match(texto, /Pico de gasto/);
+    assert.match(texto, /\$15\.000 · día 10/);
+    assert.match(texto, /Días sin gasto9/); // sin separador: .num es el hermano directo de .span
+  });
+
+  test("sin gastos todavía, el pico de gasto lo dice en vez de mostrar un día inventado", async () => {
+    const { dom, pie } = await montar({
+      apiGet: async () => conCambios(respuestaBase(), [["daily.peak_expense", null]]),
+    });
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    assert.match(pie.textContent, /Sin gastos todavía/);
+  });
+
+  test("el modo por defecto es «ambos»: barras, sin áreas acumuladas", async () => {
+    const { dom, grafico } = await montar();
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    assert.ok(grafico.querySelector("rect.bar"), "tiene que haber barras");
+    assert.equal(grafico.querySelector("linearGradient"), null, "el modo 'ambos' no es el acumulado");
+  });
+
+  test("tocar «Acumulado» redibuja con las áreas, sin barras", async () => {
+    const { dom, grafico, modoDiario } = await montar();
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    modoDiario.querySelector('[data-modo="acumulado"]').click();
+
+    assert.equal(grafico.querySelector("rect.bar"), null, "el modo acumulado no dibuja barras");
+    assert.ok(grafico.querySelector("linearGradient"), "el modo acumulado dibuja las áreas con gradiente");
+  });
+
+  test("volver a «Ambos» redibuja las barras de nuevo", async () => {
+    const { dom, grafico, modoDiario } = await montar();
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    modoDiario.querySelector('[data-modo="acumulado"]').click();
+    modoDiario.querySelector('[data-modo="ambos"]').click();
+
+    assert.ok(grafico.querySelector("rect.bar"));
+  });
+
+  test("tocar el modo que ya está activo no pide nada de nuevo ni rompe", async () => {
+    const { dom, grafico, modoDiario } = await montar();
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    modoDiario.querySelector('[data-modo="ambos"]').click();
+    assert.ok(grafico.querySelector("rect.bar"));
+  });
+
+  test("un mes histórico muestra el estado consolidado, no un gráfico inventado (Regla 4)", async () => {
+    const { dom, grafico, pie } = await montar({
+      apiGet: async () =>
+        conCambios(respuestaBase(), [
+          ["month.status", "historical"],
+          ["month.consolidated", true],
+          ["month.is_current", false],
+          ["daily", null],
+          ["recent_transactions", null],
+        ]),
+    });
+    await esperar();
+    cambiarMes(dom, { id: 4, year: 2026, month: 7, status: "historical" });
+    await esperar();
+
+    // No cualquier <svg>: el estado "consolidado" trae su propio
+    // ícono en un <svg> (estados.js). Lo que no tiene que existir es
+    // el gráfico en sí — sus barras, su línea, su grilla.
+    assert.equal(grafico.querySelector(".bar, .lineseries, .gridline"), null, "un mes histórico no inventa una serie diaria");
+    assert.match(grafico.textContent, /consolidad/i);
+    assert.equal(pie.innerHTML, "", "sin cifras que no haya — Regla 4");
+  });
+
+  test("mientras carga, se ve un esqueleto de gráfico, no la pantalla en blanco", async () => {
+    let resolver;
+    const { dom, grafico } = await montar({
+      apiGet: () => new Promise((listo) => (resolver = listo)),
+    });
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    assert.ok(grafico.querySelector(".esqueleto--grafico"), "tiene que haber un esqueleto");
+    resolver(respuestaBase());
+    await esperar();
+  });
+});
+
 describe("si la API falla", () => {
   test("muestra un error entendible con botón para reintentar, no rompe la pantalla", async () => {
-    const { dom, caja } = await montar({
+    const { dom, caja, grafico } = await montar({
       apiGet: async () => {
         throw new Error("sin red");
       },
@@ -405,6 +548,7 @@ describe("si la API falla", () => {
     const reintentar = caja.querySelector("[data-reintentar]");
     assert.ok(reintentar, "tiene que haber un botón para reintentar");
     assert.equal(caja.querySelectorAll(".kpi").length, 0);
+    assert.ok(grafico.querySelector("[data-reintentar]"), "el gráfico también tiene que ofrecer reintentar");
   });
 
   test("tocar reintentar vuelve a pedir el mismo período", async () => {

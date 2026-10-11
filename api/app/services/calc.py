@@ -143,3 +143,19 @@ def serie_de_ahorro_diaria(
         acumulado += ingreso - egreso
         serie.append(money(acumulado))
     return serie
+
+
+def serie_acumulada(valores_por_dia: list[decimal.Decimal]) -> list[decimal.Decimal]:
+    """La suma corrida de una única lista de importes diarios —
+    ingresos acumulados o egresos acumulados del mes, para el modo
+    "Acumulado" del gráfico diario (Técnico §14.1). Separada de
+    `serie_de_ahorro_diaria` porque esa combina dos listas (ingreso
+    menos egreso); acá entra una sola, para que el frontend nunca
+    tenga que sumar plata él mismo con `float` — eso es lo que esta
+    función evita."""
+    serie: list[decimal.Decimal] = []
+    acumulado = decimal.Decimal("0")
+    for valor in valores_por_dia:
+        acumulado += valor
+        serie.append(money(acumulado))
+    return serie

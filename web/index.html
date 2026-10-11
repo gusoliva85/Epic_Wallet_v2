@@ -266,11 +266,12 @@
                 class="view-switch"
                 role="group"
                 aria-label="Modo del gráfico diario"
+                id="diario-modo"
               >
-                <button type="button" class="activa">Ambos</button>
-                <button type="button">Egresos</button>
-                <button type="button">Ingresos</button>
-                <button type="button">Acumulado</button>
+                <button type="button" class="activa" data-modo="ambos">Ambos</button>
+                <button type="button" data-modo="egresos">Egresos</button>
+                <button type="button" data-modo="ingresos">Ingresos</button>
+                <button type="button" data-modo="acumulado">Acumulado</button>
               </div>
             </div>
             <div class="legend">
@@ -290,16 +291,7 @@
                 Ahorro acumulado del mes (eje derecho)
               </span>
             </div>
-            <!-- Marcador de posición: el gráfico es de la fase 3. -->
-            <div class="grafico-pendiente" role="note">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M3 20h18M6 20V11M11 20V5M16 20v-7M21 20v-4" /></svg
-              ><b>Gráfico de comportamiento diario</b>
-              <p>
-                Barras de ingresos y egresos por día, con la línea del ahorro
-                acumulado sobre su propio eje. Llega en la fase 3.
-              </p>
-            </div>
+            <div class="chart-wrap" id="grafico-diario"></div>
             <div class="chart-foot" id="pie-diario"></div>
           </article>
 

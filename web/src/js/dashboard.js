@@ -1,13 +1,15 @@
-/* Los indicadores del tablero · F05-T07
-   Referencia: 01_Documento_General.md §12.2 · 02_Documento_Tecnico.md §9.2, §12.4-§12.6
+/* El tablero de Inicio: indicadores (F05-T07) y gráfico diario (F06-T02)
+   Referencia: 01_Documento_General.md §12.2, §13 · 02_Documento_Tecnico.md
+   §9.2, §12.4-§12.6, §14.1
 
-   Reemplaza en `#kpis-inicio` los datos de muestra que pintaba
-   `views/vistas.js` desde F01-T13. Pide `GET /api/dashboard?year&month`
-   del mes que esté mostrando la barra de mes — mismo patrón que
-   `movimientos.js` (F04-T12): un solo oyente de `barra-mes.EVENTO_CAMBIO`
-   cubre arrancar, moverse de mes, y cualquier alta/edición/baja que
-   invalide el caché de meses (la invalidación hace que la barra vuelva
-   a pedir la lista y dispare el evento de nuevo).
+   Pide `GET /api/dashboard?year&month` del mes que esté mostrando la
+   barra de mes — mismo patrón que `movimientos.js` (F04-T12): un solo
+   oyente de `barra-mes.EVENTO_CAMBIO` cubre arrancar, moverse de mes,
+   y cualquier alta/edición/baja que invalide el caché de meses. Esa
+   ÚNICA llamada alimenta las tarjetas Y el gráfico: por eso los dos
+   viven en este mismo archivo y comparten `cargando`/`fallo`/
+   `dashboard` — una segunda llamada a `/api/dashboard` sólo para el
+   gráfico duplicaría exactamente lo que F05-T04 evitó.
 
    Cinco tarjetas, las que ya estaban maquetadas desde F01-T13: ahorro
    del mes (héroe), ingresos, egresos, gasto de hoy y total de ahorros.
@@ -19,13 +21,18 @@
    inversiones (F10) — por ahora esta pantalla no muestra esa cifra en
    ningún lado. "Gasto de hoy" sólo tiene sentido mirando el mes actual:
    en cualquier otro mes se apaga con su propia explicación en vez de
-   mezclar el día de hoy con un mes que no es éste. */
+   mezclar el día de hoy con un mes que no es éste.
+
+   El gráfico diario (`daily`) es `null` en un mes histórico (Regla 4):
+   ahí se muestra el estado de `consolidado()`, nunca una serie
+   inventada. */
 
 import { api } from "./api.js";
-import { fmt, fmtS, pct, pctPlano } from "./format.js";
+import { esc, fmt, fmtS, pct, pctPlano } from "./format.js";
 import { tarjetaHeroe, tarjetaMetrica, pintarTarjetas, animarCifras } from "./components/kpi.js";
-import { bloqueCargando, error as estadoError } from "./components/estados.js";
+import { bloqueCargando, error as estadoError, consolidado } from "./components/estados.js";
 import { EVENTO_CAMBIO } from "./barra-mes.js";
+import { dibujar as dibujarGraficoDiario, MODOS as MODOS_DIARIO } from "./charts/diario.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -107,22 +114,93 @@ let dashboard = null;
 let cargando = true;
 let fallo = false;
 let ultimoPeriodo = null;
+let modoDiario = "ambos";
 
-function pintar() {
-  const caja = $("kpis-inicio");
-  if (!caja) return;
+// ===================================================================
+//  Gráfico diario (F06-T02)
+// ===================================================================
+
+/** Las cifras del pie del gráfico: sólo las que ya manda la API tal
+ * cual (`peak_expense`, `days_without_expense`) o leer el último
+ * valor de una serie que el servidor ya sumó — nunca una cuenta nueva
+ * del lado del cliente. Sin "promedio diario": esa cifra ya se sacó
+ * de la tarjeta "Gasto de hoy" por pedido de Gustavo, y repetirla acá
+ * sería lo mismo que evitar en ese otro lugar. */
+function pieDiario(daily) {
+  const pico = daily.peak_expense;
+  return [
+    { etiqueta: "Ahorro acumulado hoy", valor: fmtS(daily.saving_cumulative.at(-1)) },
+    { etiqueta: "Pico de gasto", valor: pico ? `${fmt(pico.amount)} · día ${pico.day}` : "Sin gastos todavía" },
+    { etiqueta: "Días sin gasto", valor: String(daily.days_without_expense) },
+  ];
+}
+
+function pintarPie(contenedor, items) {
+  contenedor.innerHTML = items
+    .map(
+      ({ etiqueta, valor }) =>
+        `<div class="mini cg"><span>${esc(etiqueta)}</span><b class="num">${esc(valor)}</b></div>`,
+    )
+    .join("");
+}
+
+function pintarGrafico() {
+  const caja = $("grafico-diario");
+  const pie = $("pie-diario");
+  if (!caja || !pie) return;
 
   if (cargando) {
-    caja.innerHTML = bloqueCargando("tarjeta", 5);
+    caja.innerHTML = bloqueCargando("grafico", 1);
+    pie.innerHTML = "";
     return;
   }
   if (fallo || !dashboard) {
-    caja.innerHTML = `<div style="grid-column: 1 / -1">${estadoError("No se pudieron cargar los indicadores.")}</div>`;
+    caja.innerHTML = estadoError("No se pudo cargar el gráfico diario.");
+    pie.innerHTML = "";
+    return;
+  }
+  if (dashboard.daily == null) {
+    // Regla 4: un mes histórico no tiene movimientos individuales que
+    // repartir por día, así que no hay serie que dibujar.
+    caja.innerHTML = consolidado();
+    pie.innerHTML = "";
     return;
   }
 
-  pintarTarjetas(caja, tarjetas(dashboard));
-  animarCifras(caja, valoresParaContar(dashboard));
+  caja.innerHTML = dibujarGraficoDiario(dashboard.daily, modoDiario);
+  pintarPie(pie, pieDiario(dashboard.daily));
+}
+
+function conectarModoDiario() {
+  const grupo = $("diario-modo");
+  grupo?.addEventListener("click", (ev) => {
+    const boton = /** @type {HTMLElement} */ (ev.target).closest("button[data-modo]");
+    if (!boton || !grupo.contains(boton)) return;
+    const modo = boton.dataset.modo;
+    if (!MODOS_DIARIO.includes(modo) || modo === modoDiario) return;
+    modoDiario = modo;
+    pintarGrafico();
+  });
+}
+
+// ===================================================================
+//  Las tarjetas (F05-T07)
+// ===================================================================
+
+function pintar() {
+  const caja = $("kpis-inicio");
+  if (caja) {
+    if (cargando) {
+      caja.innerHTML = bloqueCargando("tarjeta", 5);
+    } else if (fallo || !dashboard) {
+      caja.innerHTML = `<div style="grid-column: 1 / -1">${estadoError("No se pudieron cargar los indicadores.")}</div>`;
+    } else {
+      pintarTarjetas(caja, tarjetas(dashboard));
+      animarCifras(caja, valoresParaContar(dashboard));
+    }
+  }
+
+  pintarGrafico();
 }
 
 async function cargar(periodo) {
@@ -148,11 +226,16 @@ async function cargar(periodo) {
   pintar();
 }
 
+/** Un mismo "reintentar" para las tarjetas y para el gráfico: los dos
+ * fallan y se recuperan juntos, porque los dos salen de la misma
+ * llamada. */
 function conectarReintentar() {
-  $("kpis-inicio")?.addEventListener("click", (ev) => {
+  const alReintentar = (ev) => {
     if (!/** @type {HTMLElement} */ (ev.target).closest("[data-reintentar]")) return;
     if (ultimoPeriodo) cargar(ultimoPeriodo);
-  });
+  };
+  $("kpis-inicio")?.addEventListener("click", alReintentar);
+  $("grafico-diario")?.addEventListener("click", alReintentar);
 }
 
 // ===================================================================
@@ -164,6 +247,7 @@ export async function arrancar() {
   caja.dataset.conectado = "si";
 
   conectarReintentar();
+  conectarModoDiario();
 
   document.addEventListener(EVENTO_CAMBIO, (ev) => {
     cargar(/** @type {CustomEvent} */ (ev).detail);

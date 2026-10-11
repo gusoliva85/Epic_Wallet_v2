@@ -243,6 +243,11 @@ def test_con_movimientos_cargados_los_indicadores_reflejan_la_realidad(
     assert cuerpo["daily"]["expense"][4] == "170000.00"
     assert cuerpo["daily"]["peak_expense"] == {"day": 5, "amount": "170000.00"}
     assert cuerpo["daily"]["saving_cumulative"][-1] == "330000.00"
+    assert cuerpo["daily"]["income_cumulative"][0] == "500000.00"
+    assert cuerpo["daily"]["income_cumulative"][-1] == "500000.00"
+    assert cuerpo["daily"]["expense_cumulative"][0] == "0.00"
+    assert cuerpo["daily"]["expense_cumulative"][4] == "170000.00"
+    assert cuerpo["daily"]["expense_cumulative"][-1] == "170000.00"
 
     categorias = {c["name"]: c for c in cuerpo["categories"]}
     assert categorias["Alquiler"]["total"] == "150000.00"
