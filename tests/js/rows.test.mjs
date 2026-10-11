@@ -366,48 +366,17 @@ describe("filas de lista", () => {
 
   // ------------------------------------------------------- lo de inicio
 
-  test("las filas de muestra de inicio se pintan todas", async () => {
-    const { dom, lista } = await montar();
-    lista.id = "movimientos-inicio";
-
-    const vistas = await import(modulo(["views", "vistas.js"]));
-    vistas.pintarVistas();
-    await esperar(dom);
-
-    // Las cantidades salen de los datos, no escritas a mano: así
-    // cambiar la muestra no obliga a tocar la prueba.
-    const datos = await import(modulo(["datos-muestra.js"]));
-    const enInicio = datos.MOVIMIENTOS.slice(0, 5);
-    const dias = new Set(enInicio.map((m) => m.dia)).size;
-
-    assert.equal(lista.querySelectorAll(".row").length, enInicio.length);
-    assert.equal(
-      lista.querySelectorAll(".day-sep").length,
-      dias,
-      "un separador por día",
-    );
-  });
-
-  test("la muestra de inicio trae ingresos y egresos", async () => {
-    // Si fueran todos del mismo tipo, en el teléfono no se vería la
-    // diferencia de signo y color que esta tarea tenía que resolver.
-    const { dom, lista } = await montar();
-    lista.id = "movimientos-inicio";
-
-    const vistas = await import(modulo(["views", "vistas.js"]));
-    vistas.pintarVistas();
-    await esperar(dom);
-
-    assert.ok(lista.querySelector(".amt-in"), "falta un ingreso en la muestra");
-    assert.ok(lista.querySelector(".amt-out"), "falta un egreso en la muestra");
-  });
-
-  test("vistas.js ya no escribe en #categorias-inicio ni #pie-seis (F06-T05 los reemplazó)", async () => {
-    // Guarda de regresión: esos dos contenedores son de dashboard.js
-    // ahora, con datos reales. Si vistas.js volviera a escribir ahí,
-    // competiría con esos datos reales cada vez que cambia el mes.
+  test("vistas.js ya no escribe en #categorias-inicio, #pie-seis ni #movimientos-inicio", async () => {
+    // Guarda de regresión. #categorias-inicio y #pie-seis son de
+    // dashboard.js desde F06-T05, con datos reales. #movimientos-inicio
+    // ya no existe ningún contenido para él: la sección "Últimos
+    // movimientos" se sacó de Inicio después de F06-T07 porque
+    // duplicaba la vista Movimientos sin aportar nada (General §55). Si
+    // vistas.js volviera a escribir en cualquiera de los tres, o
+    // competiría con datos reales, o resucitaría una sección que ya no
+    // existe en el HTML.
     const { dom } = await montar();
-    for (const id of ["categorias-inicio", "pie-seis"]) {
+    for (const id of ["categorias-inicio", "pie-seis", "movimientos-inicio"]) {
       const caja = dom.window.document.createElement("div");
       caja.id = id;
       dom.window.document.body.append(caja);
@@ -417,7 +386,7 @@ describe("filas de lista", () => {
     vistas.pintarVistas();
     await esperar(dom);
 
-    for (const id of ["categorias-inicio", "pie-seis"]) {
+    for (const id of ["categorias-inicio", "pie-seis", "movimientos-inicio"]) {
       assert.equal(dom.window.document.getElementById(id).innerHTML, "", `#${id} tiene que seguir vacío`);
     }
   });

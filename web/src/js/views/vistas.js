@@ -17,11 +17,6 @@ import {
   tarjetaMetrica,
   pintarTarjetas,
 } from "../components/kpi.js";
-import {
-  filaMovimiento,
-  separadorDia,
-  pintarFilas,
-} from "../components/rows.js";
 import { aviso, pildora } from "../components/avisos.js";
 import { crearHoja } from "../components/sheet.js";
 import { conectarSinConexion } from "../components/estados.js";
@@ -35,57 +30,15 @@ function escribir(id, html) {
   if (caja) caja.innerHTML = html;
 }
 
-/* ------------------------------------------------------------ inicio */
-
-function inicio() {
-  // Los seis indicadores, el gráfico diario, el de los últimos seis
-  // meses y el desglose por categoría de #kpis-inicio/#grafico-diario/
-  // #grafico-seis/#categorias-inicio son datos reales desde F05-T07 y
-  // F06-T02/F06-T05 (dashboard.js, GET /api/dashboard). Ya no hay nada
-  // de muestra que escribir acá para esos cuatro — mismo caso que las
-  // categorías de config() y la lista de #movimientos-lista, más abajo.
-
-  /* Los cinco más recientes. Cinco y no cuatro porque con cuatro el
-     panel queda con puros egresos, y entonces no se ve la diferencia
-     de signo y color entre un ingreso y un egreso, que es la mitad de lo
-     que este panel tiene que mostrar. */
-  pintarFilas(
-    $("movimientos-inicio"),
-    filasDeMovimientos(D.MOVIMIENTOS.slice(0, 5)),
-  );
-}
-
-/* ------------------------------------------------------- movimientos */
-
-/** Filas agrupadas por día, con su separador. */
-function filasDeMovimientos(lista) {
-  const salida = [];
-  let dia = null;
-  for (const m of lista) {
-    if (m.dia !== dia) {
-      dia = m.dia;
-      salida.push(separadorDia(`${dia} de octubre 2026`));
-    }
-    salida.push(
-      filaMovimiento({
-        id: m.id,
-        tipo: m.tipo,
-        categoria: m.categoria,
-        importe: m.importe,
-        fecha: `${m.dia}/10/2026`,
-        descripcion: m.descripcion,
-        origen: "manual",
-      }),
-    );
-  }
-  return salida;
-}
-
-// La lista de `#movimientos-lista` y el filtro `#mov-categoria`:
-// F04-T12 los reemplazó por datos reales de `GET /api/transactions` y
-// `GET /api/categories`, pintados por `movimientos.js`. Ya no hay
-// nada de muestra que escribir acá — mismo caso que las categorías de
-// `config()`, más abajo.
+// La vista Inicio (#kpis-inicio/#grafico-diario/#grafico-seis/
+// #categorias-inicio) y la lista de `#movimientos-lista` con su
+// filtro `#mov-categoria`: todo eso son datos reales desde F05-T07,
+// F06-T02/F06-T05 (dashboard.js) y F04-T12 (movimientos.js). Ya no
+// hay nada de muestra que escribir para ninguno de los dos — mismo
+// caso que las categorías de `config()`, más abajo. "Últimos
+// movimientos" (la sección que faltaba acá) se sacó del dashboard
+// después de F06-T07: duplicaba esta misma lista sin aportar nada
+// (General §55).
 
 /* --------------------------------------------------------- historial */
 
@@ -257,7 +210,6 @@ function config() {
 /* ------------------------------------------------------------ armado */
 
 export function pintarVistas() {
-  inicio();
   historial();
   cartera();
   patrimonio();
@@ -301,9 +253,7 @@ function conectarControles() {
    desde F04-T12: son datos reales y `movimientos.js` tiene su propio
    oyente, scoped a esa lista, que abre `#hoja-movimiento` en modo
    edición. Sin esta exclusión, un toque ahí abriría las dos hojas a
-   la vez — la de muestra y la real. Las de `#movimientos-inicio` (el
-   tablero) siguen siendo de muestra hasta la Fase 5 y mantienen este
-   stub. */
+   la vez — la de muestra y la real. */
 function conectarDetalle() {
   const hoja = $("hoja-detalle");
   const control = hoja && crearHoja(hoja);

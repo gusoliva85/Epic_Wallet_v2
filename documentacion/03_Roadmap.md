@@ -267,7 +267,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 
 - [x] **F05-T04 · Servicio y endpoint `/api/dashboard`**
   **Tipo:** Backend · **Ref:** Técnico §9.2 · *fusiona F05-T04, F05-T05 y F05-T06*
-  **Hacer:** el contrato central de la sección 9.2 en **una sola llamada** que trae indicadores, serie diaria, últimos seis meses, desglose por categoría y últimos movimientos.
+  **Hacer:** el contrato central de la sección 9.2 en **una sola llamada** que trae indicadores, serie diaria, últimos seis meses y desglose por categoría. *(Los "últimos movimientos" del contrato original se sacaron después: duplicaban la vista Movimientos sin agregar nada.)*
   **Aceptación:** · una sola petición alimenta todo el dashboard · un mes histórico responde con `transactions: null` y sin serie diaria · responde en menos de 400 ms desde la función desplegada.
 
 - [x] **F05-T07 · Los seis indicadores conectados**

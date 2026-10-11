@@ -33,10 +33,8 @@ from ..repos import transactions as repos_movimientos
 from . import calc
 from .months import HISTORICO, Periodo, abrir_mes, dias_transcurridos, mes_actual
 
-# Cuántos meses entran en el panel de "últimos seis" y en la lista de
-# movimientos recientes del tablero (Técnico §9.2).
+# Cuántos meses entran en el panel de "últimos seis" (Técnico §9.2).
 MESES_EN_COMPARATIVA = 6
-MOVIMIENTOS_RECIENTES = 5
 
 MESES = (
     "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -109,7 +107,6 @@ class Dashboard(NamedTuple):
     diario: SerieDiaria | None
     ultimos_seis_meses: list[MesComparativo]
     categorias: list[CategoriaDelMes]
-    movimientos_recientes: list[Transaction] | None
 
 
 def _por_dia(
@@ -270,7 +267,6 @@ def armar(
         # individuales, y no se inventan.
         movimientos: list[Transaction] = []
         diario = None
-        recientes: list[Transaction] | None = None
     else:
         movimientos = repos_movimientos.listar_por_mes(sesion, mes.id)
         dias = dias_transcurridos(periodo_pedido, ahora)
@@ -285,7 +281,6 @@ def armar(
             peak_expense=_pico_de_gasto(egresos_por_dia),
             days_without_expense=sum(1 for e in egresos_por_dia if e == 0),
         )
-        recientes = movimientos[:MOVIMIENTOS_RECIENTES]
 
     return Dashboard(
         mes=mes,
@@ -301,5 +296,4 @@ def armar(
         diario=diario,
         ultimos_seis_meses=_ultimos_seis(hasta_aqui),
         categorias=_desglose_por_categoria(totales_por_categoria, categorias_por_id, movimientos, mes),
-        movimientos_recientes=recientes,
     )

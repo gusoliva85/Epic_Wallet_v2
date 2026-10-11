@@ -853,11 +853,6 @@ Una sola llamada alimenta todo el dashboard. Evita seis peticiones en el arranqu
       "total": "553000.00", "share": "22.9",
       "transaction_count": 1, "last_date": "2026-10-01" }
   ],
-  "recent_transactions": [               // null cuando el mes es histórico
-    { "id": 148, "date": "2026-10-24", "type": "expense",
-      "category_id": 22, "category_name": "Mercadería",
-      "amount": "27600.00", "description": "Mercadería", "source": "manual" }
-  ],
   "alerts": [
     { "id": 3, "type": "category_above_average", "severity": "warning",
       "title": "Mercadería sobre el promedio",

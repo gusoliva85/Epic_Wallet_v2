@@ -468,7 +468,6 @@ describe("tarjetas de indicador", () => {
       "pie-diario",
       "pie-seis",
       "categorias-inicio",
-      "movimientos-inicio",
       "avisos-inicio",
     ]) {
       const d = b.dom.window.document.createElement("div");

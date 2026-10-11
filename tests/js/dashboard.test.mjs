@@ -166,7 +166,6 @@ function respuestaBase() {
         last_date: "2026-10-01",
       },
     ],
-    recent_transactions: [],
     alerts: [],
   };
 }
@@ -431,7 +430,6 @@ describe("gasto de hoy", () => {
           ["month.is_current", false],
           ["month.status", "historical"],
           ["daily", null],
-          ["recent_transactions", null],
         ]),
     });
     await esperar();
@@ -635,7 +633,6 @@ describe("el gráfico diario (F06-T02)", () => {
           ["month.consolidated", true],
           ["month.is_current", false],
           ["daily", null],
-          ["recent_transactions", null],
         ]),
     });
     await esperar();
@@ -771,7 +768,6 @@ describe("gastos por categoría (F06-T05)", () => {
           ["month.consolidated", true],
           ["month.status", "historical"],
           ["daily", null],
-          ["recent_transactions", null],
           ["categories.0.transaction_count", 0],
           ["categories.0.last_date", null],
         ]),

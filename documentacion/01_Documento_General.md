@@ -1693,7 +1693,6 @@ solo uso y vence.
 -   gráfico diario;
 -   gráfico seis meses;
 -   categorías;
--   últimos movimientos;
 -   patrimonio.
 
 ## 48.3 Nuevo movimiento
@@ -1947,26 +1946,11 @@ Puede incorporarse en una fase posterior.
 
 # 55. Últimos movimientos
 
-El dashboard debe mostrar los últimos movimientos del mes:
-
-``` text
-03/10  Carnicería      -$42.000
-03/10  Nafta           -$18.500
-02/10  Otros           +$50.000
-01/10  Sueldo       +$3.129.529
-```
-
-Orden:
-
-``` text
-más reciente → más antiguo
-```
-
-Debe existir:
-
-``` text
-Ver todos
-```
+*Sacado del dashboard después de F06-T07 (Gustavo): duplicaba la vista
+Movimientos sin aportar nada, y consumía una consulta y un
+procesamiento que no se usaban para nada más. La lista completa, con
+el mismo orden (más reciente → más antiguo), vive en la vista
+Movimientos.*
 
 ------------------------------------------------------------------------
 

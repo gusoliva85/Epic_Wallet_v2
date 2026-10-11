@@ -13,7 +13,7 @@ from __future__ import annotations
 import datetime as dt
 import decimal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 from ..services import dashboard as servicio
 
@@ -114,19 +114,6 @@ class CategoriaDelDashboard(BaseModel):
     last_date: dt.date | None
 
 
-class MovimientoDelDashboard(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    date: dt.date
-    type: str
-    category_id: int
-    category_name: str
-    amount: str
-    description: str | None
-    source: str
-
-
 class AlertaDelDashboard(BaseModel):
     """Todavía no hay de dónde sacar alertas de verdad —quedaron
     después del MVP (03_Roadmap.md)—, así que el campo existe en el
@@ -147,7 +134,6 @@ class RespuestaDashboard(BaseModel):
     daily: DiarioDelDashboard | None
     last_six_months: list[MesComparativoDelDashboard]
     categories: list[CategoriaDelDashboard]
-    recent_transactions: list[MovimientoDelDashboard] | None
     alerts: list[AlertaDelDashboard]
 
 
@@ -234,32 +220,5 @@ def respuesta_desde(d: servicio.Dashboard) -> RespuestaDashboard:
             )
             for c in d.categorias
         ],
-        recent_transactions=(
-            None
-            if d.movimientos_recientes is None
-            else [
-                MovimientoDelDashboard(
-                    id=t.id,
-                    date=t.transaction_date,
-                    type=t.transaction_type,
-                    category_id=t.category_id,
-                    category_name=_nombre_categoria(d, t.category_id),
-                    amount=_importe(t.amount),
-                    description=t.description,
-                    source=t.source,
-                )
-                for t in d.movimientos_recientes
-            ]
-        ),
         alerts=[],
     )
-
-
-def _nombre_categoria(d: servicio.Dashboard, category_id: int) -> str:
-    """El nombre de la categoría de un movimiento reciente. Sale de
-    `d.categorias` —el desglose del mes— cuando esa categoría tiene
-    movimientos en el mes (el caso normal); si no, es una categoría
-    sin total en `monthly_category_totals` por alguna razón rara, y se
-    muestra "Categoría" en vez de romper la respuesta entera."""
-    coincidencia = next((c for c in d.categorias if c.category_id == category_id), None)
-    return coincidencia.name if coincidencia else "Categoría"

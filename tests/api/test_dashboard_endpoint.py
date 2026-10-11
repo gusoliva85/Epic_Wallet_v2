@@ -7,12 +7,16 @@ Los tres criterios de aceptación de la tarea, cada uno con su prueba:
 una sola petición trae todo (`test_una_cuenta_nueva_trae_todo_en_cero`,
 `test_con_movimientos_cargados_los_indicadores_reflejan_la_realidad`),
 un mes histórico responde `transactions: null`-equivalente —acá
-`daily` y `recent_transactions`— y sin serie diaria
-(`test_un_mes_historico_no_tiene_diario_ni_movimientos_recientes`), y
-el tiempo de respuesta queda registrado, aunque no se le exige un
+`daily`— y sin serie diaria (`test_un_mes_historico_no_tiene_diario`),
+y el tiempo de respuesta queda registrado, aunque no se le exige un
 número duro: la red de este entorno de pruebas no es la de producción
 —en gru1, misma región que la base— que es la que de verdad importa
 para el límite de 400 ms.
+
+`recent_transactions` ya no es parte del contrato (se sacó después de
+F06-T07: el dashboard lo exponía pero ninguna pantalla lo leía — la
+sección "Últimos movimientos" que lo consumía duplicaba la vista
+Movimientos sin aportar nada, General §55).
 """
 
 from __future__ import annotations
@@ -202,7 +206,6 @@ def test_una_cuenta_nueva_trae_todo_en_cero(cliente, cuentas: tuple[Cuenta, Cuen
     assert cuerpo["daily"]["days_without_expense"] == cuerpo["daily"]["days"]
 
     assert cuerpo["categories"] == []
-    assert cuerpo["recent_transactions"] == []
     assert cuerpo["alerts"] == []
     assert cuerpo["navigation"]["next"] is None  # ya es el mes actual
 
@@ -250,13 +253,9 @@ def test_con_movimientos_cargados_los_indicadores_reflejan_la_realidad(
     assert categorias["Alquiler"]["transaction_count"] == 1
     assert categorias["Sueldo"]["total"] == "500000.00"
 
-    assert len(cuerpo["recent_transactions"]) == 3
-    nombres_recientes = {m["description"] for m in cuerpo["recent_transactions"]}
-    assert nombres_recientes == {"Sueldo", "Alquiler", "Gas de casa"}
-
 
 @sin_entorno
-def test_un_mes_historico_no_tiene_diario_ni_movimientos_recientes(
+def test_un_mes_historico_no_tiene_diario(
     cliente, motor, cuentas: tuple[Cuenta, Cuenta], limpiar_meses
 ) -> None:
     # Criterio de aceptación de la tarea. F08 todavía no tiene el
@@ -297,7 +296,6 @@ def test_un_mes_historico_no_tiene_diario_ni_movimientos_recientes(
     assert cuerpo["month"]["status"] == "historical"
     assert cuerpo["month"]["consolidated"] is True
     assert cuerpo["daily"] is None
-    assert cuerpo["recent_transactions"] is None
     # El total manual sigue mostrándose: Regla 4 dice que no hay
     # movimientos individuales, no que no haya totales.
     assert cuerpo["categories"][0]["total"] == "250000.00"
