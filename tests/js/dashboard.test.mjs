@@ -314,14 +314,14 @@ describe("las cinco tarjetas", () => {
 });
 
 describe("gasto de hoy", () => {
-  test("en el mes actual, muestra el gasto de hoy y el promedio diario", async () => {
+  test("en el mes actual, muestra el gasto de hoy", async () => {
     const { dom, caja } = await montar();
     await esperar();
     cambiarMes(dom, MES_ACTUAL);
     await esperar();
 
     assert.equal(cifraDe(caja, "Gasto de hoy"), "$15.000");
-    assert.match(subDe(caja, "Gasto de hoy"), /Promedio diario/);
+    assert.equal(subDe(caja, "Gasto de hoy"), "Total gastado hoy");
   });
 
   test("en un mes que no es el actual, no mezcla el día de hoy con ese mes", async () => {

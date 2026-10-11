@@ -72,13 +72,13 @@ function tarjetas(d) {
     tarjetaMetrica({
       etiqueta: "Gasto de hoy",
       cifra: hoy == null ? "—" : fmt(hoy),
-      sub: hoy == null ? "Sólo para el mes actual" : `Promedio diario ${fmt(Number(ind.expense) / d.daily.days)}`,
+      sub: hoy == null ? "Sólo para el mes actual" : "Total gastado hoy",
       tarjeta: "dia",
     }),
     tarjetaMetrica({
       etiqueta: "Total de ahorros",
       cifra: fmtS(ind.savings_balance),
-      sub: "Acumulado de todos los meses",
+      sub: "Acumulado mensual",
       tarjeta: "pat",
     }),
   ];

@@ -247,7 +247,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Hacer:** hoja inferior desde el botón `+` con tipo, importe, categoría, fecha (hoy por defecto) y descripción opcional; teclado numérico en el importe; validación en vivo; al guardar, actualización inmediata de los indicadores sin recargar.
   **Aceptación:** · un gasto se carga en menos de cinco toques · el teclado del celular abre en numérico · un importe vacío no permite enviar · los indicadores cambian al guardar.
 
-- [~] **F04-T12 · Lista del mes, detalle, edición y baja**
+- [x] **F04-T12 · Lista del mes, detalle, edición y baja**
   **Tipo:** Frontend · **Ref:** General §11 · *fusiona F04-T12 y F04-T13*
   **Hacer:** lista de movimientos del mes agrupada por día, con los filtros de la API; al tocar una fila, hoja de detalle con editar y borrar, la baja con confirmación (R11).
   **Aceptación:** · la lista refleja lo cargado y ordena por fecha descendente · editar el importe actualiza los totales · borrar pide confirmación y no se puede deshacer por accidente · un mes sin movimientos muestra el estado vacío, no una lista en blanco.
@@ -260,22 +260,22 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 
 **Al cerrar esta fase:** abrís la aplicación y ves tu mes de verdad.
 
-- [~] **F05-T01 · Módulo de cálculos puros**
+- [x] **F05-T01 · Módulo de cálculos puros**
   **Tipo:** Cálculo · **Ref:** Técnico §7, §7.1 · General §52 · *fusiona F05-T01, F05-T02 y F05-T03*
   **Hacer:** `services/calc.py` con ingresos, gastos, ahorro del mes, tasa de ahorro, ahorro acumulado, total de inversiones y patrimonio; la serie diaria del mes con el ahorro acumulado día a día; y los casos borde obligatorios de la sección 7.1.
   **Aceptación:** · **tasa de ahorro con ingresos en cero devuelve `null`, no un error ni una división** · un mes vacío da ceros · la serie diaria de un mes histórico es `null` · cada función tiene su test y son todas puras: reciben números y devuelven números.
 
-- [~] **F05-T04 · Servicio y endpoint `/api/dashboard`**
+- [x] **F05-T04 · Servicio y endpoint `/api/dashboard`**
   **Tipo:** Backend · **Ref:** Técnico §9.2 · *fusiona F05-T04, F05-T05 y F05-T06*
   **Hacer:** el contrato central de la sección 9.2 en **una sola llamada** que trae indicadores, serie diaria, últimos seis meses, desglose por categoría y últimos movimientos.
   **Aceptación:** · una sola petición alimenta todo el dashboard · un mes histórico responde con `transactions: null` y sin serie diaria · responde en menos de 400 ms desde la función desplegada.
 
-- [~] **F05-T07 · Los seis indicadores conectados**
+- [x] **F05-T07 · Los seis indicadores conectados**
   **Tipo:** Frontend · **Ref:** General §12.2 · *fusiona F05-T07, F05-T08, F05-T09 y F05-T10*
   **Hacer:** las seis tarjetas con datos reales; animación de conteo; estados de carga, error y vacío; formato de importes en pesos argentinos con `tabular-nums` para que las cifras no bailen.
   **Aceptación:** · los seis indicadores muestran lo mismo que la API · con la red caída se ve un error entendible, no una pantalla rota · un mes sin datos muestra ceros con su explicación · las cifras no cambian de ancho al actualizarse.
 
-- [ ] **F05-T11 · Verificación contra el Excel**
+- [x] **F05-T11 · Verificación contra el Excel**
   **Tipo:** QA
   **Hacer:** cargar un mes completo del Excel a mano y comparar los seis indicadores con los del Excel, peso por peso.
   **Aceptación:** · los seis coinciden · cualquier diferencia queda explicada o corregida antes de cerrar la fase.
