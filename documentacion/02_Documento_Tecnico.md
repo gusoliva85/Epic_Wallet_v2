@@ -839,8 +839,6 @@ Una sola llamada alimenta todo el dashboard. Evita seis peticiones en el arranqu
     "income":  ["3491280.00", "0.00", "..."],
     "expense": ["763400.00", "78200.00", "..."],
     "saving_cumulative": ["2727880.00", "2649680.00", "..."],
-    "income_cumulative": ["3491280.00", "3491280.00", "..."],
-    "expense_cumulative": ["763400.00", "841600.00", "..."],
     "peak_expense": { "day": 10, "amount": "311225.00" },
     "days_without_expense": 0
   },
@@ -867,7 +865,7 @@ Una sola llamada alimenta todo el dashboard. Evita seis peticiones en el arranqu
 }
 ```
 
-`daily.saving_cumulative` es la serie que dibuja **la línea de ahorro sobre el gráfico de barras**, el cambio que pediste sobre el mockup. `daily.income_cumulative` y `daily.expense_cumulative` son las series del modo "Acumulado" del mismo gráfico (F06-T02): vienen sumadas desde el servidor para que el frontend nunca tenga que acumular plata con `float`.
+`daily.saving_cumulative` es la serie que dibuja **la línea de ahorro sobre el gráfico de barras**, el cambio que pediste sobre el mockup.
 
 Lo que **no** es un endpoint nuestro: registro, confirmación de email, recuperación y cambio de contraseña los atiende **Supabase Auth directamente desde el navegador** (§8.3). No hay un `POST /api/register` ni un `POST /api/forgot-password`: pasar esas operaciones por nuestra API sólo agregaría un intermediario sin aportar nada, y nos obligaría a manejar los mails.
 

@@ -49,8 +49,8 @@ async function cargarConDobles() {
       "const api = { get: (...a) => globalThis.__espia.apiGet(...a) };",
     )
     .replace(
-      'import { esc, fmt, fmtS, pct, pctPlano } from "./format.js";',
-      `import { esc, fmt, fmtS, pct, pctPlano } from "${rutaAbsoluta("format.js")}";`,
+      'import { fmt, fmtS, pct, pctPlano } from "./format.js";',
+      `import { fmt, fmtS, pct, pctPlano } from "${rutaAbsoluta("format.js")}";`,
     )
     .replace(
       'import { tarjetaHeroe, tarjetaMetrica, pintarTarjetas, animarCifras } from "./components/kpi.js";',
@@ -114,11 +114,9 @@ function respuestaBase() {
     },
     daily: {
       days: 10,
-      income: Array(10).fill("0.00"),
+      income: ["500000.00"].concat(Array(9).fill("0.00")),
       expense: Array(9).fill("0.00").concat(["15000.00"]),
-      saving_cumulative: Array(9).fill("0.00").concat(["-15000.00"]),
-      income_cumulative: Array(10).fill("0.00"),
-      expense_cumulative: Array(9).fill("0.00").concat(["15000.00"]),
+      saving_cumulative: Array(9).fill("500000.00").concat(["485000.00"]),
       peak_expense: { day: 10, amount: "15000.00" },
       days_without_expense: 9,
     },
@@ -146,10 +144,8 @@ const HTML_INICIO = `<!doctype html><html><body>
     <button type="button" class="activa" data-modo="ambos">Ambos</button>
     <button type="button" data-modo="egresos">Egresos</button>
     <button type="button" data-modo="ingresos">Ingresos</button>
-    <button type="button" data-modo="acumulado">Acumulado</button>
   </div>
   <div class="chart-wrap" id="grafico-diario"></div>
-  <div class="chart-foot" id="pie-diario"></div>
 </body></html>`;
 
 async function montar({ apiGet } = {}) {
@@ -185,7 +181,6 @@ async function montar({ apiGet } = {}) {
     llamadas,
     caja: $$("kpis-inicio"),
     grafico: $$("grafico-diario"),
-    pie: $$("pie-diario"),
     modoDiario: $$("diario-modo"),
   };
 }
@@ -427,77 +422,83 @@ describe("el gráfico diario (F06-T02)", () => {
     assert.ok(grafico.querySelector("svg"), "tiene que haber un <svg>");
   });
 
-  test("el pie de cifras muestra el ahorro acumulado hoy, el pico de gasto y los días sin gasto", async () => {
-    const { dom, pie } = await montar();
-    await esperar();
-    cambiarMes(dom, MES_ACTUAL);
-    await esperar();
-
-    const texto = pie.textContent;
-    assert.match(texto, /Ahorro acumulado hoy/);
-    assert.match(texto, /−\$15\.000/); // saving_cumulative.at(-1) de la base
-    assert.match(texto, /Pico de gasto/);
-    assert.match(texto, /\$15\.000 · día 10/);
-    assert.match(texto, /Días sin gasto9/); // sin separador: .num es el hermano directo de .span
-  });
-
-  test("sin gastos todavía, el pico de gasto lo dice en vez de mostrar un día inventado", async () => {
-    const { dom, pie } = await montar({
-      apiGet: async () => conCambios(respuestaBase(), [["daily.peak_expense", null]]),
-    });
-    await esperar();
-    cambiarMes(dom, MES_ACTUAL);
-    await esperar();
-
-    assert.match(pie.textContent, /Sin gastos todavía/);
-  });
-
-  test("el modo por defecto es «ambos»: barras, sin áreas acumuladas", async () => {
+  test("el modo por defecto es «ambos»: una barra de cada color", async () => {
     const { dom, grafico } = await montar();
     await esperar();
     cambiarMes(dom, MES_ACTUAL);
     await esperar();
 
-    assert.ok(grafico.querySelector("rect.bar"), "tiene que haber barras");
-    assert.equal(grafico.querySelector("linearGradient"), null, "el modo 'ambos' no es el acumulado");
+    const barras = [...grafico.querySelectorAll(".bar")];
+    assert.equal(barras.length, 2, "un día con ingreso y un día con egreso: dos barras");
   });
 
-  test("tocar «Acumulado» redibuja con las áreas, sin barras", async () => {
+  test("tocar «Ingresos» deja sólo esa barra", async () => {
     const { dom, grafico, modoDiario } = await montar();
     await esperar();
     cambiarMes(dom, MES_ACTUAL);
     await esperar();
 
-    modoDiario.querySelector('[data-modo="acumulado"]').click();
+    modoDiario.querySelector('[data-modo="ingresos"]').click();
 
-    assert.equal(grafico.querySelector("rect.bar"), null, "el modo acumulado no dibuja barras");
-    assert.ok(grafico.querySelector("linearGradient"), "el modo acumulado dibuja las áreas con gradiente");
+    assert.equal(grafico.querySelectorAll(".bar").length, 1, "sólo el día con ingreso tiene barra");
   });
 
-  test("volver a «Ambos» redibuja las barras de nuevo", async () => {
+  test("tocar «Egresos» deja sólo esa barra", async () => {
     const { dom, grafico, modoDiario } = await montar();
     await esperar();
     cambiarMes(dom, MES_ACTUAL);
     await esperar();
 
-    modoDiario.querySelector('[data-modo="acumulado"]').click();
+    modoDiario.querySelector('[data-modo="egresos"]').click();
+
+    assert.equal(grafico.querySelectorAll(".bar").length, 1, "sólo el día con egreso tiene barra");
+  });
+
+  test("volver a «Ambos» redibuja las dos barras de nuevo", async () => {
+    const { dom, grafico, modoDiario } = await montar();
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    modoDiario.querySelector('[data-modo="egresos"]').click();
     modoDiario.querySelector('[data-modo="ambos"]').click();
 
-    assert.ok(grafico.querySelector("rect.bar"));
+    assert.equal(grafico.querySelectorAll(".bar").length, 2);
   });
 
-  test("tocar el modo que ya está activo no pide nada de nuevo ni rompe", async () => {
+  test("tocar el modo que ya está activo no rompe nada", async () => {
     const { dom, grafico, modoDiario } = await montar();
     await esperar();
     cambiarMes(dom, MES_ACTUAL);
     await esperar();
 
     modoDiario.querySelector('[data-modo="ambos"]').click();
-    assert.ok(grafico.querySelector("rect.bar"));
+    assert.equal(grafico.querySelectorAll(".bar").length, 2);
+  });
+
+  test("ya no existe el modo «Acumulado»: Gustavo pidió sacarlo", async () => {
+    const { dom, modoDiario } = await montar();
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    assert.equal(modoDiario.querySelector('[data-modo="acumulado"]'), null);
+  });
+
+  test("la línea de ahorro sigue visible en los tres modos", async () => {
+    const { dom, grafico, modoDiario } = await montar();
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    for (const modo of ["ambos", "ingresos", "egresos"]) {
+      modoDiario.querySelector(`[data-modo="${modo}"]`).click();
+      assert.ok(grafico.querySelector(".lineseries"), `el modo ${modo} tiene que seguir mostrando la línea`);
+    }
   });
 
   test("un mes histórico muestra el estado consolidado, no un gráfico inventado (Regla 4)", async () => {
-    const { dom, grafico, pie } = await montar({
+    const { dom, grafico } = await montar({
       apiGet: async () =>
         conCambios(respuestaBase(), [
           ["month.status", "historical"],
@@ -516,7 +517,6 @@ describe("el gráfico diario (F06-T02)", () => {
     // el gráfico en sí — sus barras, su línea, su grilla.
     assert.equal(grafico.querySelector(".bar, .lineseries, .gridline"), null, "un mes histórico no inventa una serie diaria");
     assert.match(grafico.textContent, /consolidad/i);
-    assert.equal(pie.innerHTML, "", "sin cifras que no haya — Regla 4");
   });
 
   test("mientras carga, se ve un esqueleto de gráfico, no la pantalla en blanco", async () => {

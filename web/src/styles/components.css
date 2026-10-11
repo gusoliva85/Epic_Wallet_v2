@@ -2134,6 +2134,15 @@
   }
 }
 
+/* El punto de "hoy" en la línea de ahorro (gráfico diario, F06-T02):
+   un halo suave para que lea como el protagonista del gráfico, no
+   sólo el último punto de una serie. `drop-shadow` y no `blur`: un
+   blur difumina el círculo mismo, drop-shadow deja el trazo nítido y
+   agrega el resplandor alrededor. */
+.punto-brillante {
+  filter: drop-shadow(0 0 5px var(--color-sav));
+}
+
 /* ---- leyenda y pie de cifras de un gráfico ---- */
 
 .legend {

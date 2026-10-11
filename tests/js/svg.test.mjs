@@ -14,6 +14,7 @@ import assert from "node:assert/strict";
 import {
   escalaRedonda,
   alturaDeBarra,
+  trazoBarraRedondeada,
   etiquetaSvg,
   grilla,
   ejeDeCategorias,
@@ -60,6 +61,32 @@ describe("alturaDeBarra", () => {
 
   test("una escala en cero no divide por cero", () => {
     assert.equal(alturaDeBarra(500, 0, 200), 0);
+  });
+});
+
+describe("trazoBarraRedondeada", () => {
+  test("empieza y termina en la base, línea recta abajo", () => {
+    // El borde de abajo tiene que quedar recto, apoyado en el eje: una
+    // barra con las cuatro esquinas iguales parece flotar.
+    const d = trazoBarraRedondeada(10, 50, 20, 100, 4);
+    assert.match(d, /^M10\.0 150\.0/, "arranca en la base (yTope + alto)");
+    assert.match(d, /L30\.0 150\.0 Z$/, "termina en la base, sin curva");
+  });
+
+  test("el radio se recorta si no entra en el ancho o el alto", () => {
+    // Un radio de 20 en una barra de 6 de ancho desbordaría: tiene que
+    // quedar en 3 (la mitad del ancho), o la curva se superpondría.
+    const d = trazoBarraRedondeada(0, 0, 6, 100, 20);
+    assert.match(d, /Q0\.0 0\.0 3\.0 0\.0/);
+  });
+
+  test("con radio cero, es un rectángulo derecho (cuatro esquinas sin curva)", () => {
+    const d = trazoBarraRedondeada(0, 0, 10, 50, 0);
+    assert.ok(!d.includes("Q"), "sin curvas Q cuando el radio es cero");
+  });
+
+  test("una barra de alto cero no rompe (el radio no puede ser mayor que el alto)", () => {
+    assert.doesNotThrow(() => trazoBarraRedondeada(0, 100, 10, 0, 4));
   });
 });
 

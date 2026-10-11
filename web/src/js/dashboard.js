@@ -28,7 +28,7 @@
    inventada. */
 
 import { api } from "./api.js";
-import { esc, fmt, fmtS, pct, pctPlano } from "./format.js";
+import { fmt, fmtS, pct, pctPlano } from "./format.js";
 import { tarjetaHeroe, tarjetaMetrica, pintarTarjetas, animarCifras } from "./components/kpi.js";
 import { bloqueCargando, error as estadoError, consolidado } from "./components/estados.js";
 import { EVENTO_CAMBIO } from "./barra-mes.js";
@@ -120,55 +120,26 @@ let modoDiario = "ambos";
 //  Gráfico diario (F06-T02)
 // ===================================================================
 
-/** Las cifras del pie del gráfico: sólo las que ya manda la API tal
- * cual (`peak_expense`, `days_without_expense`) o leer el último
- * valor de una serie que el servidor ya sumó — nunca una cuenta nueva
- * del lado del cliente. Sin "promedio diario": esa cifra ya se sacó
- * de la tarjeta "Gasto de hoy" por pedido de Gustavo, y repetirla acá
- * sería lo mismo que evitar en ese otro lugar. */
-function pieDiario(daily) {
-  const pico = daily.peak_expense;
-  return [
-    { etiqueta: "Ahorro acumulado hoy", valor: fmtS(daily.saving_cumulative.at(-1)) },
-    { etiqueta: "Pico de gasto", valor: pico ? `${fmt(pico.amount)} · día ${pico.day}` : "Sin gastos todavía" },
-    { etiqueta: "Días sin gasto", valor: String(daily.days_without_expense) },
-  ];
-}
-
-function pintarPie(contenedor, items) {
-  contenedor.innerHTML = items
-    .map(
-      ({ etiqueta, valor }) =>
-        `<div class="mini cg"><span>${esc(etiqueta)}</span><b class="num">${esc(valor)}</b></div>`,
-    )
-    .join("");
-}
-
 function pintarGrafico() {
   const caja = $("grafico-diario");
-  const pie = $("pie-diario");
-  if (!caja || !pie) return;
+  if (!caja) return;
 
   if (cargando) {
     caja.innerHTML = bloqueCargando("grafico", 1);
-    pie.innerHTML = "";
     return;
   }
   if (fallo || !dashboard) {
     caja.innerHTML = estadoError("No se pudo cargar el gráfico diario.");
-    pie.innerHTML = "";
     return;
   }
   if (dashboard.daily == null) {
     // Regla 4: un mes histórico no tiene movimientos individuales que
     // repartir por día, así que no hay serie que dibujar.
     caja.innerHTML = consolidado();
-    pie.innerHTML = "";
     return;
   }
 
   caja.innerHTML = dibujarGraficoDiario(dashboard.daily, modoDiario);
-  pintarPie(pie, pieDiario(dashboard.daily));
 }
 
 function conectarModoDiario() {

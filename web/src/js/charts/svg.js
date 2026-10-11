@@ -66,6 +66,36 @@ export function alturaDeBarra(valor, escalaMaxima, altoDisponible) {
 }
 
 /**
+ * El trazo (`d`) de una barra con sólo las esquinas de ARRIBA
+ * redondeadas: el borde inferior queda recto, apoyado en el eje. Con
+ * las cuatro esquinas iguales —lo que da un `<rect rx>`— una barra
+ * que nace del cero parece flotar en vez de pararse sobre el eje; acá
+ * se nota más cuanto más ancha es la barra, que es justo el pedido de
+ * F06-T02 (barras más gruesas).
+ *
+ * @param {number} x borde izquierdo de la barra
+ * @param {number} yTope el techo de la barra (el valor más alto, en Y de pantalla)
+ * @param {number} ancho
+ * @param {number} alto
+ * @param {number} radio se recorta solo si no entra en el ancho o el alto
+ */
+export function trazoBarraRedondeada(x, yTope, ancho, alto, radio) {
+  const r = Math.max(0, Math.min(radio, ancho / 2, alto));
+  const base = yTope + alto;
+  if (r === 0) {
+    return `M${x.toFixed(1)} ${base.toFixed(1)} L${x.toFixed(1)} ${yTope.toFixed(1)} L${(x + ancho).toFixed(1)} ${yTope.toFixed(1)} L${(x + ancho).toFixed(1)} ${base.toFixed(1)} Z`;
+  }
+  return (
+    `M${x.toFixed(1)} ${base.toFixed(1)} ` +
+    `L${x.toFixed(1)} ${(yTope + r).toFixed(1)} ` +
+    `Q${x.toFixed(1)} ${yTope.toFixed(1)} ${(x + r).toFixed(1)} ${yTope.toFixed(1)} ` +
+    `L${(x + ancho - r).toFixed(1)} ${yTope.toFixed(1)} ` +
+    `Q${(x + ancho).toFixed(1)} ${yTope.toFixed(1)} ${(x + ancho).toFixed(1)} ${(yTope + r).toFixed(1)} ` +
+    `L${(x + ancho).toFixed(1)} ${base.toFixed(1)} Z`
+  );
+}
+
+/**
  * La etiqueta de apertura del `<svg>`. El `viewBox` es lo que permite
  * dibujar a 390 px o a 1440 px sin deformarse: el dibujo interno usa
  * siempre las mismas coordenadas (`ancho`×`alto`), y es el navegador
