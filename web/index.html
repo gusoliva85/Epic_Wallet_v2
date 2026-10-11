@@ -303,21 +303,14 @@
                 class="view-switch"
                 role="group"
                 aria-label="Modo del gráfico de seis meses"
+                id="seis-modo"
               >
-                <button type="button" class="activa">Barras</button>
-                <button type="button">Ahorro</button>
-                <button type="button">Tasa de ahorro</button>
+                <button type="button" class="activa" data-modo="barras">Barras</button>
+                <button type="button" data-modo="ahorro">Ahorro</button>
+                <button type="button" data-modo="tasa">Tasa de ahorro</button>
               </div>
             </div>
-            <div class="grafico-pendiente" role="note">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M3 20h18M6 20V11M11 20V5M16 20v-7M21 20v-4" /></svg
-              ><b>Gráfico de los últimos seis meses</b>
-              <p>
-                Barras agrupadas de ingresos, egresos y ahorro. Llega en la fase
-                3.
-              </p>
-            </div>
+            <div class="chart-wrap" id="grafico-seis"></div>
             <div class="chart-foot" id="pie-seis"></div>
           </article>
 
@@ -332,9 +325,10 @@
                   class="view-switch"
                   role="group"
                   aria-label="Orden de las categorías"
+                  id="categorias-orden"
                 >
-                  <button type="button" class="activa">Mayor gasto</button>
-                  <button type="button">A–Z</button>
+                  <button type="button" class="activa" data-orden="mayor">Mayor gasto</button>
+                  <button type="button" data-orden="az">A–Z</button>
                 </div>
               </div>
               <div class="rows" id="categorias-inicio"></div>

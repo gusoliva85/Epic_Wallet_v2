@@ -298,7 +298,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Hacer:** barras de ingresos y egresos por día, línea de ahorro acumulado en un segundo eje, modo acumulado conmutable y pie con las cifras del mes.
   **Aceptación:** · los dos ejes están rotulados y no se confunden · el día de hoy se distingue · el modo acumulado y el diario muestran el mismo total al final del mes.
 
-- [ ] **F06-T05 · Últimos seis meses y gastos por categoría**
+- [~] **F06-T05 · Últimos seis meses y gastos por categoría**
   **Tipo:** Frontend · **Ref:** General §14, §15 · *fusiona F06-T05 y F06-T06*
   **Hacer:** barras comparadas de los últimos seis meses con el ahorro de cada uno, y el gráfico de gastos por categoría del mes.
   **Aceptación:** · con menos de seis meses cargados muestra los que hay, sin huecos falsos · las categorías se ordenan de mayor a menor.

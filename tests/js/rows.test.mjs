@@ -369,9 +369,6 @@ describe("filas de lista", () => {
   test("las filas de muestra de inicio se pintan todas", async () => {
     const { dom, lista } = await montar();
     lista.id = "movimientos-inicio";
-    const otra = dom.window.document.createElement("div");
-    otra.id = "categorias-inicio";
-    dom.window.document.body.append(otra);
 
     const vistas = await import(modulo(["views", "vistas.js"]));
     vistas.pintarVistas();
@@ -389,7 +386,6 @@ describe("filas de lista", () => {
       dias,
       "un separador por día",
     );
-    assert.equal(otra.querySelectorAll(".row").length, datos.CATEGORIAS.length);
   });
 
   test("la muestra de inicio trae ingresos y egresos", async () => {
@@ -397,9 +393,6 @@ describe("filas de lista", () => {
     // diferencia de signo y color que esta tarea tenía que resolver.
     const { dom, lista } = await montar();
     lista.id = "movimientos-inicio";
-    const otra = dom.window.document.createElement("div");
-    otra.id = "categorias-inicio";
-    dom.window.document.body.append(otra);
 
     const vistas = await import(modulo(["views", "vistas.js"]));
     vistas.pintarVistas();
@@ -407,5 +400,25 @@ describe("filas de lista", () => {
 
     assert.ok(lista.querySelector(".amt-in"), "falta un ingreso en la muestra");
     assert.ok(lista.querySelector(".amt-out"), "falta un egreso en la muestra");
+  });
+
+  test("vistas.js ya no escribe en #categorias-inicio ni #pie-seis (F06-T05 los reemplazó)", async () => {
+    // Guarda de regresión: esos dos contenedores son de dashboard.js
+    // ahora, con datos reales. Si vistas.js volviera a escribir ahí,
+    // competiría con esos datos reales cada vez que cambia el mes.
+    const { dom } = await montar();
+    for (const id of ["categorias-inicio", "pie-seis"]) {
+      const caja = dom.window.document.createElement("div");
+      caja.id = id;
+      dom.window.document.body.append(caja);
+    }
+
+    const vistas = await import(modulo(["views", "vistas.js"]));
+    vistas.pintarVistas();
+    await esperar(dom);
+
+    for (const id of ["categorias-inicio", "pie-seis"]) {
+      assert.equal(dom.window.document.getElementById(id).innerHTML, "", `#${id} tiene que seguir vacío`);
+    }
   });
 });

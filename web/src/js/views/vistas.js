@@ -19,7 +19,6 @@ import {
 } from "../components/kpi.js";
 import {
   filaMovimiento,
-  filaCategoria,
   separadorDia,
   pintarFilas,
 } from "../components/rows.js";
@@ -39,42 +38,12 @@ function escribir(id, html) {
 /* ------------------------------------------------------------ inicio */
 
 function inicio() {
-  // Los seis indicadores de #kpis-inicio son datos reales desde
-  // F05-T07 (dashboard.js, GET /api/dashboard). Ya no hay nada de
-  // muestra que escribir acá — mismo caso que las categorías de
-  // config() y la lista de #movimientos-lista, más abajo.
-
-  escribir(
-    "pie-diario",
-    D.PIE_DIARIO.map(
-      (x) =>
-        `<div class="mini cg"><span>${esc(x.etiqueta)}</span><b class="num">${esc(x.valor)}</b></div>`,
-    ).join(""),
-  );
-
-  escribir(
-    "pie-seis",
-    D.SEIS_MESES.map(
-      (m) =>
-        `<div class="mini cg"><span>${esc(m.mes)}</span>` +
-        `<b class="num">${esc(m.ahorro)}</b>` +
-        `<span style="text-transform: none; letter-spacing: 0">${esc(m.ingresos)} / ${esc(m.egresos)}</span></div>`,
-    ).join(""),
-  );
-
-  pintarFilas(
-    $("categorias-inicio"),
-    D.CATEGORIAS.map((c) =>
-      filaCategoria({
-        id: c.id,
-        nombre: c.nombre,
-        total: c.total,
-        detalle: `${c.cantidad} movimiento${c.cantidad === 1 ? "" : "s"} · ${c.porcentaje}% del gasto`,
-        participacion: c.participacion,
-        pie: `últ. ${c.ultimo}`,
-      }),
-    ),
-  );
+  // Los seis indicadores, el gráfico diario, el de los últimos seis
+  // meses y el desglose por categoría de #kpis-inicio/#grafico-diario/
+  // #grafico-seis/#categorias-inicio son datos reales desde F05-T07 y
+  // F06-T02/F06-T05 (dashboard.js, GET /api/dashboard). Ya no hay nada
+  // de muestra que escribir acá para esos cuatro — mismo caso que las
+  // categorías de config() y la lista de #movimientos-lista, más abajo.
 
   /* Los cinco más recientes. Cinco y no cuatro porque con cuatro el
      panel queda con puros egresos, y entonces no se ve la diferencia

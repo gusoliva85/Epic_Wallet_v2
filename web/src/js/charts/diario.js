@@ -49,6 +49,7 @@ import {
   etiquetaSvg,
   grilla,
   ejeDeCategorias,
+  ejeConCero,
   idUnico,
 } from "./svg.js";
 
@@ -69,13 +70,8 @@ export const MODOS = Object.freeze(["ambos", "egresos", "ingresos"]);
  * se estaba mirando. */
 function lineaDeAhorro(serie, iw, ih) {
   const n = serie.length;
-  const minimo = Math.min(0, ...serie);
-  const maximo = Math.max(0, ...serie);
-  const techo = maximo > 0 ? escalaRedonda(maximo) : 0;
-  const piso = minimo < 0 ? -escalaRedonda(-minimo) : 0;
-  const rango = techo - piso || 1;
-
-  const y = (v) => PT + ih - (ih * (v - piso)) / rango;
+  const eje = ejeConCero(serie, { y: PT, alto: ih });
+  const y = eje.yDe;
   const x = (i) => PL + (iw * (i + 0.5)) / n;
 
   const trazo = serie.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(" ");
@@ -87,13 +83,13 @@ function lineaDeAhorro(serie, iw, ih) {
   // (Técnico §14.1): con el piso en cero, dibujarla sería repetir el
   // borde inferior del gráfico sin decir nada nuevo.
   const lineaCero =
-    piso < 0
+    eje.ymin < 0
       ? `<line x1="${PL}" y1="${y(0).toFixed(1)}" x2="${(PL + iw).toFixed(1)}" y2="${y(0).toFixed(1)}" stroke="var(--color-ink-4)" stroke-width="1" stroke-dasharray="3 4" opacity=".6"/>`
       : "";
 
   let ejeDerecho = "";
   for (let i = 0; i <= 4; i++) {
-    const v = piso + (rango * i) / 4;
+    const v = eje.ymin + (eje.rango * i) / 4;
     ejeDerecho += `<text class="axis-v" x="${(PL + iw + 9).toFixed(1)}" y="${(y(v) + 3.4).toFixed(1)}" fill="var(--color-sav)" opacity=".8">${fmtK(v)}</text>`;
   }
   ejeDerecho += `<text class="axis-t" x="${(PL + iw + 9).toFixed(1)}" y="${PT - 6}" fill="var(--color-sav)" opacity=".9" font-weight="700">AHORRO</text>`;

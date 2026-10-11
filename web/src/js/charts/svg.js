@@ -66,6 +66,45 @@ export function alturaDeBarra(valor, escalaMaxima, altoDisponible) {
 }
 
 /**
+ * Un eje que puede cruzar el cero — el ahorro de un mes puede ser
+ * negativo (se gastó más de lo que entró), y eso tiene que poder
+ * dibujarse sin mentir mostrándolo como si fuera cero o positivo.
+ * Techo y piso cada uno con su propia escala redonda (de
+ * `escalaRedonda`), y `yDe()` convierte cualquier valor en su posición
+ * Y dentro de `[y, y+alto]`. Con puros valores en cero, da un rango de
+ * 1 — nunca cero, que dividiría por cero.
+ *
+ * @param {number[]} valores
+ * @param {{y:number, alto:number}} caja el área disponible en pantalla
+ */
+export function ejeConCero(valores, { y, alto }) {
+  const techo = Math.max(0, ...valores);
+  const piso = Math.min(0, ...valores);
+  const ymax = techo > 0 ? escalaRedonda(techo) : 0;
+  const ymin = piso < 0 ? -escalaRedonda(-piso) : 0;
+  const rango = ymax - ymin || 1;
+  const yDe = (v) => y + alto - (alto * (v - ymin)) / rango;
+  return { yDe, yCero: yDe(0), ymax, ymin, rango };
+}
+
+/**
+ * El tramo `{y, alto}` de una barra que puede ser negativa: crece
+ * hacia arriba desde el cero si el valor es positivo, hacia abajo si
+ * es negativo — nunca al revés, o un ahorro negativo se vería como
+ * positivo. Mismo mínimo de 1,5 px que `alturaDeBarra`, para que un
+ * valor chico no desaparezca.
+ *
+ * @param {number} valor
+ * @param {{yDe:(v:number)=>number, yCero:number}} eje de `ejeConCero`
+ */
+export function tramoDeBarra(valor, eje) {
+  if (!valor) return { y: eje.yCero, alto: 0 };
+  const y = eje.yDe(valor);
+  if (valor > 0) return { y, alto: Math.max(1.5, eje.yCero - y) };
+  return { y: eje.yCero, alto: Math.max(1.5, y - eje.yCero) };
+}
+
+/**
  * El trazo (`d`) de una barra con sólo las esquinas de ARRIBA
  * redondeadas: el borde inferior queda recto, apoyado en el eje. Con
  * las cuatro esquinas iguales —lo que da un `<rect rx>`— una barra
@@ -110,19 +149,27 @@ export function etiquetaSvg(ancho, alto) {
 }
 
 /**
- * Grilla horizontal y eje de valores, de 0 a `maximo` en `pasos`
- * saltos (5 líneas con 4 pasos, el valor por defecto). Cada etiqueta
- * pasa por `fmtK` salvo que se pida otro formato — nunca un número
- * crudo, que en millones no se lee.
+ * Grilla horizontal y eje de valores, de `minimo` a `maximo` en
+ * `pasos` saltos (5 líneas con 4 pasos, el valor por defecto). Cada
+ * etiqueta pasa por `fmtK` salvo que se pida otro formato — nunca un
+ * número crudo, que en millones no se lee.
+ *
+ * `minimo` es 0 salvo que se pida otra cosa: la mayoría de los
+ * gráficos no cruzan el cero. Cuando sí lo hacen (el ahorro de un mes
+ * puede ser negativo), pasarle el `ymin` de `ejeConCero` acá es lo que
+ * hace que la grilla quede alineada con las barras — las dos tienen
+ * que usar el mismo rango, o la línea del cero de una no cae donde
+ * las barras de la otra lo tienen.
  *
  * @param {{x:number, y:number, ancho:number, alto:number, maximo:number,
- *          formatear?:(n:number)=>string, pasos?:number}} datos
+ *          minimo?:number, formatear?:(n:number)=>string, pasos?:number}} datos
  */
-export function grilla({ x, y, ancho, alto, maximo, formatear = fmtK, pasos = 4 }) {
+export function grilla({ x, y, ancho, alto, maximo, minimo = 0, formatear = fmtK, pasos = 4 }) {
+  const rango = maximo - minimo || 1;
   let salida = "";
   for (let i = 0; i <= pasos; i++) {
-    const posY = y + alto - (alto * i) / pasos;
-    const valor = (maximo * i) / pasos;
+    const valor = minimo + (rango * i) / pasos;
+    const posY = y + alto - (alto * (valor - minimo)) / rango;
     salida +=
       `<line class="gridline" x1="${x}" y1="${posY.toFixed(1)}" x2="${(x + ancho).toFixed(1)}" y2="${posY.toFixed(1)}"/>` +
       `<text class="axis-v" x="${(x - 7).toFixed(1)}" y="${(posY + 3.2).toFixed(1)}" text-anchor="end">${esc(formatear(valor))}</text>`;

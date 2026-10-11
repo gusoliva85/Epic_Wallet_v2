@@ -1,15 +1,17 @@
-/* El tablero de Inicio: indicadores (F05-T07) y gráfico diario (F06-T02)
-   Referencia: 01_Documento_General.md §12.2, §13 · 02_Documento_Tecnico.md
-   §9.2, §12.4-§12.6, §14.1
+/* El tablero de Inicio: indicadores (F05-T07), gráfico diario
+   (F06-T02) y últimos seis meses + gastos por categoría (F06-T05)
+   Referencia: 01_Documento_General.md §12.2, §13, §14, §15 ·
+   02_Documento_Tecnico.md §9.2, §12.4-§12.6, §14.1, §14.2
 
    Pide `GET /api/dashboard?year&month` del mes que esté mostrando la
    barra de mes — mismo patrón que `movimientos.js` (F04-T12): un solo
    oyente de `barra-mes.EVENTO_CAMBIO` cubre arrancar, moverse de mes,
    y cualquier alta/edición/baja que invalide el caché de meses. Esa
-   ÚNICA llamada alimenta las tarjetas Y el gráfico: por eso los dos
-   viven en este mismo archivo y comparten `cargando`/`fallo`/
-   `dashboard` — una segunda llamada a `/api/dashboard` sólo para el
-   gráfico duplicaría exactamente lo que F05-T04 evitó.
+   ÚNICA llamada alimenta las tarjetas, los dos gráficos y el desglose
+   por categoría: por eso viven todos en este mismo archivo y
+   comparten `cargando`/`fallo`/`dashboard` — una segunda llamada a
+   `/api/dashboard` sólo para uno de ellos duplicaría exactamente lo
+   que F05-T04 evitó.
 
    Cinco tarjetas, las que ya estaban maquetadas desde F01-T13: ahorro
    del mes (héroe), ingresos, egresos, gasto de hoy y total de ahorros.
@@ -25,14 +27,22 @@
 
    El gráfico diario (`daily`) es `null` en un mes histórico (Regla 4):
    ahí se muestra el estado de `consolidado()`, nunca una serie
-   inventada. */
+   inventada. Los últimos seis meses y las categorías NO tienen ese
+   problema: salen de totales por mes/categoría que existen tanto para
+   un mes abierto como uno histórico, así que se muestran siempre —
+   sólo cambia el texto de cada fila de categoría (F06-T05, más abajo).
+
+   "Gastos por categoría" filtra a `type === "expense"`: es un
+   desglose de GASTO (General §15), no de todos los movimientos. */
 
 import { api } from "./api.js";
-import { fmt, fmtS, pct, pctPlano } from "./format.js";
+import { esc, fmt, fmtS, fmtK, pct, pctPlano } from "./format.js";
 import { tarjetaHeroe, tarjetaMetrica, pintarTarjetas, animarCifras } from "./components/kpi.js";
-import { bloqueCargando, error as estadoError, consolidado } from "./components/estados.js";
+import { filaCategoria, pintarFilas } from "./components/rows.js";
+import { bloqueCargando, error as estadoError, vacio, consolidado } from "./components/estados.js";
 import { EVENTO_CAMBIO } from "./barra-mes.js";
 import { dibujar as dibujarGraficoDiario, MODOS as MODOS_DIARIO } from "./charts/diario.js";
+import { dibujar as dibujarGraficoSeis, MODOS as MODOS_SEIS, etiquetaCorta } from "./charts/seis.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -115,6 +125,8 @@ let cargando = true;
 let fallo = false;
 let ultimoPeriodo = null;
 let modoDiario = "ambos";
+let modoSeis = "barras";
+let ordenCategorias = "mayor";
 
 // ===================================================================
 //  Gráfico diario (F06-T02)
@@ -155,6 +167,122 @@ function conectarModoDiario() {
 }
 
 // ===================================================================
+//  Últimos seis meses (F06-T05)
+// ===================================================================
+
+function pintarPieSeis(contenedor, meses) {
+  contenedor.innerHTML = meses
+    .map(
+      (m) =>
+        `<div class="mini cg"><span>${esc(etiquetaCorta(m))}</span>` +
+        `<b class="num">${esc(fmtK(m.saving))}</b>` +
+        `<span style="text-transform: none; letter-spacing: 0">${esc(fmtK(m.income))} / ${esc(fmtK(m.expense))}</span></div>`,
+    )
+    .join("");
+}
+
+function pintarGraficoSeis() {
+  const caja = $("grafico-seis");
+  const pie = $("pie-seis");
+  if (!caja) return;
+
+  if (cargando) {
+    caja.innerHTML = bloqueCargando("grafico", 1);
+    if (pie) pie.innerHTML = "";
+    return;
+  }
+  if (fallo || !dashboard) {
+    caja.innerHTML = estadoError("No se pudo cargar el gráfico de los últimos seis meses.");
+    if (pie) pie.innerHTML = "";
+    return;
+  }
+
+  caja.innerHTML = dibujarGraficoSeis(dashboard.last_six_months, modoSeis);
+  if (pie) pintarPieSeis(pie, dashboard.last_six_months);
+}
+
+function conectarModoSeis() {
+  const grupo = $("seis-modo");
+  grupo?.addEventListener("click", (ev) => {
+    const boton = /** @type {HTMLElement} */ (ev.target).closest("button[data-modo]");
+    if (!boton || !grupo.contains(boton)) return;
+    const modo = boton.dataset.modo;
+    if (!MODOS_SEIS.includes(modo) || modo === modoSeis) return;
+    modoSeis = modo;
+    pintarGraficoSeis();
+  });
+}
+
+// ===================================================================
+//  Gastos por categoría (F06-T05)
+// ===================================================================
+
+/** "DD/MM", sin año: todas las filas son del mismo mes en pantalla. */
+function fechaCorta(iso) {
+  const [, m, d] = iso.split("-");
+  return `${d}/${m}`;
+}
+
+function categoriasOrdenadas(categorias, orden) {
+  // `[...gastos].sort(...)` y no `.toSorted(...)`: ES2022 (CLAUDE.md),
+  // `toSorted` es ES2023.
+  const gastos = categorias.filter((c) => c.type === "expense");
+  if (orden === "az") return [...gastos].sort((a, b) => a.name.localeCompare(b.name, "es"));
+  return [...gastos].sort((a, b) => Number(b.total) - Number(a.total));
+}
+
+/** Un mes histórico no tiene movimientos individuales (Regla 4): cada
+ * categoría tiene su total pero `transaction_count` y `last_date`
+ * quedan en 0/`null` — "Total consolidado" lo explica, en vez de un
+ * "0 movimientos" que sería verdad en el papel y mentira en espíritu. */
+function filaDeCategoria(c, mesConsolidado) {
+  return filaCategoria({
+    id: c.category_id,
+    nombre: c.name,
+    total: fmt(c.total),
+    detalle: mesConsolidado
+      ? "Total consolidado"
+      : `${c.transaction_count} movimiento${c.transaction_count === 1 ? "" : "s"} · ${pctPlano(c.share)} del gasto`,
+    participacion: c.share == null ? 0 : Number(c.share),
+    pie: c.last_date ? `últ. ${fechaCorta(c.last_date)}` : "—",
+  });
+}
+
+function pintarCategorias() {
+  const caja = $("categorias-inicio");
+  if (!caja) return;
+
+  if (cargando) {
+    caja.innerHTML = bloqueCargando("fila", 4);
+    return;
+  }
+  if (fallo || !dashboard) {
+    caja.innerHTML = estadoError("No se pudieron cargar las categorías.");
+    return;
+  }
+
+  const gastos = categoriasOrdenadas(dashboard.categories, ordenCategorias);
+  if (gastos.length === 0) {
+    caja.innerHTML = vacio("Sin gastos este mes", "Cuando cargues un egreso, va a aparecer acá.");
+    return;
+  }
+
+  pintarFilas(caja, gastos.map((c) => filaDeCategoria(c, dashboard.month.consolidated)));
+}
+
+function conectarOrdenCategorias() {
+  const grupo = $("categorias-orden");
+  grupo?.addEventListener("click", (ev) => {
+    const boton = /** @type {HTMLElement} */ (ev.target).closest("button[data-orden]");
+    if (!boton || !grupo.contains(boton)) return;
+    const orden = boton.dataset.orden;
+    if (!["mayor", "az"].includes(orden) || orden === ordenCategorias) return;
+    ordenCategorias = orden;
+    pintarCategorias();
+  });
+}
+
+// ===================================================================
 //  Las tarjetas (F05-T07)
 // ===================================================================
 
@@ -172,6 +300,8 @@ function pintar() {
   }
 
   pintarGrafico();
+  pintarGraficoSeis();
+  pintarCategorias();
 }
 
 async function cargar(periodo) {
@@ -197,8 +327,8 @@ async function cargar(periodo) {
   pintar();
 }
 
-/** Un mismo "reintentar" para las tarjetas y para el gráfico: los dos
- * fallan y se recuperan juntos, porque los dos salen de la misma
+/** Un mismo "reintentar" para las tarjetas y los tres paneles: todos
+ * fallan y se recuperan juntos, porque todos salen de la misma
  * llamada. */
 function conectarReintentar() {
   const alReintentar = (ev) => {
@@ -207,6 +337,8 @@ function conectarReintentar() {
   };
   $("kpis-inicio")?.addEventListener("click", alReintentar);
   $("grafico-diario")?.addEventListener("click", alReintentar);
+  $("grafico-seis")?.addEventListener("click", alReintentar);
+  $("categorias-inicio")?.addEventListener("click", alReintentar);
 }
 
 // ===================================================================
@@ -219,6 +351,8 @@ export async function arrancar() {
 
   conectarReintentar();
   conectarModoDiario();
+  conectarModoSeis();
+  conectarOrdenCategorias();
 
   document.addEventListener(EVENTO_CAMBIO, (ev) => {
     cargar(/** @type {CustomEvent} */ (ev).detail);

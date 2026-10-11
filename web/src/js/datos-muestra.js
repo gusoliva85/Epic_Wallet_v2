@@ -246,24 +246,6 @@ export const METRICAS = [
   { nombre: "Meses registrados", valor: "6" },
 ];
 
-export const SEIS_MESES = [
-  { mes: "May", ingresos: "$1,65M", egresos: "$1,01M", ahorro: "$638k" },
-  { mes: "Jun", ingresos: "$1,82M", egresos: "$988k", ahorro: "$832k" },
-  { mes: "Jul", ingresos: "$1,82M", egresos: "$1,24M", ahorro: "$583k" },
-  { mes: "Ago", ingresos: "$1,98M", egresos: "$1,10M", ahorro: "$876k" },
-  { mes: "Sep", ingresos: "$1,98M", egresos: "$937k", ahorro: "$1,04M" },
-  { mes: "Oct", ingresos: "$2,11M", egresos: "$821k", ahorro: "$1,28M" },
-];
-
-export const PIE_DIARIO = [
-  { etiqueta: "Promedio diario", valor: "$27.356" },
-  { etiqueta: "Día más alto", valor: "$520.000" },
-  { etiqueta: "Días sin gasto", valor: "1" },
-  { etiqueta: "Proyección a 30 días", valor: "$820.700" },
-  { etiqueta: "Ahorro de hoy", valor: "$1.284.300" },
-  { etiqueta: "Máximo del mes", valor: "$1.339.400" },
-];
-
 /* Las categorías de configuración, con su estado. Se desactivan, nunca
    se borran si tienen histórico. */
 export const PREFERENCIAS = [

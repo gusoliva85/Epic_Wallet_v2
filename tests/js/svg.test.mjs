@@ -14,6 +14,8 @@ import assert from "node:assert/strict";
 import {
   escalaRedonda,
   alturaDeBarra,
+  ejeConCero,
+  tramoDeBarra,
   trazoBarraRedondeada,
   etiquetaSvg,
   grilla,
@@ -61,6 +63,57 @@ describe("alturaDeBarra", () => {
 
   test("una escala en cero no divide por cero", () => {
     assert.equal(alturaDeBarra(500, 0, 200), 0);
+  });
+});
+
+describe("ejeConCero", () => {
+  test("con puros valores positivos, el piso queda en cero", () => {
+    const eje = ejeConCero([100, 500, 200], { y: 0, alto: 100 });
+    assert.equal(eje.ymin, 0);
+    assert.equal(eje.yCero, 100, "el cero cae en el borde inferior del área");
+  });
+
+  test("con un valor negativo, el piso baja y el cero deja de estar abajo del todo", () => {
+    const eje = ejeConCero([500, -100], { y: 0, alto: 100 });
+    assert.ok(eje.ymin < 0, "tiene que haber piso negativo");
+    assert.ok(eje.yCero > 0 && eje.yCero < 100, "el cero queda en algún punto intermedio, no en el borde");
+  });
+
+  test("con la lista vacía o puros ceros no rompe (rango nunca en cero)", () => {
+    assert.doesNotThrow(() => ejeConCero([], { y: 0, alto: 100 }));
+    assert.doesNotThrow(() => ejeConCero([0, 0], { y: 0, alto: 100 }));
+  });
+
+  test("yDe(0) y yCero son lo mismo", () => {
+    const eje = ejeConCero([300, -150], { y: 10, alto: 200 });
+    assert.equal(eje.yDe(0), eje.yCero);
+  });
+});
+
+describe("tramoDeBarra", () => {
+  test("un valor positivo crece hacia arriba desde el cero", () => {
+    const eje = ejeConCero([100], { y: 0, alto: 100 });
+    const { y, alto } = tramoDeBarra(100, eje);
+    assert.ok(y < eje.yCero, "el techo de la barra tiene que quedar arriba del cero");
+    assert.equal(y + alto, eje.yCero, "la barra tiene que apoyarse justo en el cero");
+  });
+
+  test("un valor negativo crece hacia abajo desde el cero, nunca hacia arriba", () => {
+    // Si esto fallara, un ahorro negativo se vería como uno positivo.
+    const eje = ejeConCero([500, -100], { y: 0, alto: 100 });
+    const { y, alto } = tramoDeBarra(-100, eje);
+    assert.equal(y, eje.yCero, "una barra negativa arranca en el cero");
+    assert.ok(alto > 0, "y crece hacia abajo (alto positivo, offset ya puesto en y)");
+  });
+
+  test("un valor en cero no dibuja nada (alto cero)", () => {
+    const eje = ejeConCero([100], { y: 0, alto: 100 });
+    assert.equal(tramoDeBarra(0, eje).alto, 0);
+  });
+
+  test("un valor chico nunca da menos de 1,5 px", () => {
+    const eje = ejeConCero([1_000_000], { y: 0, alto: 100 });
+    assert.equal(tramoDeBarra(1, eje).alto, 1.5);
   });
 });
 
@@ -122,6 +175,31 @@ describe("grilla", () => {
     });
     assert.match(svg, />#0#</);
     assert.match(svg, />#100#</);
+  });
+
+  test("con minimo negativo, el cero no queda en el borde de abajo", () => {
+    // F06-T05: el ahorro de un mes puede ser negativo. Sin esto, la
+    // grilla asumía 0 siempre y quedaba desalineada con las barras de
+    // `ejeConCero`/`tramoDeBarra`, que sí saben que el piso bajó.
+    const svg = grilla({
+      x: 0,
+      y: 0,
+      ancho: 100,
+      alto: 100,
+      maximo: 100,
+      minimo: -50,
+      formatear: (n) => `#${n}#`,
+      pasos: 3,
+    });
+    // De -50 a 100 en 3 pasos: -50, 0, 50, 100.
+    assert.match(svg, />#-50#</);
+    assert.match(svg, />#0#</);
+    assert.match(svg, />#50#</);
+    assert.match(svg, />#100#</);
+    // El cero no está en el fondo (y=100): el piso es -50, así que el
+    // cero cae a 2/3 de la altura, no al final.
+    const lineaDeCero = svg.match(/<line[^>]*y1="([\d.]+)"[^>]*\/><text[^>]*>#0#/)[1];
+    assert.notEqual(Number(lineaDeCero), 100);
   });
 
   test("una etiqueta con caracteres de HTML se escapa", () => {

@@ -49,16 +49,20 @@ async function cargarConDobles() {
       "const api = { get: (...a) => globalThis.__espia.apiGet(...a) };",
     )
     .replace(
-      'import { fmt, fmtS, pct, pctPlano } from "./format.js";',
-      `import { fmt, fmtS, pct, pctPlano } from "${rutaAbsoluta("format.js")}";`,
+      'import { esc, fmt, fmtS, fmtK, pct, pctPlano } from "./format.js";',
+      `import { esc, fmt, fmtS, fmtK, pct, pctPlano } from "${rutaAbsoluta("format.js")}";`,
     )
     .replace(
       'import { tarjetaHeroe, tarjetaMetrica, pintarTarjetas, animarCifras } from "./components/kpi.js";',
       `import { tarjetaHeroe, tarjetaMetrica, pintarTarjetas, animarCifras } from "${rutaAbsoluta("components", "kpi.js")}";`,
     )
     .replace(
-      'import { bloqueCargando, error as estadoError, consolidado } from "./components/estados.js";',
-      `import { bloqueCargando, error as estadoError, consolidado } from "${rutaAbsoluta("components", "estados.js")}";`,
+      'import { filaCategoria, pintarFilas } from "./components/rows.js";',
+      `import { filaCategoria, pintarFilas } from "${rutaAbsoluta("components", "rows.js")}";`,
+    )
+    .replace(
+      'import { bloqueCargando, error as estadoError, vacio, consolidado } from "./components/estados.js";',
+      `import { bloqueCargando, error as estadoError, vacio, consolidado } from "${rutaAbsoluta("components", "estados.js")}";`,
     )
     .replace(
       'import { EVENTO_CAMBIO } from "./barra-mes.js";',
@@ -67,6 +71,10 @@ async function cargarConDobles() {
     .replace(
       'import { dibujar as dibujarGraficoDiario, MODOS as MODOS_DIARIO } from "./charts/diario.js";',
       `import { dibujar as dibujarGraficoDiario, MODOS as MODOS_DIARIO } from "${rutaAbsoluta("charts", "diario.js")}";`,
+    )
+    .replace(
+      'import { dibujar as dibujarGraficoSeis, MODOS as MODOS_SEIS, etiquetaCorta } from "./charts/seis.js";',
+      `import { dibujar as dibujarGraficoSeis, MODOS as MODOS_SEIS, etiquetaCorta } from "${rutaAbsoluta("charts", "seis.js")}";`,
     );
 
   const unico = `\n// ${Math.random()}\n`;
@@ -120,8 +128,44 @@ function respuestaBase() {
       peak_expense: { day: 10, amount: "15000.00" },
       days_without_expense: 9,
     },
-    last_six_months: [],
-    categories: [],
+    last_six_months: [
+      { year: 2026, month: 8, label: "Agosto 2026", income: "480000.00", expense: "300000.00", saving: "180000.00", saving_rate: "37.5" },
+      { year: 2026, month: 9, label: "Septiembre 2026", income: "490000.00", expense: "320000.00", saving: "170000.00", saving_rate: "34.7" },
+      { year: 2026, month: 10, label: "Octubre 2026", income: "500000.00", expense: "165000.00", saving: "335000.00", saving_rate: "67.0" },
+    ],
+    categories: [
+      // A propósito, "Gas" pesa más que "Alquiler": así el orden "mayor
+      // gasto" (Gas, Alquiler) y el orden "A–Z" (Alquiler, Gas) dan
+      // resultados distintos, y una prueba de orden que no mueva nada
+      // de verdad no pasa por casualidad.
+      {
+        category_id: 1,
+        name: "Alquiler",
+        type: "expense",
+        total: "45000.00",
+        share: "27.3",
+        transaction_count: 2,
+        last_date: "2026-10-12",
+      },
+      {
+        category_id: 2,
+        name: "Gas",
+        type: "expense",
+        total: "120000.00",
+        share: "72.7",
+        transaction_count: 1,
+        last_date: "2026-10-05",
+      },
+      {
+        category_id: 3,
+        name: "Sueldo",
+        type: "income",
+        total: "500000.00",
+        share: "100.0",
+        transaction_count: 1,
+        last_date: "2026-10-01",
+      },
+    ],
     recent_transactions: [],
     alerts: [],
   };
@@ -146,6 +190,18 @@ const HTML_INICIO = `<!doctype html><html><body>
     <button type="button" data-modo="ingresos">Ingresos</button>
   </div>
   <div class="chart-wrap" id="grafico-diario"></div>
+  <div class="view-switch" id="seis-modo">
+    <button type="button" class="activa" data-modo="barras">Barras</button>
+    <button type="button" data-modo="ahorro">Ahorro</button>
+    <button type="button" data-modo="tasa">Tasa de ahorro</button>
+  </div>
+  <div class="chart-wrap" id="grafico-seis"></div>
+  <div class="chart-foot" id="pie-seis"></div>
+  <div class="view-switch" id="categorias-orden">
+    <button type="button" class="activa" data-orden="mayor">Mayor gasto</button>
+    <button type="button" data-orden="az">A–Z</button>
+  </div>
+  <div class="rows" id="categorias-inicio"></div>
 </body></html>`;
 
 async function montar({ apiGet } = {}) {
@@ -182,6 +238,11 @@ async function montar({ apiGet } = {}) {
     caja: $$("kpis-inicio"),
     grafico: $$("grafico-diario"),
     modoDiario: $$("diario-modo"),
+    graficoSeis: $$("grafico-seis"),
+    pieSeis: $$("pie-seis"),
+    modoSeis: $$("seis-modo"),
+    categorias: $$("categorias-inicio"),
+    ordenCategorias: $$("categorias-orden"),
   };
 }
 
@@ -603,6 +664,135 @@ describe("el gráfico diario (F06-T02)", () => {
   });
 });
 
+describe("últimos seis meses (F06-T05)", () => {
+  test("dibuja el svg y el pie con un mini-card por mes", async () => {
+    const { dom, graficoSeis, pieSeis } = await montar();
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    assert.ok(graficoSeis.querySelector("svg"));
+    assert.equal(pieSeis.querySelectorAll(".mini").length, 3, "un mini-card por cada mes de la base");
+  });
+
+  test("con menos de seis meses, el pie muestra sólo los que hay", async () => {
+    const { dom, pieSeis } = await montar({
+      apiGet: async () => conCambios(respuestaBase(), [["last_six_months", [respuestaBase().last_six_months.at(-1)]]]),
+    });
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    assert.equal(pieSeis.querySelectorAll(".mini").length, 1);
+  });
+
+  test("tocar «Ahorro» y «Tasa de ahorro» redibuja sin romper", async () => {
+    const { dom, graficoSeis, modoSeis } = await montar();
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    modoSeis.querySelector('[data-modo="ahorro"]').click();
+    assert.ok(graficoSeis.querySelector("svg"));
+
+    modoSeis.querySelector('[data-modo="tasa"]').click();
+    assert.ok(graficoSeis.querySelector("svg"));
+    // El mes de octubre de la base tiene saving_rate: "67.0".
+    assert.match(graficoSeis.textContent, /67%/);
+  });
+
+  test("un mes sin tasa de ahorro (saving_rate: null) no rompe el modo «Tasa»", async () => {
+    const { dom, graficoSeis, modoSeis } = await montar({
+      apiGet: async () => conCambios(respuestaBase(), [["last_six_months.0.saving_rate", null]]),
+    });
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    modoSeis.querySelector('[data-modo="tasa"]').click();
+    assert.ok(graficoSeis.querySelector("svg"));
+  });
+});
+
+describe("gastos por categoría (F06-T05)", () => {
+  test("sólo muestra categorías de egreso, nunca las de ingreso", async () => {
+    const { dom, categorias } = await montar();
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    const filas = [...categorias.querySelectorAll(".row")];
+    assert.equal(filas.length, 2, "Alquiler y Gas — Sueldo (ingreso) queda afuera");
+    assert.ok(!categorias.textContent.includes("Sueldo"));
+  });
+
+  test("por defecto ordena de mayor a menor gasto", async () => {
+    const { dom, categorias } = await montar();
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    const nombres = [...categorias.querySelectorAll(".row-main b")].map((b) => b.textContent);
+    assert.deepEqual(nombres, ["Gas", "Alquiler"]); // 120000 > 45000
+  });
+
+  test("tocar «A–Z» ordena alfabéticamente", async () => {
+    const { dom, categorias, ordenCategorias } = await montar();
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    ordenCategorias.querySelector('[data-orden="az"]').click();
+
+    const nombres = [...categorias.querySelectorAll(".row-main b")].map((b) => b.textContent);
+    assert.deepEqual(nombres, ["Alquiler", "Gas"]); // distinto del orden "mayor gasto" de arriba
+  });
+
+  test("el detalle trae la cantidad de movimientos y el % del gasto", async () => {
+    const { dom, categorias } = await montar();
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    const fila = [...categorias.querySelectorAll(".row")].find((f) => f.textContent.includes("Gas"));
+    assert.match(fila.textContent, /1 movimiento/);
+    assert.match(fila.textContent, /72,7% del gasto/);
+  });
+
+  test("un mes histórico muestra «Total consolidado», no una cantidad inventada (Regla 4)", async () => {
+    const { dom, categorias } = await montar({
+      apiGet: async () =>
+        conCambios(respuestaBase(), [
+          ["month.consolidated", true],
+          ["month.status", "historical"],
+          ["daily", null],
+          ["recent_transactions", null],
+          ["categories.0.transaction_count", 0],
+          ["categories.0.last_date", null],
+        ]),
+    });
+    await esperar();
+    cambiarMes(dom, { id: 4, year: 2026, month: 7, status: "historical" });
+    await esperar();
+
+    const fila = [...categorias.querySelectorAll(".row")].find((f) => f.textContent.includes("Alquiler"));
+    assert.match(fila.textContent, /Total consolidado/);
+    assert.ok(!fila.textContent.includes("movimiento"));
+  });
+
+  test("un mes sin gastos muestra el estado vacío, no una lista en blanco", async () => {
+    const { dom, categorias } = await montar({
+      apiGet: async () => conCambios(respuestaBase(), [["categories", []]]),
+    });
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    assert.equal(categorias.querySelectorAll(".row").length, 0);
+    assert.match(categorias.textContent, /sin gastos/i);
+  });
+});
+
 describe("si la API falla", () => {
   test("muestra un error entendible con botón para reintentar, no rompe la pantalla", async () => {
     const { dom, caja, grafico } = await montar({
@@ -617,12 +807,26 @@ describe("si la API falla", () => {
     const reintentar = caja.querySelector("[data-reintentar]");
     assert.ok(reintentar, "tiene que haber un botón para reintentar");
     assert.equal(caja.querySelectorAll(".kpi").length, 0);
-    assert.ok(grafico.querySelector("[data-reintentar]"), "el gráfico también tiene que ofrecer reintentar");
+    assert.ok(grafico.querySelector("[data-reintentar]"), "el gráfico diario también tiene que ofrecer reintentar");
   });
 
-  test("tocar reintentar vuelve a pedir el mismo período", async () => {
+  test("los últimos seis meses y las categorías también muestran su error con reintentar", async () => {
+    const { dom, graficoSeis, categorias } = await montar({
+      apiGet: async () => {
+        throw new Error("sin red");
+      },
+    });
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    assert.ok(graficoSeis.querySelector("[data-reintentar]"));
+    assert.ok(categorias.querySelector("[data-reintentar]"));
+  });
+
+  test("tocar reintentar vuelve a pedir el mismo período, y recupera los cuatro paneles", async () => {
     let falla = true;
-    const { dom, caja, llamadas } = await montar({
+    const { dom, caja, graficoSeis, categorias, llamadas } = await montar({
       apiGet: async () => {
         if (falla) {
           falla = false;
@@ -639,6 +843,8 @@ describe("si la API falla", () => {
     await esperar();
 
     assert.equal(caja.querySelectorAll(".kpi").length, 5, "el reintento tiene que haber pintado las tarjetas");
+    assert.ok(graficoSeis.querySelector("svg"), "el reintento tiene que haber pintado los últimos seis meses");
+    assert.equal(categorias.querySelectorAll(".row").length, 2, "el reintento tiene que haber pintado las categorías");
     const pedidos = llamadas.apiGet.filter((a) => a[0].startsWith("/dashboard?"));
     assert.equal(pedidos.length, 2);
     assert.match(pedidos[1][0], /month=10/);
