@@ -2218,6 +2218,32 @@
   color: var(--color-ink);
 }
 
+/* ---- barra de composición del patrimonio · F06-T07 ----
+   Dos (o más) segmentos lado a lado, proporcionales — sin ejes ni
+   escala, así que no entra en la arquitectura SVG de `charts/svg.js`.
+   El mockup aprobado (`chartStack`) resuelve esto igual, con flexbox
+   puro. El ancho de cada segmento ya llega como porcentaje calculado
+   del lado del servidor (o, mientras no haya inversiones de verdad,
+   como dato de ejemplo) — acá sólo se posiciona, nunca se calcula. */
+.comp-track {
+  display: flex;
+  height: 14px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  box-shadow: var(--groove-in);
+  background: var(--groove-bg);
+}
+
+.comp-track > div {
+  height: 100%;
+}
+
+.comp-aviso {
+  margin: 10px 2px 0;
+  font-size: var(--text-sub);
+  color: var(--color-ink-3);
+}
+
 /* ---- nota de regla de negocio ---- */
 
 .ghost-note {

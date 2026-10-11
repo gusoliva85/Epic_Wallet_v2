@@ -146,6 +146,49 @@ def test_ahorro_acumulado_suma_los_ahorros_mensuales() -> None:
 
 
 # ===================================================================
+#  serie_de_ahorro_acumulado
+# ===================================================================
+
+
+@pytest.mark.unit
+def test_serie_de_ahorro_acumulado_sin_meses_da_la_lista_vacia() -> None:
+    assert calc.serie_de_ahorro_acumulado(D("500000.00"), []) == []
+
+
+@pytest.mark.unit
+def test_serie_de_ahorro_acumulado_da_un_punto_por_mes_encadenado() -> None:
+    ahorros = [D("50000.00"), D("-10000.00"), D("30000.00")]
+    assert calc.serie_de_ahorro_acumulado(D("100000.00"), ahorros) == [
+        D("150000.00"),
+        D("140000.00"),
+        D("170000.00"),
+    ]
+
+
+@pytest.mark.unit
+def test_serie_de_ahorro_acumulado_puede_quedar_en_negativo() -> None:
+    # Se gastó más de lo que entró dos meses seguidos: el acumulado
+    # cruza a negativo y se queda así, no se clava en cero.
+    ahorros = [D("-80000.00"), D("-50000.00")]
+    assert calc.serie_de_ahorro_acumulado(D("100000.00"), ahorros) == [
+        D("20000.00"),
+        D("-30000.00"),
+    ]
+
+
+@pytest.mark.unit
+def test_serie_de_ahorro_acumulado_termina_en_el_mismo_total_que_ahorro_acumulado() -> None:
+    # El último punto de la serie tiene que coincidir exactamente con
+    # el total que ya usa el dashboard (F05-T04) para el mismo mes: si
+    # algún día se cambia el redondeo de uno y no del otro, esta
+    # prueba lo nota.
+    saldo = D("250000.00")
+    ahorros = [D("12345.67"), D("-987.65"), D("40000.00"), D("-15000.01")]
+    serie = calc.serie_de_ahorro_acumulado(saldo, ahorros)
+    assert serie[-1] == calc.ahorro_acumulado(saldo, ahorros)
+
+
+# ===================================================================
 #  total_de_inversiones
 # ===================================================================
 

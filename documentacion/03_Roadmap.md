@@ -303,7 +303,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Hacer:** barras comparadas de los últimos seis meses con el ahorro de cada uno, y el gráfico de gastos por categoría del mes.
   **Aceptación:** · con menos de seis meses cargados muestra los que hay, sin huecos falsos · las categorías se ordenan de mayor a menor.
 
-- [ ] **F06-T07 · Evolución del ahorro y composición patrimonial**
+- [x] **F06-T07 · Evolución del ahorro y composición patrimonial**
   **Tipo:** Frontend · **Ref:** General §54
   **Hacer:** los dos gráficos restantes. El patrimonial queda con datos de ejemplo hasta la Fase 9, que es la que trae el dato real.
   **Aceptación:** · la evolución del ahorro usa el acumulado real · el patrimonial queda listo para enchufar y marcado como tal.

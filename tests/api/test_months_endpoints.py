@@ -326,3 +326,71 @@ def test_un_mes_historico_devuelve_transactions_null(
     cuerpo = r.json()
     assert "transactions" in cuerpo, "el campo no puede faltar"
     assert cuerpo["transactions"] is None
+
+
+# ===================================================================
+#  GET /api/months/savings-evolution · F06-T07
+# ===================================================================
+
+
+@sin_entorno
+def test_savings_evolution_sin_token_da_401(cliente) -> None:
+    r = cliente.get("/api/months/savings-evolution")
+    assert r.status_code == 401
+
+
+@sin_entorno
+def test_savings_evolution_encadena_el_saldo_del_mas_viejo_al_mas_nuevo(
+    cliente, motor, cuentas: tuple[Cuenta, Cuenta], limpiar_meses
+) -> None:
+    """El criterio central de la tarea: "la evolución del ahorro usa
+    el acumulado real". Se siembran tres meses fuera de orden y con un
+    `saving_total` negativo de por medio, y se verifica que el saldo
+    de cada punto es el saldo inicial más lo acumulado hasta ESE mes
+    —nunca sólo su propio `saving_total`—, y que la lista viene
+    ordenada del más viejo al más nuevo sin importar en qué orden se
+    insertaron las filas."""
+    a, _ = cuentas
+
+    r = cliente.patch("/api/me", json={"opening_balance": "100000.00"}, headers=a.cabeceras)
+    assert r.status_code == 200
+
+    with escritura(motor) as con:
+        for anio, mes, ahorro in [(2026, 10, "30000.00"), (2026, 8, "50000.00"), (2026, 9, "-20000.00")]:
+            con.execute(
+                text(
+                    f'insert into "{ESQUEMA}".months '
+                    "(user_id, year, month, status, saving_total) "
+                    "values (:uid, :anio, :mes, 'historical', :ahorro)"
+                ),
+                {"uid": a.uid, "anio": anio, "mes": mes, "ahorro": ahorro},
+            )
+
+    r = cliente.get("/api/months/savings-evolution", headers=a.cabeceras)
+    assert r.status_code == 200
+    serie = r.json()
+
+    periodos = [(p["year"], p["month"]) for p in serie]
+    assert periodos.index((2026, 8)) < periodos.index((2026, 9)) < periodos.index((2026, 10))
+
+    por_periodo = {(p["year"], p["month"]): p["balance"] for p in serie}
+    assert por_periodo[(2026, 8)] == "150000.00"  # 100000 + 50000
+    assert por_periodo[(2026, 9)] == "130000.00"  # 150000 - 20000
+    assert por_periodo[(2026, 10)] == "160000.00"  # 130000 + 30000
+
+    # Deja el perfil como estaba para no afectar otras pruebas del
+    # módulo que comparten esta misma cuenta.
+    cliente.patch("/api/me", json={"opening_balance": "0.00"}, headers=a.cabeceras)
+
+
+@sin_entorno
+def test_savings_evolution_no_ve_los_meses_de_otra_cuenta(
+    cliente, cuentas: tuple[Cuenta, Cuenta], limpiar_meses
+) -> None:
+    a, b = cuentas
+    _crear_mes(a.uid, year=2026, month=10, status="open")
+    _crear_mes(b.uid, year=2026, month=10, status="open")
+
+    r = cliente.get("/api/months/savings-evolution", headers=a.cabeceras)
+    assert r.status_code == 200
+    assert len(r.json()) == 1

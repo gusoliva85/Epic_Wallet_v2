@@ -11,7 +11,7 @@
    gráfico funcionan todavía. Están maquetados y en su lugar; la lógica
    es de las fases que les corresponden. */
 
-import { esc } from "../format.js";
+import { esc, toNum } from "../format.js";
 import {
   tarjetaHeroe,
   tarjetaMetrica,
@@ -168,6 +168,29 @@ function ficha(nombre, valor, total = false) {
   );
 }
 
+/* La barra de composición (líquido vs. invertido) es un dato de
+   ejemplo a propósito, hasta F10 (General §54, Gráfico 5; roadmap
+   F06-T07): sin inversiones todavía en la base, no hay una segunda
+   parte real que mostrar. El aviso de abajo lo deja explícito en
+   vez de dejar que se confunda con una cifra real. Los porcentajes
+   ya llegan calculados en `D.PATRIMONIO` —acá sólo deciden el ancho
+   de su propio segmento, no se suma ni se divide nada. */
+function barraDeComposicion() {
+  const liquido = toNum(D.PATRIMONIO.liquido);
+  const invertido = toNum(D.PATRIMONIO.invertido);
+  return (
+    '<div class="comp-track">' +
+    `<div style="width: ${liquido}%; background: var(--color-sav)"></div>` +
+    `<div style="width: ${invertido}%; background: var(--color-accent-2)"></div>` +
+    "</div>" +
+    '<div class="legend" style="padding-top: 10px">' +
+    `<span><i class="dot" style="background: var(--color-sav)"></i>Ahorro líquido <b class="num">${esc(D.PATRIMONIO.ahorro)}</b></span>` +
+    `<span><i class="dot" style="background: var(--color-accent-2)"></i>Inversiones <b class="num">${esc(D.PATRIMONIO.inversiones)}</b></span>` +
+    "</div>" +
+    '<p class="comp-aviso">Datos de ejemplo — se conecta con las inversiones reales en la Fase 9.</p>'
+  );
+}
+
 function patrimonio() {
   escribir(
     "patrimonio-ecuacion",
@@ -176,6 +199,8 @@ function patrimonio() {
       ficha("Pasivos", D.PATRIMONIO.pasivos) +
       ficha("Patrimonio neto", D.PATRIMONIO.total, true),
   );
+
+  escribir("grafico-composicion", barraDeComposicion());
 
   escribir(
     "patrimonio-pie",

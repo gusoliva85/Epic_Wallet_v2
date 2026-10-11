@@ -94,6 +94,23 @@ def ahorro_acumulado(
     return money(saldo_inicial + sum(ahorros_mensuales, decimal.Decimal("0")))
 
 
+def serie_de_ahorro_acumulado(
+    saldo_inicial: decimal.Decimal, ahorros_mensuales: list[decimal.Decimal]
+) -> list[decimal.Decimal]:
+    """La misma cuenta de `ahorro_acumulado`, pero devuelve el saldo al
+    final de CADA mes en vez de sólo el del último: la serie que pide
+    el gráfico de evolución del ahorro (General §54, Gráfico 4), un
+    punto por mes. `ahorros_mensuales` tiene que venir del más viejo
+    al más nuevo —acá sólo se encadena la suma, el orden ya tiene que
+    traerlo quien llama."""
+    serie: list[decimal.Decimal] = []
+    corrida = saldo_inicial
+    for ahorro in ahorros_mensuales:
+        corrida = money(corrida + ahorro)
+        serie.append(corrida)
+    return serie
+
+
 def total_de_inversiones(valores_actuales: list[decimal.Decimal]) -> decimal.Decimal:
     """General §52: la suma del valor actual de cada posición. Cómo se
     valúa una posición individual —precio de mercado o valor manual—

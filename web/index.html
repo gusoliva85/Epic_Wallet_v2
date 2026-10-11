@@ -435,15 +435,17 @@
                 <p>Saldo inicial más los ahorros de cada mes.</p>
               </div>
             </div>
-            <div class="grafico-pendiente" role="note">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M3 20h18M6 20V11M11 20V5M16 20v-7M21 20v-4" /></svg
-              ><b>Gráfico de evolución del ahorro</b>
-              <p>
-                Área con la línea del saldo acumulado mes a mes. Llega en la
-                fase 5.
-              </p>
+            <div class="legend">
+              <span>
+                <i
+                  class="dot dot--linea"
+                  style="background: var(--color-sav)"
+                ></i>
+                Saldo acumulado
+              </span>
             </div>
+            <div class="chart-wrap" id="grafico-ahorro"></div>
+            <div class="chart-foot" id="ahorro-pie"></div>
           </article>
 
           <p class="ghost-note">
@@ -532,15 +534,7 @@
                 </p>
               </div>
             </div>
-            <div class="grafico-pendiente" role="note">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M3 20h18M6 20V11M11 20V5M16 20v-7M21 20v-4" /></svg
-              ><b>Gráfico de composición del patrimonio</b>
-              <p>
-                Barra apilada con la parte líquida y la invertida. Llega en la
-                fase 7.
-              </p>
-            </div>
+            <div class="chart-wrap" id="grafico-composicion"></div>
             <div class="chart-foot" id="patrimonio-pie"></div>
           </article>
         </section>
@@ -1497,6 +1491,7 @@
     <script type="module" src="/src/js/alta-movimiento.js"></script>
     <script type="module" src="/src/js/movimientos.js"></script>
     <script type="module" src="/src/js/dashboard.js"></script>
+    <script type="module" src="/src/js/historial.js"></script>
     <script type="module" src="/src/js/app.js"></script>
     <script type="module" src="/src/js/registrar-sw.js"></script>
   </body>

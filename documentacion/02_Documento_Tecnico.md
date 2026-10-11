@@ -774,6 +774,7 @@ Base: `/api`. JSON en todo. Fechas en ISO 8601 (`2026-10-03`). Importes como **s
 | `POST` | `/api/me/bootstrap` | Red de seguridad: crea el perfil y las 21 categorías si el trigger no corrió. Idempotente. |
 | `GET` | `/api/dashboard?year&month` | **Respuesta única del dashboard** (ver 9.2). |
 | `GET` | `/api/months` | Lista de meses con sus totales y saldo acumulado. |
+| `GET` | `/api/months/savings-evolution` | El saldo acumulado real, un punto por mes (gráfico de evolución del ahorro, F06-T07). |
 | `GET` | `/api/months/{id}` | Detalle de un mes con totales por categoría. |
 | `POST` | `/api/months/historical` | Crear o actualizar un mes histórico consolidado. |
 | `PATCH` | `/api/months/{id}` | Corregir un mes histórico. |

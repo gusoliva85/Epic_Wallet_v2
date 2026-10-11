@@ -40,6 +40,22 @@ class MesResumen(BaseModel):
         return f"{valor:.2f}"
 
 
+class SaldoMensual(BaseModel):
+    """Un punto de `GET /api/months/savings-evolution`: el saldo
+    acumulado al final de ese mes, para el gráfico de evolución del
+    ahorro (General §54, Gráfico 4)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    year: int
+    month: int
+    balance: decimal.Decimal
+
+    @field_serializer("balance")
+    def _balance_como_texto(self, valor: decimal.Decimal) -> str:
+        return f"{valor:.2f}"
+
+
 class MesDetalle(MesResumen):
     """`GET /api/months/{id}`: lo del resumen, más lo que falta para
     ver el mes entero."""

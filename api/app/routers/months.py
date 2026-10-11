@@ -2,8 +2,9 @@
 
 Referencia: 02_Documento_Tecnico.md §9.1, §6.6
 
-    GET  /api/months       la lista, con su saldo acumulado
-    GET  /api/months/{id}  el detalle, respetando las dos naturalezas
+    GET  /api/months                   la lista, con su saldo acumulado
+    GET  /api/months/savings-evolution el acumulado real, mes a mes (F06-T07)
+    GET  /api/months/{id}              el detalle, respetando las dos naturalezas
 
 Ninguno de los dos filtra por usuario en su consulta: la sesión que
 llega acá es una `SesionDeUsuario` (F02-T05), así que RLS ya deja ver
@@ -13,6 +14,8 @@ sólo lo del usuario del token — el mismo patrón que `GET`/`PATCH
 
 from __future__ import annotations
 
+import decimal
+
 from fastapi import APIRouter, status
 
 from ..core.db import SesionDeUsuario
@@ -20,7 +23,9 @@ from ..core.errors import NOT_FOUND, ErrorDeApi
 from ..core.security import UsuarioDelToken
 from ..models import Month
 from ..repos import months as repos
-from ..schemas.months import MesDetalle, MesResumen
+from ..repos import profiles as repos_perfiles
+from ..schemas.months import MesDetalle, MesResumen, SaldoMensual
+from ..services import calc
 from ..services.months import abrir_mes_actual, transacciones_del_mes
 from .me import asegurar_perfil_y_categorias
 
@@ -53,6 +58,37 @@ def listar_meses(sesion: SesionDeUsuario, usuario: UsuarioDelToken) -> list[Mont
     # la que ya estaba.
     abrir_mes_actual(sesion, usuario.id)
     return repos.listar(sesion)
+
+
+@router.get(
+    "/savings-evolution",
+    response_model=list[SaldoMensual],
+    summary="La evolución del ahorro acumulado, mes a mes",
+)
+def ver_evolucion_del_ahorro(sesion: SesionDeUsuario, usuario: UsuarioDelToken) -> list[SaldoMensual]:
+    # Antes de `/{month_id}` a propósito: con el otro orden, FastAPI
+    # intenta leer "savings-evolution" como el `int` de esa ruta y
+    # nunca llega hasta acá.
+    #
+    # El saldo acumulado real (General §54, Gráfico 4) sale de sumar
+    # `saving_total` mes a mes (F04-T05 ya lo mantiene al día) sobre el
+    # saldo inicial del perfil — la misma cuenta que ya usa
+    # `services.dashboard.armar()` para el indicador, acá con un punto
+    # por mes en vez de sólo el último. `months.closing_balance` no se
+    # toca: esa columna queda para cuando F08-T03 la encadene de
+    # verdad en la base.
+    asegurar_perfil_y_categorias(sesion, usuario)
+    abrir_mes_actual(sesion, usuario.id)
+
+    meses = sorted(repos.listar(sesion), key=lambda m: (m.year, m.month))
+    perfil = repos_perfiles.buscar(sesion)
+    saldo_inicial = perfil.opening_balance if perfil else decimal.Decimal("0")
+
+    serie = calc.serie_de_ahorro_acumulado(saldo_inicial, [m.saving_total for m in meses])
+    return [
+        SaldoMensual(year=m.year, month=m.month, balance=saldo)
+        for m, saldo in zip(meses, serie, strict=True)
+    ]
 
 
 @router.get("/{month_id}", response_model=MesDetalle, summary="El detalle de un mes")
