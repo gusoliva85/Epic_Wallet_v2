@@ -135,18 +135,22 @@ export function grilla({ x, y, ancho, alto, maximo, formatear = fmtK, pasos = 4 
  * lo que `etiquetas` traiga, ya resuelto por quien llama (este módulo
  * no sabe qué es un día ni un mes). Si no entran todas sin pisarse,
  * salta de a dos, tres o cuatro — la última siempre queda, para que
- * el borde del gráfico no quede sin etiqueta.
+ * el borde del gráfico no quede sin etiqueta. `todas: true` apaga el
+ * salto (Gustavo, F06-T02: quiere ver cada día del gráfico diario,
+ * sin huecos) — queda a criterio de quien llama, porque un eje con
+ * muchas más categorías (nombres de categoría, por ejemplo) sí puede
+ * necesitar saltar para no amontonarse.
  *
  * @param {string[]} etiquetas
- * @param {{x:number, ancho:number, y:number, centradoEnSlot?:boolean}} datos
+ * @param {{x:number, ancho:number, y:number, centradoEnSlot?:boolean, todas?:boolean}} datos
  *   `centradoEnSlot`: cada etiqueta va al centro de su franja
  *   (`ancho/n`) — así dibujan las barras agrupadas por día o por mes.
  *   Sin eso, va distribuida de punta a punta — así dibuja una línea.
  */
-export function ejeDeCategorias(etiquetas, { x, ancho, y, centradoEnSlot = false }) {
+export function ejeDeCategorias(etiquetas, { x, ancho, y, centradoEnSlot = false, todas = false }) {
   const n = etiquetas.length;
   if (n === 0) return "";
-  const salto = n > 24 ? 4 : n > 14 ? 3 : n > 8 ? 2 : 1;
+  const salto = todas ? 1 : n > 24 ? 4 : n > 14 ? 3 : n > 8 ? 2 : 1;
   const slot = ancho / n;
   let salida = "";
   etiquetas.forEach((etiqueta, i) => {

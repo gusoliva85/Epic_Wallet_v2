@@ -21,6 +21,15 @@
    pararse sobre el eje—, y la línea de ahorro lleva su propia área
    de relleno degradada debajo, el elemento protagonista del gráfico.
 
+   Cada día decide solo cuánto ancho de barra usa (F06-T02, corrección:
+   Gustavo aprobó la "opción A" de un mockup con cuatro alternativas).
+   Un sueldo entra una vez al mes, no todos los días traen ingreso y
+   egreso juntos: reservarle a cada día el espacio de las DOS barras
+   aunque sólo existiera una dejaba un hueco vacío. Un solo tipo ese
+   día → una barra ancha, centrada en toda su franja. Los dos ese
+   día → dos barras finas, una al lado de la otra. Y el eje de abajo
+   muestra los días TODOS, sin saltar ninguno.
+
    Pura: recibe `daily` (el mismo objeto de `GET /api/dashboard`) y el
    modo, devuelve el string del `<svg>`. No sabe de dónde salió el
    dato ni dónde se va a escribir — eso es trabajo de quien la llama
@@ -103,7 +112,16 @@ function lineaDeAhorro(serie, iw, ih) {
 
 /** Barras de ingresos y/o egresos, según el modo — con un degradé
  * sutil (mismo tono, menos opacidad arriba) y sólo las esquinas de
- * arriba redondeadas. */
+ * arriba redondeadas.
+ *
+ * Centrado dinámico por día (Gustavo, F06-T02 — opción A del mockup
+ * que aprobó): la plata de un día casi siempre es de un solo tipo —
+ * un sueldo una vez al mes, no todos los días traen ingreso y
+ * egreso juntos. Reservarle a cada día el espacio de las DOS barras
+ * aunque sólo exista una dejaba un hueco vacío donde habría ido la
+ * otra, y quedaba feo. Acá cada día decide solo: si tiene un único
+ * tipo, una barra ancha y centrada en toda su franja; si tiene los
+ * dos, dos barras finas una al lado de la otra, igual que antes. */
 function barras(daily, iw, ih, modo) {
   const ingresos = daily.income.map(toNum);
   const egresos = daily.expense.map(toNum);
@@ -116,9 +134,13 @@ function barras(daily, iw, ih, modo) {
   const slot = iw / n;
   // Más gruesas que antes a propósito (Gustavo, F06-T02): con muchos
   // días en el mes las barras finitas se perdían en el espacio vacío
-  // entre franjas.
-  const anchoBarra = Math.max(4, Math.min(22, slot * (modo === "ambos" ? 0.62 : 0.8)));
-  const radio = Math.min(4, anchoBarra / 2.2);
+  // entre franjas. Los dos TOPES son distintos (26 contra 14) y no el
+  // mismo número: en un mes con pocos días la franja es grande y, con
+  // un solo tope compartido, "sola" y "par" llegaban las dos al tope y
+  // se veían idénticas — justo la distinción que center dinámico
+  // necesita para leerse.
+  const anchoSola = Math.max(4, Math.min(26, slot * 0.8)); // un solo tipo ese día: toda la franja
+  const anchoPar = Math.max(4, Math.min(14, slot * 0.62)); // los dos ese día: una al lado de la otra
 
   const idIngreso = idUnico("bi");
   const idEgreso = idUnico("be");
@@ -128,10 +150,11 @@ function barras(daily, iw, ih, modo) {
     `<stop offset="1" stop-color="${color}" stop-opacity="1"/>` +
     "</linearGradient>";
 
-  const barra = (cx, valor, relleno, offset) => {
+  const barra = (cx, valor, relleno, ancho, offset) => {
     if (!valor) return "";
     const alto = alturaDeBarra(valor, maximo, ih);
-    return `<path class="bar" d="${trazoBarraRedondeada(cx + offset - anchoBarra / 2, PT + ih - alto, anchoBarra, alto, radio)}" fill="${relleno}"/>`;
+    const radio = Math.min(4, ancho / 2.2);
+    return `<path class="bar" d="${trazoBarraRedondeada(cx + offset - ancho / 2, PT + ih - alto, ancho, alto, radio)}" fill="${relleno}"/>`;
   };
 
   let salida = "<defs>";
@@ -141,13 +164,16 @@ function barras(daily, iw, ih, modo) {
 
   for (let i = 0; i < n; i++) {
     const cx = PL + slot * i + slot / 2;
-    if (modo === "ambos") {
-      salida += barra(cx, ingresos[i], `url(#${idIngreso})`, -anchoBarra / 2 - 1.5);
-      salida += barra(cx, egresos[i], `url(#${idEgreso})`, anchoBarra / 2 + 1.5);
-    } else if (mostrarIngreso) {
-      salida += barra(cx, ingresos[i], `url(#${idIngreso})`, 0);
-    } else {
-      salida += barra(cx, egresos[i], `url(#${idEgreso})`, 0);
+    const hayIngreso = mostrarIngreso && ingresos[i] > 0;
+    const hayEgreso = mostrarEgreso && egresos[i] > 0;
+
+    if (hayIngreso && hayEgreso) {
+      salida += barra(cx, ingresos[i], `url(#${idIngreso})`, anchoPar, -anchoPar / 2 - 1.5);
+      salida += barra(cx, egresos[i], `url(#${idEgreso})`, anchoPar, anchoPar / 2 + 1.5);
+    } else if (hayIngreso) {
+      salida += barra(cx, ingresos[i], `url(#${idIngreso})`, anchoSola, 0);
+    } else if (hayEgreso) {
+      salida += barra(cx, egresos[i], `url(#${idEgreso})`, anchoSola, 0);
     }
   }
   return { svg: salida, maximo };
@@ -173,7 +199,9 @@ export function dibujar(daily, modo = "ambos") {
     grilla({ x: PL, y: PT, ancho: iw, alto: ih, maximo: cuerpo.maximo }) +
     cuerpo.svg +
     lineaDeAhorro(serieDeAhorro, iw, ih) +
-    ejeDeCategorias(dias, { x: PL, ancho: iw, y: PT + ih + 18, centradoEnSlot: true }) +
+    // `todas: true` (Gustavo, F06-T02): quiere ver cada día del mes
+    // en el eje, nunca uno de cada dos.
+    ejeDeCategorias(dias, { x: PL, ancho: iw, y: PT + ih + 18, centradoEnSlot: true, todas: true }) +
     "</svg>"
   );
 }

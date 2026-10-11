@@ -152,6 +152,14 @@ describe("ejeDeCategorias", () => {
     assert.match(svg, />31</, "la última etiqueta (día 31) tiene que quedar");
   });
 
+  test("con todas:true no salta ninguna, aunque haya muchas (F06-T02)", () => {
+    // El gráfico diario las quiere todas, sin saltear — es lo que pidió
+    // Gustavo, a diferencia del comportamiento por defecto de arriba.
+    const dias = Array.from({ length: 31 }, (_, i) => String(i + 1));
+    const svg = ejeDeCategorias(dias, { x: 0, ancho: 700, y: 20, todas: true });
+    assert.equal((svg.match(/<text/g) || []).length, 31);
+  });
+
   test("sin etiquetas no rompe, no dibuja nada", () => {
     assert.equal(ejeDeCategorias([], { x: 0, ancho: 100, y: 20 }), "");
   });

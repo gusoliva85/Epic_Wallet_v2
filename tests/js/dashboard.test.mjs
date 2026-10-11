@@ -485,6 +485,67 @@ describe("el gráfico diario (F06-T02)", () => {
     assert.equal(modoDiario.querySelector('[data-modo="acumulado"]'), null);
   });
 
+  test("se ven los diez días del eje, ninguno salteado", async () => {
+    // Gustavo: antes mostraba sólo 1, 3, 5, 7, 9 — quiere cada día.
+    const { dom, grafico } = await montar();
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    const dias = [...grafico.querySelectorAll(".axis-t")]
+      .map((t) => t.textContent)
+      .filter((t) => /^\d+$/.test(t));
+    assert.deepEqual(dias, Array.from({ length: 10 }, (_, i) => String(i + 1)));
+  });
+
+  describe("un día con ingreso y egreso a la vez (opción A del mockup aprobado)", () => {
+    // La base ya tiene ingreso sólo el día 1 y egreso sólo el día 10;
+    // acá se agrega un tercer día con los dos juntos, para probar el
+    // centrado dinámico sin tocar esos dos casos de "un solo tipo".
+    function conDiaMixto() {
+      return conCambios(respuestaBase(), [
+        ["daily.income", ["500000.00"].concat(Array(3).fill("0.00")).concat(["30000.00"]).concat(Array(5).fill("0.00"))],
+        ["daily.expense", Array(4).fill("0.00").concat(["20000.00"]).concat(Array(4).fill("0.00")).concat(["15000.00"])],
+      ]);
+      // día 1: sólo ingreso (500000). día 5 (índice 4): ingreso 30000 Y
+      // egreso 20000 juntos. día 10: sólo egreso (15000), igual que la base.
+    }
+
+    test("ese día dibuja dos barras, una de cada color", async () => {
+      const { dom, grafico } = await montar({ apiGet: async () => conDiaMixto() });
+      await esperar();
+      cambiarMes(dom, MES_ACTUAL);
+      await esperar();
+
+      // Día 1 (sólo ingreso) + día 5 (los dos) + día 10 (sólo egreso)
+      // = 1 + 2 + 1 = 4 barras en total.
+      assert.equal(grafico.querySelectorAll(".bar").length, 4);
+    });
+
+    test("un día con un solo tipo usa una barra más ancha que un día con los dos", async () => {
+      const { dom, grafico } = await montar({ apiGet: async () => conDiaMixto() });
+      await esperar();
+      cambiarMes(dom, MES_ACTUAL);
+      await esperar();
+
+      const anchos = [...grafico.querySelectorAll(".bar")].map((b) => {
+        // El trazo es un <path>, no un <rect>: `trazoBarraRedondeada`
+        // siempre arranca en "M<bordeIzq> ..." y termina en
+        // "...L<bordeDer> <baseY> Z" (tests/js/svg.test.mjs lo prueba
+        // directo); acá alcanza con leer esos dos bordes.
+        const d = b.getAttribute("d");
+        const izq = Number(d.match(/^M(-?[\d.]+)/)[1]);
+        const der = Number(d.match(/L(-?[\d.]+) -?[\d.]+ Z$/)[1]);
+        return der - izq;
+      });
+      // Las dos barras del día mixto (las del medio, más angostas) no
+      // pueden ser tan anchas como las de los días de un solo tipo.
+      const anchoSolo = Math.max(...anchos);
+      const anchoPar = Math.min(...anchos);
+      assert.ok(anchoPar < anchoSolo, `par (${anchoPar}) tiene que ser más angosto que solo (${anchoSolo})`);
+    });
+  });
+
   test("la línea de ahorro sigue visible en los tres modos", async () => {
     const { dom, grafico, modoDiario } = await montar();
     await esperar();
