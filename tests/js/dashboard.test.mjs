@@ -546,15 +546,23 @@ describe("el gráfico diario (F06-T02)", () => {
     });
   });
 
-  test("la línea de ahorro sigue visible en los tres modos", async () => {
+  test("la línea de ahorro sólo se ve en «ambos» (F06-T02, corrección)", async () => {
+    // En "ingresos" o "egresos" el eje izquierdo cambia de escala para
+    // esa serie sola; el derecho (ahorro) se quedaba sin actualizarse
+    // y los dos lados dejaban de hablar de lo mismo — Gustavo pidió
+    // sacarla en esos dos modos.
     const { dom, grafico, modoDiario } = await montar();
     await esperar();
     cambiarMes(dom, MES_ACTUAL);
     await esperar();
 
-    for (const modo of ["ambos", "ingresos", "egresos"]) {
+    modoDiario.querySelector('[data-modo="ambos"]').click();
+    assert.ok(grafico.querySelector(".lineseries"), "en «ambos» tiene que verse");
+
+    for (const modo of ["ingresos", "egresos"]) {
       modoDiario.querySelector(`[data-modo="${modo}"]`).click();
-      assert.ok(grafico.querySelector(".lineseries"), `el modo ${modo} tiene que seguir mostrando la línea`);
+      assert.equal(grafico.querySelector(".lineseries"), null, `el modo ${modo} no tiene que mostrar la línea`);
+      assert.equal(grafico.textContent.includes("AHORRO"), false, `el modo ${modo} no tiene que mostrar su eje`);
     }
   });
 

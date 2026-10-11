@@ -293,7 +293,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Hacer:** escalas, ejes, grilla, formato de etiquetas y contenedor que se adapta al ancho; las reglas comunes de la sección 14.3.
   **Aceptación:** · un gráfico se dibuja a 390 px y a 1440 px sin deformarse · los colores salen de los tokens, ninguno escrito a mano.
 
-- [~] **F06-T02 · Gráfico diario del mes**
+- [x] **F06-T02 · Gráfico diario del mes**
   **Tipo:** Frontend · **Ref:** Técnico §14.1 · General §13 · *fusiona F06-T02, F06-T03 y F06-T04*
   **Hacer:** barras de ingresos y egresos por día, línea de ahorro acumulado en un segundo eje, modo acumulado conmutable y pie con las cifras del mes.
   **Aceptación:** · los dos ejes están rotulados y no se confunden · el día de hoy se distingue · el modo acumulado y el diario muestran el mismo total al final del mes.

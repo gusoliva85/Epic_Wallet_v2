@@ -7,11 +7,16 @@
    millones; con un solo eje la línea aplastaría las barras.
 
    Tres modos: "ambos" muestra las dos barras, "ingresos" y "egresos"
-   sólo la suya. La línea de ahorro se mantiene visible en los tres —
-   es lo que responde "cómo viene el mes hasta ahora", la pregunta que
-   este gráfico existe para contestar. (Hubo un cuarto modo,
+   sólo la suya. La línea de ahorro —y su eje derecho— sólo se dibuja
+   en "ambos" (F06-T02, última corrección): en "ingresos" o "egresos"
+   el eje izquierdo ya cambia de escala para mostrar sólo esa serie, y
+   el derecho se quedaba mostrando el ahorro de siempre, sin
+   actualizarse — los dos lados dejaban de hablar de lo mismo. Más
+   simple sacarla que tratar de explicarla ahí. Sin ese eje, el margen
+   derecho también se achica (`PR_SIN_LINEA`): no tiene sentido
+   reservarle espacio a un eje que no está. (Hubo un cuarto modo,
    "acumulado", que reemplazaba las barras por áreas acumuladas;
-   Gustavo pidió sacarlo — F06-T02, corrección.)
+   Gustavo pidió sacarlo — F06-T02, corrección anterior.)
 
    Un vidrio grafito con barras lisas quedaba chato al lado del resto
    de la aplicación, así que las barras llevan un degradé sutil de
@@ -50,14 +55,18 @@ import {
 const ANCHO = 760;
 const ALTO = 262;
 const PL = 52; // margen izquierdo: el eje de valores diarios
-const PR = 58; // margen derecho: el eje del ahorro acumulado
+const PR_CON_LINEA = 58; // margen derecho: el eje del ahorro acumulado
+const PR_SIN_LINEA = 16; // sin ese eje, alcanza con un respiro chico
 const PT = 18;
 const PB = 28;
 
 export const MODOS = Object.freeze(["ambos", "egresos", "ingresos"]);
 
 /** La línea de ahorro acumulado, su área de relleno y su eje derecho.
- * Se dibuja en los tres modos, así que vive aparte de las barras. */
+ * Sólo se llama en modo "ambos" (F06-T02, corrección): en "ingresos"
+ * o "egresos" el eje izquierdo cambia de escala para esa serie sola,
+ * y el derecho se quedaba mostrando el ahorro sin relación con lo que
+ * se estaba mirando. */
 function lineaDeAhorro(serie, iw, ih) {
   const n = serie.length;
   const minimo = Math.min(0, ...serie);
@@ -180,25 +189,26 @@ function barras(daily, iw, ih, modo) {
 }
 
 /**
- * El gráfico diario completo: barras más la línea de ahorro con su
- * eje, y el eje de días abajo.
+ * El gráfico diario completo: barras más, sólo en "ambos", la línea
+ * de ahorro con su eje; y el eje de días abajo.
  *
  * @param {object} daily el campo `daily` de `GET /api/dashboard`
  * @param {"ambos"|"egresos"|"ingresos"} modo
  */
 export function dibujar(daily, modo = "ambos") {
-  const iw = ANCHO - PL - PR;
+  const mostrarLinea = modo === "ambos";
+  const iw = ANCHO - PL - (mostrarLinea ? PR_CON_LINEA : PR_SIN_LINEA);
   const ih = ALTO - PT - PB;
   const dias = daily.income.map((_, i) => String(i + 1));
-  const serieDeAhorro = daily.saving_cumulative.map(toNum);
 
   const cuerpo = barras(daily, iw, ih, modo);
+  const linea = mostrarLinea ? lineaDeAhorro(daily.saving_cumulative.map(toNum), iw, ih) : "";
 
   return (
     etiquetaSvg(ANCHO, ALTO) +
     grilla({ x: PL, y: PT, ancho: iw, alto: ih, maximo: cuerpo.maximo }) +
     cuerpo.svg +
-    lineaDeAhorro(serieDeAhorro, iw, ih) +
+    linea +
     // `todas: true` (Gustavo, F06-T02): quiere ver cada día del mes
     // en el eje, nunca uno de cada dos.
     ejeDeCategorias(dias, { x: PL, ancho: iw, y: PT + ih + 18, centradoEnSlot: true, todas: true }) +
