@@ -98,9 +98,12 @@ function respuestaBase() {
       income: "500000.00",
       expense: "165000.00",
       saving: "335000.00",
+      // savings_balance y net_worth deliberadamente distintos: así una
+      // prueba que lea el campo equivocado se nota (hoy, con F10 sin
+      // existir, la API real los manda siempre iguales).
       savings_balance: "1200000.00",
-      investments_value: "0.00",
-      net_worth: "1200000.00",
+      investments_value: "150000.00",
+      net_worth: "1350000.00",
       vs_previous: { income: "12.0", expense: "-5.0", saving: "31.7" },
     },
     daily: {
@@ -222,18 +225,33 @@ describe("las cinco tarjetas", () => {
     await esperar();
 
     assert.equal(caja.querySelectorAll(".kpi--hero").length, 1);
-    assert.deepEqual(etiquetas(caja), ["Ahorro del mes", "Ingresos", "Egresos", "Gasto de hoy", "Patrimonio"]);
+    assert.deepEqual(etiquetas(caja), ["Ahorro del mes", "Ingresos", "Egresos", "Gasto de hoy", "Total de ahorros"]);
   });
 
-  test("no hay tarjeta de «total de ahorros»: es la misma cifra que «ahorro del mes»", async () => {
-    // Decisión de Gustavo en F05-T07: mostrarla aparte repetía la
-    // misma cifra dos veces sin agregar información.
+  test("«total de ahorros» es el acumulado de todos los meses, no el del mes en pantalla", async () => {
+    // Pedido de Gustavo: el valor de "ahorro del mes" (sólo el mes en
+    // pantalla) y el de "total de ahorros" (savings_balance, la suma
+    // de todos los meses) tienen que poder ser números distintos — acá
+    // el mock los pone distintos a propósito (335.000 vs. 1.200.000)
+    // para que un error que confunda los dos campos se note.
     const { dom, caja } = await montar();
     await esperar();
     cambiarMes(dom, MES_ACTUAL);
     await esperar();
 
-    assert.equal(etiquetas(caja).includes("Total de ahorros"), false);
+    assert.equal(cifraDe(caja, "Ahorro del mes"), "$335.000");
+    assert.equal(cifraDe(caja, "Total de ahorros"), "$1.200.000");
+  });
+
+  test("«total de ahorros» no muestra patrimonio (ahorro + inversiones)", async () => {
+    // Ese valor se va a mostrar en Cartera cuando exista la fase de
+    // inversiones (F10), con otro nombre ("ahorro más inversiones").
+    const { dom, caja } = await montar();
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    assert.notEqual(cifraDe(caja, "Total de ahorros"), "$1.350.000", "no tiene que ser net_worth");
   });
 
   test("cada cifra es la que mandó la API, formateada en pesos", async () => {
@@ -245,7 +263,7 @@ describe("las cinco tarjetas", () => {
     assert.equal(cifraDe(caja, "Ahorro del mes"), "$335.000");
     assert.equal(cifraDe(caja, "Ingresos"), "$500.000");
     assert.equal(cifraDe(caja, "Egresos"), "$165.000");
-    assert.equal(cifraDe(caja, "Patrimonio"), "$1.200.000");
+    assert.equal(cifraDe(caja, "Total de ahorros"), "$1.200.000", "tiene que ser savings_balance, no net_worth");
   });
 
   test("ingresos y egresos muestran la variación contra el mes anterior", async () => {

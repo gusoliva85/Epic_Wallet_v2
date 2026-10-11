@@ -10,15 +10,16 @@
    a pedir la lista y dispare el evento de nuevo).
 
    Cinco tarjetas, las que ya estaban maquetadas desde F01-T13: ahorro
-   del mes (héroe), ingresos, egresos, gasto de hoy y patrimonio. De
-   los seis indicadores de General §12.2 no hay tarjeta propia para
-   "total de ahorros": en el mes en curso es la misma cifra que "ahorro
-   del mes" (decisión de Gustavo, F05-T07 — repetirla en otra tarjeta
-   no agregaba información), y "total de inversiones" entra en el
-   subtítulo de patrimonio, en cero hasta F10. "Gasto de hoy" sólo
-   tiene sentido mirando el mes actual: en cualquier otro mes se apaga
-   con su propia explicación en vez de mezclar el día de hoy con un mes
-   que no es éste. */
+   del mes (héroe), ingresos, egresos, gasto de hoy y total de ahorros.
+   La última es el saldo acumulado de TODOS los meses (`savings_balance`
+   de la API) — "ahorro del mes" es el del mes en pantalla, ésta es la
+   suma de todos; no son la misma cifra apenas hay más de un mes
+   cargado. "Patrimonio" (ahorro + inversiones) no vive acá: Gustavo lo
+   quiere en la pantalla de Cartera, cuando exista la fase de
+   inversiones (F10) — por ahora esta pantalla no muestra esa cifra en
+   ningún lado. "Gasto de hoy" sólo tiene sentido mirando el mes actual:
+   en cualquier otro mes se apaga con su propia explicación en vez de
+   mezclar el día de hoy con un mes que no es éste. */
 
 import { api } from "./api.js";
 import { fmt, fmtS, pct, pctPlano } from "./format.js";
@@ -75,9 +76,9 @@ function tarjetas(d) {
       tarjeta: "dia",
     }),
     tarjetaMetrica({
-      etiqueta: "Patrimonio",
-      cifra: fmtS(ind.net_worth),
-      sub: "Ahorro e inversiones",
+      etiqueta: "Total de ahorros",
+      cifra: fmtS(ind.savings_balance),
+      sub: "Acumulado de todos los meses",
       tarjeta: "pat",
     }),
   ];
@@ -96,7 +97,7 @@ function valoresParaContar(d) {
     { valor: Number(ind.income), formatear: fmt },
     { valor: Number(ind.expense), formatear: fmt },
     hoy == null ? null : { valor: hoy, formatear: fmt },
-    { valor: Number(ind.net_worth), formatear: fmtS },
+    { valor: Number(ind.savings_balance), formatear: fmtS },
   ];
 }
 
