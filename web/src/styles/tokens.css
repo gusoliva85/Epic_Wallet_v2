@@ -64,20 +64,18 @@
      grafito del resto de la aplicación y pesa más que la información
      que lleva encima.
 
-     CONTRASTE parejo de 5,4:1 con blanco en las cuatro. No son los
-     colores semánticos sin más; están bajados hasta llegar ahí. El
-     ámbar es el que más bajó —blanco sobre --color-warn puro da
-     2,95:1, menos de la mitad del mínimo— y por eso quedó oliva. Que
-     las cuatro den lo mismo es lo que hace que la fila se lea como un
-     conjunto y no como cuatro oscuridades distintas. */
+     CONTRASTE parejo de 5,4 a 5,6:1 con blanco en las cuatro. No son
+     los colores semánticos sin más; están bajados (o en el caso de
+     "gasto de hoy", elegidos directamente en violeta, F05-T07) hasta
+     llegar ahí. Que las cuatro den un número parecido es lo que hace
+     que la fila se lea como un conjunto y no como cuatro oscuridades
+     distintas. */
   --color-card-inc: #357662; /* ingresos      5,39:1 con blanco */
   --color-card-egr: #aa4c55; /* egresos       5,41:1 */
-  --color-card-dia: #7c6838; /* gasto de hoy  5,41:1 */
+  --color-card-dia: #7d5a94; /* gasto de hoy  5,59:1 — violeta, para no
+                                 confundirse con ingresos (verde) ni
+                                 patrimonio (el otro azul grafito) */
   --color-card-pat: #416f90; /* patrimonio    5,40:1 */
-  /* Violeta: quinto color de tarjeta, F05-T07. Ninguno de los otros
-     cuatro quedaba libre para "total de ahorros" sin confundirse con
-     patrimonio (mismo azul grafito) o con ingresos (mismo verde). */
-  --color-card-aho: #7d5a94; /* total de ahorros 5,59:1 */
 
   --color-avatar-1: #5c6469;
   --color-avatar-2: #33383c;

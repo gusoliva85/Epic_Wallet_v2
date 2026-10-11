@@ -214,22 +214,26 @@ describe("al cambiar de mes", () => {
   });
 });
 
-describe("las seis tarjetas", () => {
-  test("hay una heroe y cinco de color, en el orden de General §12.2", async () => {
+describe("las cinco tarjetas", () => {
+  test("hay una heroe y cuatro de color, en el orden de F01-T13", async () => {
     const { dom, caja } = await montar();
     await esperar();
     cambiarMes(dom, MES_ACTUAL);
     await esperar();
 
     assert.equal(caja.querySelectorAll(".kpi--hero").length, 1);
-    assert.deepEqual(etiquetas(caja), [
-      "Ahorro del mes",
-      "Ingresos",
-      "Egresos",
-      "Total de ahorros",
-      "Patrimonio",
-      "Gasto de hoy",
-    ]);
+    assert.deepEqual(etiquetas(caja), ["Ahorro del mes", "Ingresos", "Egresos", "Gasto de hoy", "Patrimonio"]);
+  });
+
+  test("no hay tarjeta de «total de ahorros»: es la misma cifra que «ahorro del mes»", async () => {
+    // Decisión de Gustavo en F05-T07: mostrarla aparte repetía la
+    // misma cifra dos veces sin agregar información.
+    const { dom, caja } = await montar();
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    assert.equal(etiquetas(caja).includes("Total de ahorros"), false);
   });
 
   test("cada cifra es la que mandó la API, formateada en pesos", async () => {
@@ -241,7 +245,6 @@ describe("las seis tarjetas", () => {
     assert.equal(cifraDe(caja, "Ahorro del mes"), "$335.000");
     assert.equal(cifraDe(caja, "Ingresos"), "$500.000");
     assert.equal(cifraDe(caja, "Egresos"), "$165.000");
-    assert.equal(cifraDe(caja, "Total de ahorros"), "$1.200.000");
     assert.equal(cifraDe(caja, "Patrimonio"), "$1.200.000");
   });
 
@@ -363,7 +366,7 @@ describe("mes nuevo sin movimientos", () => {
     cambiarMes(dom, MES_ACTUAL);
     await esperar();
 
-    assert.equal(caja.querySelectorAll(".kpi").length, 6, "las seis tarjetas siguen, no desaparecen");
+    assert.equal(caja.querySelectorAll(".kpi").length, 5, "las tarjetas siguen, no desaparecen");
     assert.equal(cifraDe(caja, "Ingresos"), "$0");
     assert.equal(cifraDe(caja, "Gasto de hoy"), "$0");
     assert.equal(subDe(caja, "Ahorro del mes"), "Sin ingresos registrados");
@@ -404,7 +407,7 @@ describe("si la API falla", () => {
     caja.querySelector("[data-reintentar]").click();
     await esperar();
 
-    assert.equal(caja.querySelectorAll(".kpi").length, 6, "el reintento tiene que haber pintado las tarjetas");
+    assert.equal(caja.querySelectorAll(".kpi").length, 5, "el reintento tiene que haber pintado las tarjetas");
     const pedidos = llamadas.apiGet.filter((a) => a[0].startsWith("/dashboard?"));
     assert.equal(pedidos.length, 2);
     assert.match(pedidos[1][0], /month=10/);

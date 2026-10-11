@@ -47,7 +47,6 @@ const TARJETAS = {
   egr: { fondo: "var(--color-card-egr)", glifo: "baja" },
   dia: { fondo: "var(--color-card-dia)", glifo: "calendario" },
   pat: { fondo: "var(--color-card-pat)", glifo: "libro" },
-  aho: { fondo: "var(--color-card-aho)", glifo: "ahorro" },
 };
 
 export const TARJETAS_VALIDAS = Object.freeze(Object.keys(TARJETAS));

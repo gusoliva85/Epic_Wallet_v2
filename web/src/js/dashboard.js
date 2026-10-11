@@ -1,4 +1,4 @@
-/* Los seis indicadores del tablero · F05-T07
+/* Los indicadores del tablero · F05-T07
    Referencia: 01_Documento_General.md §12.2 · 02_Documento_Tecnico.md §9.2, §12.4-§12.6
 
    Reemplaza en `#kpis-inicio` los datos de muestra que pintaba
@@ -9,11 +9,13 @@
    invalide el caché de meses (la invalidación hace que la barra vuelva
    a pedir la lista y dispare el evento de nuevo).
 
-   Las seis tarjetas son las de General §12.2: ingresos, egresos, ahorro
-   del mes, total de ahorros, total de inversiones (en cero: F10
-   todavía no existe) y patrimonio neto. "Gasto de hoy" es una séptima
-   tarjeta que ya estaba maquetada desde F01-T13 y no es uno de los
-   seis oficiales — se mantiene porque Gustavo la aprobó, pero sólo
+   Cinco tarjetas, las que ya estaban maquetadas desde F01-T13: ahorro
+   del mes (héroe), ingresos, egresos, gasto de hoy y patrimonio. De
+   los seis indicadores de General §12.2 no hay tarjeta propia para
+   "total de ahorros": en el mes en curso es la misma cifra que "ahorro
+   del mes" (decisión de Gustavo, F05-T07 — repetirla en otra tarjeta
+   no agregaba información), y "total de inversiones" entra en el
+   subtítulo de patrimonio, en cero hasta F10. "Gasto de hoy" sólo
    tiene sentido mirando el mes actual: en cualquier otro mes se apaga
    con su propia explicación en vez de mezclar el día de hoy con un mes
    que no es éste. */
@@ -67,22 +69,16 @@ function tarjetas(d) {
       tarjeta: "egr",
     }),
     tarjetaMetrica({
-      etiqueta: "Total de ahorros",
-      cifra: fmtS(ind.savings_balance),
-      sub: "Saldo acumulado",
-      tarjeta: "aho",
+      etiqueta: "Gasto de hoy",
+      cifra: hoy == null ? "—" : fmt(hoy),
+      sub: hoy == null ? "Sólo para el mes actual" : `Promedio diario ${fmt(Number(ind.expense) / d.daily.days)}`,
+      tarjeta: "dia",
     }),
     tarjetaMetrica({
       etiqueta: "Patrimonio",
       cifra: fmtS(ind.net_worth),
       sub: "Ahorro e inversiones",
       tarjeta: "pat",
-    }),
-    tarjetaMetrica({
-      etiqueta: "Gasto de hoy",
-      cifra: hoy == null ? "—" : fmt(hoy),
-      sub: hoy == null ? "Sólo para el mes actual" : `Promedio diario ${fmt(Number(ind.expense) / d.daily.days)}`,
-      tarjeta: "dia",
     }),
   ];
 }
@@ -99,9 +95,8 @@ function valoresParaContar(d) {
     { valor: Number(ind.saving), formatear: fmtS },
     { valor: Number(ind.income), formatear: fmt },
     { valor: Number(ind.expense), formatear: fmt },
-    { valor: Number(ind.savings_balance), formatear: fmtS },
-    { valor: Number(ind.net_worth), formatear: fmtS },
     hoy == null ? null : { valor: hoy, formatear: fmt },
+    { valor: Number(ind.net_worth), formatear: fmtS },
   ];
 }
 
@@ -117,7 +112,7 @@ function pintar() {
   if (!caja) return;
 
   if (cargando) {
-    caja.innerHTML = bloqueCargando("tarjeta", 6);
+    caja.innerHTML = bloqueCargando("tarjeta", 5);
     return;
   }
   if (fallo || !dashboard) {
