@@ -73,8 +73,8 @@ async function cargarConDobles() {
       `import { dibujar as dibujarGraficoDiario, MODOS as MODOS_DIARIO } from "${rutaAbsoluta("charts", "diario.js")}";`,
     )
     .replace(
-      'import { dibujar as dibujarGraficoSeis, MODOS as MODOS_SEIS, etiquetaCorta } from "./charts/seis.js";',
-      `import { dibujar as dibujarGraficoSeis, MODOS as MODOS_SEIS, etiquetaCorta } from "${rutaAbsoluta("charts", "seis.js")}";`,
+      'import { dibujar as dibujarGraficoSeis, MODOS as MODOS_SEIS, etiquetaDeMes } from "./charts/seis.js";',
+      `import { dibujar as dibujarGraficoSeis, MODOS as MODOS_SEIS, etiquetaDeMes } from "${rutaAbsoluta("charts", "seis.js")}";`,
     );
 
   const unico = `\n// ${Math.random()}\n`;
@@ -665,14 +665,19 @@ describe("el gráfico diario (F06-T02)", () => {
 });
 
 describe("últimos seis meses (F06-T05)", () => {
-  test("dibuja el svg y el pie con un mini-card por mes", async () => {
+  test("dibuja el svg, y el pie sólo con los últimos dos meses (no los seis del gráfico)", async () => {
+    // Gustavo (F06-T05, corrección): seis tarjetitas en el pie repetían
+    // lo que las barras ya muestran y acumulaban demasiada información.
     const { dom, graficoSeis, pieSeis } = await montar();
     await esperar();
     cambiarMes(dom, MES_ACTUAL);
     await esperar();
 
     assert.ok(graficoSeis.querySelector("svg"));
-    assert.equal(pieSeis.querySelectorAll(".mini").length, 3, "un mini-card por cada mes de la base");
+    assert.equal(pieSeis.querySelectorAll(".mini").length, 2, "la base trae tres meses; el pie sólo dos");
+    assert.match(pieSeis.textContent, /Septiembre 26/);
+    assert.match(pieSeis.textContent, /Octubre 26/);
+    assert.ok(!pieSeis.textContent.includes("Agosto"), "el mes más viejo no entra en el pie de dos");
   });
 
   test("con menos de seis meses, el pie muestra sólo los que hay", async () => {

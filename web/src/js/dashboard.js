@@ -42,7 +42,7 @@ import { filaCategoria, pintarFilas } from "./components/rows.js";
 import { bloqueCargando, error as estadoError, vacio, consolidado } from "./components/estados.js";
 import { EVENTO_CAMBIO } from "./barra-mes.js";
 import { dibujar as dibujarGraficoDiario, MODOS as MODOS_DIARIO } from "./charts/diario.js";
-import { dibujar as dibujarGraficoSeis, MODOS as MODOS_SEIS, etiquetaCorta } from "./charts/seis.js";
+import { dibujar as dibujarGraficoSeis, MODOS as MODOS_SEIS, etiquetaDeMes } from "./charts/seis.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -170,11 +170,16 @@ function conectarModoDiario() {
 //  Últimos seis meses (F06-T05)
 // ===================================================================
 
+/** Sólo los últimos dos meses — no los seis del gráfico de arriba.
+ * Gustavo (F06-T05, corrección): seis tarjetitas repetían en texto lo
+ * que las barras ya muestran de un vistazo, y se acumulaba demasiada
+ * información para lo que un pie tiene que ser. */
 function pintarPieSeis(contenedor, meses) {
   contenedor.innerHTML = meses
+    .slice(-2)
     .map(
       (m) =>
-        `<div class="mini cg"><span>${esc(etiquetaCorta(m))}</span>` +
+        `<div class="mini cg"><span>${esc(etiquetaDeMes(m))}</span>` +
         `<b class="num">${esc(fmtK(m.saving))}</b>` +
         `<span style="text-transform: none; letter-spacing: 0">${esc(fmtK(m.income))} / ${esc(fmtK(m.expense))}</span></div>`,
     )

@@ -40,18 +40,20 @@ const PB = 28;
 
 export const MODOS = Object.freeze(["barras", "ahorro", "tasa"]);
 
-const MESES_CORTOS = new Intl.DateTimeFormat("es-AR", {
-  month: "short",
+const MESES_LARGOS = new Intl.DateTimeFormat("es-AR", {
+  month: "long",
   timeZone: "America/Argentina/Buenos_Aires",
 });
 
-/** "May '26" — corto a propósito: hasta seis meses en el mismo eje, y
- * "Mayo 2026" no entra sin amontonarse. Mediodía UTC, mismo motivo que
+/** "Octubre 26" — Gustavo lo pidió completo (F06-T05, corrección): el
+ * nombre abreviado ("Oct '26") quedaba menos claro. Con hasta seis
+ * meses sigue entrando sin amontonarse. Mediodía UTC, mismo motivo que
  * el resto de la aplicación: a medianoche la zona Argentina corre la
  * fecha al mes anterior. */
-export function etiquetaCorta({ year, month }) {
-  const texto = MESES_CORTOS.format(new Date(Date.UTC(year, month - 1, 1, 12))).replace(".", "");
-  return `${texto.charAt(0).toUpperCase()}${texto.slice(1)} '${String(year).slice(2)}`;
+export function etiquetaDeMes({ year, month }) {
+  const texto = MESES_LARGOS.format(new Date(Date.UTC(year, month - 1, 1, 12)));
+  const letra = texto.charAt(0).toUpperCase() + texto.slice(1);
+  return `${letra} ${String(year).slice(2)}`;
 }
 
 function formatoPorcentaje(v) {
@@ -191,7 +193,7 @@ function tasaDeAhorro(meses, iw, ih) {
 export function dibujar(ultimosSeisMeses, modo = "barras") {
   const iw = ANCHO - PL - PR;
   const ih = ALTO - PT - PB;
-  const etiquetas = ultimosSeisMeses.map(etiquetaCorta);
+  const etiquetas = ultimosSeisMeses.map(etiquetaDeMes);
 
   const cuerpo =
     modo === "ahorro"

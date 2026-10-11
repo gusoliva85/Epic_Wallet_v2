@@ -105,14 +105,13 @@ describe("modo tasa — la línea de tasa de ahorro", () => {
 });
 
 describe("las etiquetas del eje", () => {
-  test("mes y año cortos, todas visibles (hasta seis, nunca se amontonan)", () => {
+  test("mes completo y año, todas visibles (hasta seis, nunca se amontonan)", () => {
+    // "Octubre 26", no "Oct '26": Gustavo lo pidió completo, F06-T05
+    // corrección.
     const meses = [8, 9, 10].map((month) => mes({ month, year: 2026 }));
     const svg = dibujar(meses, "barras");
     const etiquetas = [...svg.matchAll(/class="axis-t"[^>]*>([^<]+)</g)].map((m) => m[1]);
     assert.equal(etiquetas.length, 3);
-    // El apóstrofe sale escapado (&#39;): esc() lo escapa siempre,
-    // incluso en un texto que arma este módulo y no el usuario — regla
-    // 5 del sistema, sin excepciones por "este texto es de confianza".
-    for (const e of etiquetas) assert.match(e, /^[A-Za-zé]+ &#39;26$/);
+    assert.deepEqual(etiquetas, ["Agosto 26", "Septiembre 26", "Octubre 26"]);
   });
 });
