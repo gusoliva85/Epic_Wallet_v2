@@ -288,7 +288,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 
 **Al cerrar esta fase el MVP de la sección 64 está completo.**
 
-- [ ] **F06-T01 · Utilidades de SVG**
+- [~] **F06-T01 · Utilidades de SVG**
   **Tipo:** Frontend · **Ref:** Técnico §14.3
   **Hacer:** escalas, ejes, grilla, formato de etiquetas y contenedor que se adapta al ancho; las reglas comunes de la sección 14.3.
   **Aceptación:** · un gráfico se dibuja a 390 px y a 1440 px sin deformarse · los colores salen de los tokens, ninguno escrito a mano.

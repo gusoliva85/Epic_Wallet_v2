@@ -2036,6 +2036,104 @@
   }
 }
 
+/* ---- el lienzo de un gráfico SVG · F06-T01 ----
+   Referencia: 02_Documento_Tecnico.md §14.3
+
+   `.chart-wrap` es el contenedor que se adapta al ancho: el `svg` de
+   adentro declara su `viewBox` y nada más (ancho/alto fijos ahí
+   dentro, en `charts/svg.js`), así que a 1440 px crece sin
+   deformarse. Por debajo de 720 px, en cambio, hay un piso de 520 px:
+   si el `svg` se angostara más, las barras y el texto de los ejes se
+   pisarían entre sí, así que el contenedor hace scroll horizontal en
+   vez de aplastar el dibujo. */
+.chart-wrap {
+  padding: 14px 10px 6px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.chart-wrap svg {
+  display: block;
+  width: 100%;
+  min-width: 520px;
+  height: auto;
+}
+
+@media (min-width: 720px) {
+  .chart-wrap svg {
+    min-width: 0;
+  }
+}
+
+/* Las clases que pinta `charts/svg.js` dentro del `svg`. Ninguna fija
+   un color: `.gridline`/`.axis-t`/`.axis-v` usan tokens de tinta, y
+   las series (barras, líneas, áreas) reciben su color por `fill`/
+   `stroke` en línea —`var(--color-inc)` y análogos— que decide cada
+   gráfico, no esta hoja de estilos. */
+.bar {
+  transform-origin: bottom;
+  animation: barCrece 0.75s var(--ease) both;
+}
+
+@keyframes barCrece {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.gridline {
+  stroke: var(--line-2);
+  stroke-width: 1;
+}
+
+.axis-t,
+.axis-v {
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+}
+
+.axis-t {
+  fill: var(--color-ink-4);
+  font-size: 9.5px;
+}
+
+.axis-v {
+  fill: var(--color-ink-3);
+  font-size: 10px;
+}
+
+.lineseries {
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 2000;
+  stroke-dashoffset: 2000;
+  animation: trazar 1.4s var(--ease) 0.15s forwards;
+}
+
+@keyframes trazar {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.areafill {
+  animation: apareceG 0.9s ease 0.5s both;
+}
+
+@keyframes apareceG {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* ---- leyenda y pie de cifras de un gráfico ---- */
 
 .legend {
