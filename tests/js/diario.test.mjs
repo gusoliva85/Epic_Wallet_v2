@@ -13,10 +13,17 @@
    en la conversión de una coordenada X muestra el valor del día
    EQUIVOCADO, y nada en la pantalla lo delata. */
 
-import { test, describe } from "node:test";
+import { test, describe, mock } from "node:test";
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import { geometriaDeDias, contenidoDeLectura, conectarLectura } from "../../web/src/js/charts/diario.js";
+
+// 350ms/10px, los mismos valores que RETARDO_MANTENER/UMBRAL_MOVIMIENTO
+// en charts/diario.js — no se exportan (son detalle de implementación),
+// así que acá se repiten a propósito: si algún día cambian ahí sin
+// querer, una prueba que siga esperando los viejos lo nota.
+const RETARDO_MANTENER = 350;
+const UMBRAL_MOVIMIENTO = 10;
 
 function daily({ dias = 5 } = {}) {
   return {
@@ -112,24 +119,83 @@ describe("conectarLectura", () => {
     assert.doesNotThrow(() => conectarLectura(svg, daily({ dias: 1 }), "ambos"));
   });
 
-  test("al tocar y arrastrar aparece la guía con el día correcto, y se oculta al soltar", () => {
+  test("tocar y mantener quieto (sin moverse) activa la lectura recién tras el retardo", (t) => {
+    t.mock.timers.enable({ apis: ["setTimeout"] });
     const { dom, svg } = montarSvg();
     conectarLectura(svg, daily({ dias: 10 }), "ambos");
-
     const grupo = svg.querySelector(".lectura");
-    assert.equal(grupo.style.display, "none", "arranca oculta");
-
-    // Tocar cerca del día 10 (el último, slot centrado cerca del borde
-    // derecho del ancho dibujable).
     const geo = geometriaDeDias(10, "ambos");
     const xUltimo = geo.x(9);
-    svg.dispatchEvent(puntero(dom, "pointerdown", { clientX: xUltimo }));
 
-    assert.equal(grupo.style.display, "", "aparece al tocar");
+    svg.dispatchEvent(puntero(dom, "pointerdown", { clientX: xUltimo }));
+    assert.equal(grupo.style.display, "none", "no aparece todavía: falta el retardo");
+
+    t.mock.timers.tick(RETARDO_MANTENER - 1);
+    assert.equal(grupo.style.display, "none", "un milisegundo antes, tampoco");
+
+    t.mock.timers.tick(1);
+    assert.equal(grupo.style.display, "", "cumplido el retardo, aparece");
     assert.match(svg.querySelector(".lectura-texto").textContent, /Día 10/);
 
     svg.dispatchEvent(puntero(dom, "pointerup"));
     assert.equal(grupo.style.display, "none", "se oculta al soltar");
+  });
+
+  test("moverse más del umbral antes del retardo se trata como scroll: nunca aparece", (t) => {
+    t.mock.timers.enable({ apis: ["setTimeout"] });
+    const { dom, svg } = montarSvg();
+    conectarLectura(svg, daily({ dias: 10 }), "ambos");
+    const grupo = svg.querySelector(".lectura");
+
+    svg.dispatchEvent(puntero(dom, "pointerdown", { clientX: 0, clientY: 0 }));
+    t.mock.timers.tick(RETARDO_MANTENER / 2);
+    // Un desplazamiento horizontal franco, como el de un dedo
+    // deslizando el gráfico al costado.
+    svg.dispatchEvent(puntero(dom, "pointermove", { clientX: UMBRAL_MOVIMIENTO + 5, clientY: 0 }));
+    t.mock.timers.tick(RETARDO_MANTENER); // de sobra para que el retardo original ya hubiera vencido
+
+    assert.equal(grupo.style.display, "none", "un gesto que se movió de más nunca activa la lectura");
+  });
+
+  test("un temblor chico (menos del umbral) no cancela la espera", (t) => {
+    t.mock.timers.enable({ apis: ["setTimeout"] });
+    const { dom, svg } = montarSvg();
+    conectarLectura(svg, daily({ dias: 10 }), "ambos");
+    const grupo = svg.querySelector(".lectura");
+
+    svg.dispatchEvent(puntero(dom, "pointerdown", { clientX: 0, clientY: 0 }));
+    svg.dispatchEvent(puntero(dom, "pointermove", { clientX: UMBRAL_MOVIMIENTO - 2, clientY: 0 }));
+    t.mock.timers.tick(RETARDO_MANTENER);
+
+    assert.equal(grupo.style.display, "", "un movimiento chico sigue contando como mantener quieto");
+  });
+
+  test("soltar antes de que se cumpla el retardo cancela la espera (nunca llega a aparecer)", (t) => {
+    t.mock.timers.enable({ apis: ["setTimeout"] });
+    const { dom, svg } = montarSvg();
+    conectarLectura(svg, daily({ dias: 10 }), "ambos");
+    const grupo = svg.querySelector(".lectura");
+
+    svg.dispatchEvent(puntero(dom, "pointerdown", { clientX: 0, clientY: 0 }));
+    t.mock.timers.tick(RETARDO_MANTENER / 2);
+    svg.dispatchEvent(puntero(dom, "pointerup"));
+    t.mock.timers.tick(RETARDO_MANTENER);
+
+    assert.equal(grupo.style.display, "none", "soltar antes de tiempo no deja la lectura pendiente");
+  });
+
+  test("una vez activada, arrastrar sin soltar actualiza el día a medida que se mueve", (t) => {
+    t.mock.timers.enable({ apis: ["setTimeout"] });
+    const { dom, svg } = montarSvg();
+    conectarLectura(svg, daily({ dias: 10 }), "ambos");
+    const geo = geometriaDeDias(10, "ambos");
+
+    svg.dispatchEvent(puntero(dom, "pointerdown", { clientX: geo.x(0), clientY: 0 }));
+    t.mock.timers.tick(RETARDO_MANTENER);
+    assert.match(svg.querySelector(".lectura-texto").textContent, /Día 01/);
+
+    svg.dispatchEvent(puntero(dom, "pointermove", { clientX: geo.x(5), clientY: 0 }));
+    assert.match(svg.querySelector(".lectura-texto").textContent, /Día 06/);
   });
 
   test("arrastrar sin haber tocado antes (pointermove suelto) no muestra nada", () => {
@@ -139,23 +205,5 @@ describe("conectarLectura", () => {
 
     svg.dispatchEvent(puntero(dom, "pointermove", { clientX: 100 }));
     assert.equal(grupo.style.display, "none");
-  });
-
-  test("arrastrar sin soltar actualiza el día a medida que se mueve", () => {
-    const { dom, svg } = montarSvg();
-    conectarLectura(svg, daily({ dias: 10 }), "ambos");
-    const geo = geometriaDeDias(10, "ambos");
-
-    svg.dispatchEvent(puntero(dom, "pointerdown", { clientX: geo.x(0) }));
-    assert.match(svg.querySelector(".lectura-texto").textContent, /Día 01/);
-
-    svg.dispatchEvent(puntero(dom, "pointermove", { clientX: geo.x(5) }));
-    assert.match(svg.querySelector(".lectura-texto").textContent, /Día 06/);
-  });
-
-  test("la clase que activa touch-action: pan-y queda puesta en el svg", () => {
-    const { svg } = montarSvg();
-    conectarLectura(svg, daily({ dias: 5 }), "ambos");
-    assert.ok(svg.classList.contains("lectura-activa"));
   });
 });

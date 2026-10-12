@@ -2144,18 +2144,16 @@
 }
 
 /* ---- lectura táctil del gráfico diario · F06-T09 ----
-   Tocar y arrastrar sobre el gráfico muestra el valor del día bajo el
-   dedo (`charts/diario.js`, `conectarLectura`). `touch-action: pan-y`
-   es lo que le saca al navegador el gesto horizontal —si no, un
-   arrastre horizontal scrollearía el `.chart-wrap` en vez de mover la
-   línea guía: Gustavo eligió que la lectura gane ese gesto, así que el
-   scroll horizontal del gráfico queda desactivado mientras se lo usa.
-   El vertical (el de la página) sigue andando porque `pan-y` no lo
-   toca. */
-.lectura-activa {
-  touch-action: pan-y;
-}
-
+   Mantener el dedo quieto sobre el gráfico muestra el valor del día
+   debajo (`charts/diario.js`, `conectarLectura`). A propósito SIN
+   `touch-action` restringido acá: la primera versión le sacaba el
+   gesto horizontal al navegador para que la lectura ganara siempre, y
+   eso tapaba el scroll lateral del `.chart-wrap` en pantallas
+   angostas — Gustavo lo probó y pidió devolverlo (corrección,
+   F06-T09). Ahora `conectarLectura` distingue "mantener quieto" de
+   "arrastrar para scrollear" con un pequeño retardo, en JavaScript,
+   así que el navegador sigue libre de scrollear un gesto que no
+   resultó ser un toque sostenido. */
 .lectura {
   pointer-events: none;
 }

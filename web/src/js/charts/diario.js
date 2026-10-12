@@ -231,15 +231,34 @@ export function dibujar(daily, modo = "ambos") {
 // ===================================================================
 //  Lectura táctil · F06-T09
 //
-//  Tocar y arrastrar sobre el gráfico muestra el valor exacto del día
-//  bajo el dedo: una línea guía más una etiqueta fija en la esquina
+//  Mantener el dedo quieto sobre el gráfico muestra el valor exacto
+//  del día debajo: una línea guía más una etiqueta fija en la esquina
 //  superior izquierda (fija a propósito, para no tener que calcular
 //  si una etiqueta que siguiera al dedo se sale del gráfico cerca de
-//  cualquiera de los dos bordes). Gustavo eligió que esto gane el
-//  gesto horizontal por sobre el scroll del `.chart-wrap` en
-//  pantallas angostas (`touch-action: pan-y` en components.css hace
-//  esa parte); acá sólo el cálculo y el dibujo de la guía.
+//  cualquiera de los dos bordes).
+//
+//  Primera versión de esta tarea dejaba que CUALQUIER arrastre, desde
+//  el primer píxel, activara la lectura — con `touch-action: pan-y`
+//  para que ganara el gesto horizontal. Gustavo la probó y pidió
+//  arreglarla: así tapaba el scroll lateral del `.chart-wrap` en
+//  pantallas angostas, que antes de esta tarea funcionaba (corrección,
+//  F06-T09). Ahora se distingue la intención con un pequeño retardo:
+//
+//    el dedo se queda quieto RETARDO_MANTENER ms  → se activa la
+//      lectura (toque sostenido)
+//    el dedo se mueve más de UMBRAL_MOVIMIENTO px
+//      antes de que se cumpla ese tiempo            → se cancela, el
+//      navegador recibe el gesto entero y scrollea como siempre
+//      (nunca se llama `preventDefault`ni `setPointerCapture` en ese
+//      caso, así que no hay nada que "devolverle" al navegador)
+//
+//  `touch-action` queda en su valor por defecto a propósito: restringirlo
+//  de entrada es lo que le sacaba el scroll al navegador sin que este
+//  código llegara siquiera a decidir nada.
 // ===================================================================
+
+const RETARDO_MANTENER = 350; // ms para distinguir "mantener" de "scrollear"
+const UMBRAL_MOVIMIENTO = 10; // px de tolerancia antes de esos 350ms
 
 /**
  * La geometría que necesita la lectura táctil para ubicar un toque:
@@ -306,8 +325,6 @@ export function conectarLectura(svg, daily, modo = "ambos") {
   // global implícito.
   const doc = svg.ownerDocument;
 
-  svg.classList.add("lectura-activa");
-
   const grupo = doc.createElementNS(NS_SVG, "g");
   grupo.setAttribute("class", "lectura");
   grupo.setAttribute("aria-hidden", "true");
@@ -369,23 +386,63 @@ export function conectarLectura(svg, daily, modo = "ambos") {
   }
 
   let activo = false;
+  let temporizador = null;
+  let inicio = null;
+
+  function cancelarEspera() {
+    if (temporizador != null) {
+      clearTimeout(temporizador);
+      temporizador = null;
+    }
+  }
+
+  function activar(ev) {
+    activo = true;
+    // Recién acá, con el toque sostenido ya confirmado: capturar el
+    // puntero y frenar el default es lo que mantiene la lectura
+    // funcionando aunque el dedo se mueva después (para "arrastrar y
+    // leer" una vez activada), sin afectar al scroll de un gesto que
+    // ya se descartó como sostenido.
+    svg.setPointerCapture(ev.pointerId);
+    ev.preventDefault();
+    mostrarEn(ev.clientX);
+  }
 
   svg.addEventListener("pointerdown", (ev) => {
-    activo = true;
-    svg.setPointerCapture(ev.pointerId);
-    mostrarEn(ev.clientX);
-    ev.preventDefault();
+    inicio = { x: ev.clientX, y: ev.clientY };
+    cancelarEspera();
+    temporizador = setTimeout(() => {
+      temporizador = null;
+      activar(ev);
+    }, RETARDO_MANTENER);
   });
+
   svg.addEventListener("pointermove", (ev) => {
-    if (!activo) return;
-    mostrarEn(ev.clientX);
+    if (activo) {
+      ev.preventDefault();
+      mostrarEn(ev.clientX);
+      return;
+    }
+    if (temporizador != null && inicio) {
+      const distancia = Math.hypot(ev.clientX - inicio.x, ev.clientY - inicio.y);
+      if (distancia > UMBRAL_MOVIMIENTO) {
+        // Se movió antes de cumplirse la espera: es un scroll, no un
+        // toque sostenido. Nunca se llamó `preventDefault` ni
+        // `setPointerCapture`, así que el navegador ya venía
+        // procesando el gesto solo y sigue sin que esto lo toque.
+        cancelarEspera();
+      }
+    }
   });
-  svg.addEventListener("pointerup", () => {
-    activo = false;
-    ocultar();
-  });
-  svg.addEventListener("pointercancel", () => {
-    activo = false;
-    ocultar();
-  });
+
+  function soltar() {
+    cancelarEspera();
+    if (activo) {
+      activo = false;
+      ocultar();
+    }
+  }
+
+  svg.addEventListener("pointerup", soltar);
+  svg.addEventListener("pointercancel", soltar);
 }
