@@ -55,6 +55,52 @@ def participacion(parte: decimal.Decimal, total: decimal.Decimal) -> decimal.Dec
     return money(parte / total * 100)
 
 
+def porcentajes_de_categorias(
+    totales: list[decimal.Decimal], total_general: decimal.Decimal
+) -> list[decimal.Decimal | None]:
+    """El `share` de cada total en `totales` sobre `total_general`, en
+    el mismo orden — pero a diferencia de llamar `participacion()` una
+    vez por categoría, acá la suma de los porcentajes da EXACTAMENTE
+    100,00 (criterio de aceptación de F07-T01, General §15). Redondear
+    cada uno por separado puede dejar la suma en 99,99 o 100,01 aunque
+    cada individual esté bien redondeado: tres categorías con un
+    tercio cada una dan 33,33 + 33,33 + 33,33 = 99,99.
+
+    El método es el del mayor resto (Hare-Niemeyer, el mismo que usan
+    varios sistemas electorales para repartir bancas sin perder
+    ninguna): cada total se redondea hacia abajo, y el centavo de
+    porcentaje que falta para llegar a 100 se reparte, de a uno, entre
+    las categorías que más cerca estaban de redondear hacia arriba.
+
+    `None` para todas con `total_general` en cero — nunca una
+    división, mismo criterio que `participacion()`."""
+    if total_general == 0:
+        return [None] * len(totales)
+
+    crudos = [t / total_general * 100 for t in totales]
+    pisos = [c.quantize(CENT, rounding=decimal.ROUND_DOWN) for c in crudos]
+    restos = [c - p for c, p in zip(crudos, pisos, strict=True)]
+
+    # Cuántos centavos de porcentaje faltan para llegar a 100,00. Nunca
+    # negativo ni mayor que `len(totales)`: redondear hacia abajo no
+    # puede perder un centavo entero por total. El `max/min` es sólo
+    # una red de seguridad para el día en que un histórico (F08) cargue
+    # categorías que no sumen justo el total del mes.
+    faltan = int((decimal.Decimal("100.00") - sum(pisos)) / CENT)
+    faltan = max(0, min(faltan, len(totales)))
+
+    # Los índices con mayor resto se llevan el centavo que falta, uno
+    # por uno. `sorted` es estable: un empate en el resto lo resuelve
+    # el orden en que llegaron los totales, siempre igual para la
+    # misma entrada.
+    orden = sorted(range(len(totales)), key=lambda i: restos[i], reverse=True)
+    corregidos = set(orden[:faltan])
+    resultado: list[decimal.Decimal | None] = [
+        piso + CENT if i in corregidos else piso for i, piso in enumerate(pisos)
+    ]
+    return resultado
+
+
 def tasa_de_ahorro(
     ingresos: decimal.Decimal, ahorro: decimal.Decimal
 ) -> decimal.Decimal | None:

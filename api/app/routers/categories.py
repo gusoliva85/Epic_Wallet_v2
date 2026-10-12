@@ -1,11 +1,12 @@
-"""Categorías · F03-T08.
+"""Categorías · F03-T08. Detalle de una categoría, F07-T01.
 
-Referencia: 02_Documento_Tecnico.md §9.1 · General §7, §34, §51
+Referencia: 02_Documento_Tecnico.md §9.1 · General §7, §15, §16, §34, §51
 
-    GET    /api/categories           lista, filtros `type` y `active`
-    POST   /api/categories           alta, al final de su tipo
-    PATCH  /api/categories/{id}      nombre, activar/desactivar, orden
-    DELETE /api/categories/{id}      baja — restringida si tiene histórico
+    GET    /api/categories             lista, filtros `type` y `active`
+    POST   /api/categories             alta, al final de su tipo
+    PATCH  /api/categories/{id}        nombre, activar/desactivar, orden
+    DELETE /api/categories/{id}        baja — restringida si tiene histórico
+    GET    /api/categories/{id}/detail el detalle de un mes (General §16)
 
 Dos traducciones de `IntegrityError` a un 409 con mensaje, no dos
 validaciones hechas a mano por este router: la restricción que
@@ -20,6 +21,8 @@ tocar este archivo.
 
 from __future__ import annotations
 
+import decimal
+
 from fastapi import APIRouter, status
 from psycopg.errors import ForeignKeyViolation, UniqueViolation
 from sqlalchemy.exc import IntegrityError
@@ -27,12 +30,23 @@ from sqlalchemy.exc import IntegrityError
 from ..core.db import SesionDeUsuario
 from ..core.errors import NOT_FOUND, ErrorDeApi, conflicto
 from ..core.security import UsuarioDelToken
-from ..models import Category
+from ..models import Category, Transaction
 from ..repos import categories as repos
-from ..schemas.categories import AltaDeCategoria, CambioDeCategoria, Categoria
+from ..repos import monthly_category_totals as repos_totales
+from ..repos import months as repos_meses
+from ..repos import transactions as repos_movimientos
+from ..schemas.categories import AltaDeCategoria, CambioDeCategoria, Categoria, DetalleDeCategoria
+from ..schemas.transactions import Movimiento
+from ..services.months import HISTORICO, transacciones_del_mes
 from .me import asegurar_perfil_y_categorias
 
 router = APIRouter(prefix="/categories", tags=["categorías"])
+
+# Una categoría de una cuenta real nunca se acerca a esto en un solo
+# mes; está para no truncar en silencio si algún día pasara, no porque
+# se lo espere (Técnico §9.1, mismo criterio que el límite por
+# defecto de `GET /api/transactions`, acá fijo y no pedido por query).
+MOVIMIENTOS_DEL_DETALLE = 500
 
 
 def _sin_categoria() -> ErrorDeApi:
@@ -40,6 +54,14 @@ def _sin_categoria() -> ErrorDeApi:
     que existe (mismo criterio que `_sin_mes` en `routers/months.py`).
     """
     return ErrorDeApi(status.HTTP_404_NOT_FOUND, NOT_FOUND, "No se encontró la categoría.")
+
+
+def _sin_mes() -> ErrorDeApi:
+    """Mismo texto y mismo 404 que `routers/months.py::_sin_mes` —se
+    repite en vez de importarla porque allá es privada (el guión bajo
+    inicial), y son tres líneas, no vale la pena centralizarlas por
+    esto solo."""
+    return ErrorDeApi(status.HTTP_404_NOT_FOUND, NOT_FOUND, "No se encontró el mes.")
 
 
 @router.get("", response_model=list[Categoria], summary="Las categorías del usuario")
@@ -120,3 +142,57 @@ def borrar_categoria(category_id: int, sesion: SesionDeUsuario) -> None:
                 "No se puede borrar: tiene movimientos cargados. Desactivala en su lugar."
             ) from exc
         raise
+
+
+@router.get(
+    "/{category_id}/detail",
+    response_model=DetalleDeCategoria,
+    summary="El detalle de una categoría en un mes",
+)
+def ver_detalle_de_categoria(
+    category_id: int, year: int, month: int, sesion: SesionDeUsuario
+) -> DetalleDeCategoria:
+    """General §16: total del mes, última carga y los movimientos
+    individuales de esa categoría — o el total sin lista si el mes es
+    histórico (Regla 4). `year`/`month` son obligatorios: a diferencia
+    de `GET /api/dashboard`, acá no hay "mes actual" por default —
+    quien pide el detalle ya está mirando un mes puntual (el
+    desglose de esa pantalla), nunca entra directo a esta vista."""
+    categoria = repos.buscar_por_id(sesion, category_id)
+    if categoria is None:
+        raise _sin_categoria()
+
+    mes = repos_meses.buscar_por_periodo(sesion, year, month)
+    if mes is None:
+        raise _sin_mes()
+
+    # Sin total ese mes, es que la categoría no tuvo movimientos —
+    # mismo "no aparece" que ya decide `_desglose_por_categoria` en el
+    # dashboard, pero acá hay que devolver algo igual (el pedido es
+    # por ESTA categoría puntual), así que el total es cero en vez de
+    # faltar.
+    total = next(
+        (t.total_amount for t in repos_totales.listar_por_mes(sesion, mes.id) if t.category_id == category_id),
+        decimal.Decimal("0.00"),
+    )
+
+    if mes.status == HISTORICO:
+        # Regla 4: un mes consolidado no tiene movimientos
+        # individuales, y no se inventan.
+        movimientos: list[Transaction] = []
+    else:
+        movimientos = repos_movimientos.listar(
+            sesion, month_id=mes.id, category_id=category_id, limit=MOVIMIENTOS_DEL_DETALLE
+        )
+
+    crudas = transacciones_del_mes(mes.status, movimientos)
+    transactions = None if crudas is None else [Movimiento.model_validate(m, from_attributes=True) for m in crudas]
+
+    return DetalleDeCategoria(
+        category_id=categoria.id,
+        name=categoria.name,
+        type=categoria.type,
+        total=total,
+        last_date=max((m.transaction_date for m in movimientos), default=None),
+        transactions=transactions,
+    )

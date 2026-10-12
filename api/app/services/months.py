@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import calendar
 import datetime as dt
+from collections.abc import Sequence
 from typing import Literal, NamedTuple
 from zoneinfo import ZoneInfo
 
@@ -135,8 +136,8 @@ def origen_de_totales(status: str) -> Literal["transactions", "stored"]:
 
 
 def transacciones_del_mes(
-    status: str, movimientos: list[object] | None
-) -> list[object] | None:
+    status: str, movimientos: Sequence[object] | None
+) -> Sequence[object] | None:
     """Lo que la API tiene que mandar en el campo `transactions`.
 
     El contrato es explícito y no es simétrico (Técnico §6.6): un mes
@@ -150,7 +151,11 @@ def transacciones_del_mes(
     `[]` significa "los tiene, y no hay ninguno este mes". Confundir
     los dos es el bug que esta función existe para que no se escriba
     dos veces en el repositorio y en el router.
-    """
+
+    `Sequence` y no `list` en la entrada (F07-T01): así acepta
+    `list[Transaction]` de verdad —`list` es invariante para el
+    chequeo de tipos, y una función pensada para cualquier llamador no
+    puede pedir el tipo exacto que use cada uno."""
     if status == HISTORICO:
         return None
     return movimientos if movimientos is not None else []

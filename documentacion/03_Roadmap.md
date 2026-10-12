@@ -319,7 +319,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 
 **Objetivo:** del total de una categoría poder llegar a los movimientos que lo forman.
 
-- [ ] **F07-T01 · Lógica del desglose y detalle en la API**
+- [~] **F07-T01 · Lógica del desglose y detalle en la API**
   **Tipo:** Cálculo → Backend · **Ref:** General §15, §16 · *fusiona F07-T01 y F07-T02*
   **Hacer:** cálculo del desglose con porcentaje sobre el total y variación contra el mes anterior; endpoint de detalle de categoría que devuelve sus movimientos, o el total consolidado si el mes es histórico.
   **Aceptación:** · los porcentajes suman 100 · una categoría sin movimientos no aparece o aparece en cero, decidido y consistente · el detalle de un mes histórico devuelve el total sin inventar movimientos.

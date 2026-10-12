@@ -79,6 +79,71 @@ def test_participacion_calcula_el_porcentaje() -> None:
 
 
 # ===================================================================
+#  porcentajes_de_categorias · F07-T01, la suma da exactamente 100
+# ===================================================================
+
+
+@pytest.mark.unit
+def test_porcentajes_de_categorias_con_total_general_en_cero_da_todos_none() -> None:
+    assert calc.porcentajes_de_categorias([D("100"), D("200")], D("0")) == [None, None]
+
+
+@pytest.mark.unit
+def test_porcentajes_de_categorias_lista_vacia_da_lista_vacia() -> None:
+    assert calc.porcentajes_de_categorias([], D("0")) == []
+    assert calc.porcentajes_de_categorias([], D("1000")) == []
+
+
+@pytest.mark.unit
+def test_porcentajes_de_categorias_una_sola_categoria_da_cien() -> None:
+    assert calc.porcentajes_de_categorias([D("553000.00")], D("553000.00")) == [D("100.00")]
+
+
+@pytest.mark.unit
+def test_porcentajes_de_categorias_suman_exactamente_cien_aunque_participacion_no() -> None:
+    # El caso que motiva la tarea: tres tercios iguales, redondeados
+    # por separado, dan 99,99 — acá tienen que dar 100,00 justo.
+    totales = [D("100.00"), D("100.00"), D("100.00")]
+    porcentajes = calc.porcentajes_de_categorias(totales, D("300.00"))
+    assert sum(porcentajes) == D("100.00")
+    # Y cada uno queda cerca de 33,33 — no se le va toda la corrección
+    # a uno solo.
+    assert all(D("33.33") <= p <= D("33.34") for p in porcentajes)
+
+
+@pytest.mark.unit
+def test_porcentajes_de_categorias_le_da_el_resto_a_quien_mas_cerca_estaba() -> None:
+    # 3/7 ≈ 42,857%, 2/7 ≈ 28,571%, 2/7 ≈ 28,571% — redondeados hacia
+    # abajo: 42,85 + 28,57 + 28,57 = 99,99, falta un centavo. El resto
+    # más grande es el de la primera categoría (0,857 > 0,571), así
+    # que se lo lleva ella.
+    totales = [D("3"), D("2"), D("2")]
+    porcentajes = calc.porcentajes_de_categorias(totales, D("7"))
+    assert sum(porcentajes) == D("100.00")
+    assert porcentajes[0] == D("42.86")
+    assert porcentajes[1] == D("28.57")
+    assert porcentajes[2] == D("28.57")
+
+
+@pytest.mark.unit
+def test_porcentajes_de_categorias_respeta_el_orden_de_entrada() -> None:
+    totales = [D("10.00"), D("20.00"), D("30.00"), D("40.00")]
+    porcentajes = calc.porcentajes_de_categorias(totales, D("100.00"))
+    assert porcentajes == [D("10.00"), D("20.00"), D("30.00"), D("40.00")]
+    assert sum(porcentajes) == D("100.00")
+
+
+@pytest.mark.unit
+def test_porcentajes_de_categorias_muchas_categorias_sigue_sumando_cien() -> None:
+    # Un caso con más margen de rounding-drift: 13 categorías de a
+    # $1.000 sobre un total de $13.000 — cada una es 7,6923...%.
+    totales = [D("1000.00")] * 13
+    porcentajes = calc.porcentajes_de_categorias(totales, D("13000.00"))
+    assert sum(porcentajes) == D("100.00")
+    assert len(porcentajes) == 13
+
+
+# ===================================================================
 #  variacion_porcentual · el vs_previous del dashboard
 # ===================================================================
 

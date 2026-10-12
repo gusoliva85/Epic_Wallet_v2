@@ -110,6 +110,7 @@ class CategoriaDelDashboard(BaseModel):
     type: str
     total: str
     share: str | None
+    variation: str | None
     transaction_count: int
     last_date: dt.date | None
 
@@ -215,6 +216,7 @@ def respuesta_desde(d: servicio.Dashboard) -> RespuestaDashboard:
                 type=c.type,
                 total=_importe(c.total),
                 share=_porcentaje_opcional(c.share),
+                variation=_porcentaje_opcional(c.variation),
                 transaction_count=c.transaction_count,
                 last_date=c.last_date,
             )

@@ -508,6 +508,8 @@ def daily_saving_series(income_by_day: list[Decimal],
 | Ahorro negativo (gasté más de lo que ingresé) | Se muestra con signo menos; es un resultado válido, no un error |
 | Mes histórico al pedir el gráfico diario | La API no devuelve serie diaria; el frontend muestra el mensaje de mes consolidado |
 | Suma de categorías ≠ total de egresos en carga histórica | Advertencia con el texto exacto del documento general; el usuario puede corregir o guardar igual |
+| Desglose por categoría (General §15, F07-T01) | Los `share` de un mismo tipo (todos los ingresos, todos los egresos) suman exactamente 100 — `calc.porcentajes_de_categorias`, método del mayor resto, no `participacion()` categoría por categoría |
+| Categoría sin movimientos en el mes | No aparece en el desglose del dashboard (`GET /api/dashboard`); pedida por su propio detalle (`GET /api/categories/{id}/detail`), da total `"0.00"` y `transactions: []` |
 
 ### 7.2 Recálculo del mes
 
@@ -786,6 +788,7 @@ Base: `/api`. JSON en todo. Fechas en ISO 8601 (`2026-10-03`). Importes como **s
 | `POST` | `/api/categories` | Alta. |
 | `PUT` | `/api/categories/{id}` | Edición, activar y desactivar. |
 | `PATCH` | `/api/categories/reorder` | Reordenamiento por lote. |
+| `GET` | `/api/categories/{id}/detail?year&month` | Total del mes, última carga y movimientos de esa categoría (General §16, F07-T01). `transactions: null` si el mes es histórico. |
 | `GET` | `/api/investments` | Cartera con totales y rendimientos. |
 | `POST` | `/api/investments` | Alta de posición. Opcional: descuenta del ahorro. |
 | `PUT` | `/api/investments/{id}` | Edición y actualización manual de valor. |
@@ -850,7 +853,7 @@ Una sola llamada alimenta todo el dashboard. Evita seis peticiones en el arranqu
   ],
   "categories": [
     { "category_id": 10, "name": "Alquiler", "type": "expense",
-      "total": "553000.00", "share": "22.9",
+      "total": "553000.00", "share": "22.9", "variation": "0.0",
       "transaction_count": 1, "last_date": "2026-10-01" }
   ],
   "alerts": [

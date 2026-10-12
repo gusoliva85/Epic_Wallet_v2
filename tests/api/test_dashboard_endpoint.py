@@ -21,6 +21,7 @@ Movimientos sin aportar nada, General §55).
 
 from __future__ import annotations
 
+import decimal
 import json
 import os
 import re
@@ -252,6 +253,80 @@ def test_con_movimientos_cargados_los_indicadores_reflejan_la_realidad(
     assert categorias["Alquiler"]["share"] == "88.2"  # 150000 / 170000 * 100
     assert categorias["Alquiler"]["transaction_count"] == 1
     assert categorias["Sueldo"]["total"] == "500000.00"
+
+
+@sin_entorno
+def test_los_porcentajes_del_desglose_suman_exactamente_cien(
+    cliente, cuentas: tuple[Cuenta, Cuenta], limpiar_meses
+) -> None:
+    """Criterio de aceptación de F07-T01. Antes de la tarea, cada
+    `share` salía de `participacion()` por separado y la suma podía
+    quedar en 99,9 o 100,1 por el redondeo independiente de cada
+    categoría — acá se arma un desglose de tres categorías para
+    comprobar la suma, no sólo cada valor individual."""
+    a, _ = cuentas
+    sueldo = _categoria_id(cliente, a, "Sueldo", "income")
+    alquiler = _categoria_id(cliente, a, "Alquiler", "expense")
+    gas = _categoria_id(cliente, a, "Gas", "expense")
+    luz = _categoria_id(cliente, a, "Luz", "expense")
+
+    hoy = cliente.get("/api/dashboard", headers=a.cabeceras).json()["month"]
+    anio, mes_num = hoy["year"], hoy["month"]
+
+    def fecha(d: int) -> str:
+        return f"{anio:04d}-{mes_num:02d}-{d:02d}"
+
+    _cargar(cliente, a, category_id=sueldo, tipo="income", importe="100000.00", fecha=fecha(1), desc="Sueldo")
+    # 250/250/500 de 1000: un cuarto, un cuarto y la mitad — exactos,
+    # sin resto que repartir, así se aísla la suma de la cuenta del
+    # redondeo que ya prueba tests/unit/test_calc.py por su cuenta.
+    _cargar(cliente, a, category_id=alquiler, tipo="expense", importe="250.00", fecha=fecha(5), desc="")
+    _cargar(cliente, a, category_id=gas, tipo="expense", importe="250.00", fecha=fecha(5), desc="")
+    _cargar(cliente, a, category_id=luz, tipo="expense", importe="500.00", fecha=fecha(5), desc="")
+
+    cuerpo = cliente.get("/api/dashboard", headers=a.cabeceras).json()
+    gastos = [c for c in cuerpo["categories"] if c["type"] == "expense"]
+    assert len(gastos) == 3
+    assert sum(decimal.Decimal(c["share"]) for c in gastos) == decimal.Decimal("100.0")
+
+    # Y los ingresos son su propio grupo de 100%: una sola categoría,
+    # su share no se mezcla con el de los gastos.
+    ingresos = [c for c in cuerpo["categories"] if c["type"] == "income"]
+    assert ingresos[0]["share"] == "100.0"
+
+
+@sin_entorno
+def test_una_categoria_trae_la_variacion_contra_el_mes_anterior(
+    cliente, cuentas: tuple[Cuenta, Cuenta], limpiar_meses
+) -> None:
+    a, _ = cuentas
+    gas = _categoria_id(cliente, a, "Gas", "expense")
+    sueldo = _categoria_id(cliente, a, "Sueldo", "income")
+
+    hoy = cliente.get("/api/dashboard", headers=a.cabeceras).json()["month"]
+    anio, mes_num = hoy["year"], hoy["month"]
+    anio_anterior, mes_anterior = (anio - 1, 12) if mes_num == 1 else (anio, mes_num - 1)
+
+    _cargar(
+        cliente, a, category_id=gas, tipo="expense", importe="20000.00",
+        fecha=f"{anio_anterior:04d}-{mes_anterior:02d}-10", desc="Gas del mes pasado",
+    )
+    _cargar(
+        cliente, a, category_id=gas, tipo="expense", importe="30000.00",
+        fecha=f"{anio:04d}-{mes_num:02d}-10", desc="Gas de este mes",
+    )
+    # Sueldo es nueva este mes: no tuvo total el mes pasado, así que no
+    # hay con qué comparar.
+    _cargar(
+        cliente, a, category_id=sueldo, tipo="income", importe="500000.00",
+        fecha=f"{anio:04d}-{mes_num:02d}-01", desc="Sueldo",
+    )
+
+    cuerpo = cliente.get("/api/dashboard", headers=a.cabeceras).json()
+    categorias = {c["name"]: c for c in cuerpo["categories"]}
+
+    assert categorias["Gas"]["variation"] == "50.0"  # de $20.000 a $30.000
+    assert categorias["Sueldo"]["variation"] is None
 
 
 @sin_entorno

@@ -85,6 +85,7 @@ class CategoriaDelMes(NamedTuple):
     type: str
     total: decimal.Decimal
     share: decimal.Decimal | None
+    variation: decimal.Decimal | None
     transaction_count: int
     last_date: dt.date | None
 
@@ -144,6 +145,7 @@ def _desglose_por_categoria(
     categorias_por_id: dict[int, Category],
     movimientos: list[Transaction],
     mes: Month,
+    totales_anteriores_por_categoria: dict[int, decimal.Decimal],
 ) -> list[CategoriaDelMes]:
     """Combina `monthly_category_totals` —que ya trae el total
     correcto para las dos naturalezas del mes (F04-T05 lo recalcula
@@ -151,7 +153,15 @@ def _desglose_por_categoria(
     con lo único que sólo se puede sacar de los movimientos
     individuales: cuántos hubo y cuándo fue el último. Un mes
     histórico no tiene movimientos, así que esas dos quedan en 0 y
-    `None` — nunca se inventan (Regla 4)."""
+    `None` — nunca se inventan (Regla 4).
+
+    `share` sale de `calc.porcentajes_de_categorias`, una vez por tipo
+    (ingreso y egreso son dos grupos de 100% separados, nunca uno
+    mezclado con el otro) y no de `calc.participacion` categoría por
+    categoría: así la suma de los porcentajes de cada grupo da
+    exactamente 100 (F07-T01), en vez de quedar 99,99 o 100,01 por el
+    redondeo independiente de cada uno.
+    """
     cantidad: dict[int, int] = {}
     ultima_fecha: dict[int, dt.date] = {}
     for m in movimientos:
@@ -160,19 +170,33 @@ def _desglose_por_categoria(
         if vigente is None or m.transaction_date > vigente:
             ultima_fecha[m.category_id] = m.transaction_date
 
+    # Defensivo: la FK no debería permitir una fila de
+    # `monthly_category_totals` sin categoría, pero filtrarlas acá
+    # (una sola vez) y no en el loop de abajo es lo que deja agrupar
+    # por tipo sin repetir el chequeo.
+    totales_validos = [t for t in totales if t.category_id in categorias_por_id]
+
+    shares: dict[int, decimal.Decimal | None] = {}
+    for tipo, total_del_tipo in (("income", mes.income_total), ("expense", mes.expense_total)):
+        del_tipo = [t for t in totales_validos if categorias_por_id[t.category_id].type == tipo]
+        porcentajes = calc.porcentajes_de_categorias(
+            [t.total_amount for t in del_tipo], total_del_tipo
+        )
+        for total, porcentaje in zip(del_tipo, porcentajes, strict=True):
+            shares[total.category_id] = porcentaje
+
     salida = []
-    for total in totales:
-        categoria = categorias_por_id.get(total.category_id)
-        if categoria is None:
-            continue  # defensivo: la FK no debería permitir esto nunca
-        total_del_tipo = mes.income_total if categoria.type == "income" else mes.expense_total
+    for total in totales_validos:
+        categoria = categorias_por_id[total.category_id]
+        anterior = totales_anteriores_por_categoria.get(total.category_id, decimal.Decimal("0"))
         salida.append(
             CategoriaDelMes(
                 category_id=categoria.id,
                 name=categoria.name,
                 type=categoria.type,
                 total=total.total_amount,
-                share=calc.participacion(total.total_amount, total_del_tipo),
+                share=shares[total.category_id],
+                variation=calc.variacion_porcentual(total.total_amount, anterior),
                 transaction_count=cantidad.get(total.category_id, 0),
                 last_date=ultima_fecha.get(total.category_id),
             )
@@ -261,6 +285,17 @@ def armar(
     categorias = repos_categorias.listar(sesion)
     categorias_por_id = {c.id: c for c in categorias}
     totales_por_categoria = repos_totales.listar_por_mes(sesion, mes.id)
+    # Para la variación de cada categoría contra el mes anterior
+    # (F07-T01): sin mes anterior, o con una categoría que no tuvo
+    # total ese mes, el diccionario no tiene esa clave y
+    # `_desglose_por_categoria` la trata como cero —mismo "nunca hubo
+    # nada con qué comparar" que ya usa `variaciones` unas líneas
+    # arriba, sólo que acá por categoría en vez de por mes entero.
+    totales_anteriores_por_categoria = (
+        {t.category_id: t.total_amount for t in repos_totales.listar_por_mes(sesion, anterior_mes.id)}
+        if anterior_mes
+        else {}
+    )
 
     if mes.status == HISTORICO:
         # Regla 4: un mes consolidado no tiene movimientos
@@ -295,5 +330,7 @@ def armar(
         variaciones=variaciones,
         diario=diario,
         ultimos_seis_meses=_ultimos_seis(hasta_aqui),
-        categorias=_desglose_por_categoria(totales_por_categoria, categorias_por_id, movimientos, mes),
+        categorias=_desglose_por_categoria(
+            totales_por_categoria, categorias_por_id, movimientos, mes, totales_anteriores_por_categoria
+        ),
     )

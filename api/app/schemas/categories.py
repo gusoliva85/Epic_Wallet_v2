@@ -1,4 +1,4 @@
-"""Esquemas de categorías · F03-T08.
+"""Esquemas de categorías · F03-T08. Detalle de una categoría, F07-T01.
 
 Referencia: 02_Documento_Tecnico.md §9.1, §9.4
 """
@@ -6,10 +6,12 @@ Referencia: 02_Documento_Tecnico.md §9.1, §9.4
 from __future__ import annotations
 
 import datetime as dt
+import decimal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
 from ..services.categories import LARGO_MAXIMO_NOMBRE, nombre_valido, tipo_valido
+from .transactions import Movimiento
 
 
 class Categoria(BaseModel):
@@ -86,3 +88,27 @@ class CambioDeCategoria(BaseModel):
     @classmethod
     def _nombre(cls, v: str | None) -> str | None:
         return _validar_nombre(v) if v is not None else None
+
+
+class DetalleDeCategoria(BaseModel):
+    """`GET /api/categories/{id}/detail?year&month` (F07-T01, General
+    §16): el total del mes, la última carga y los movimientos
+    individuales de esa categoría ese mes.
+
+    `transactions` es `None` para un mes histórico y nunca una lista
+    vacía — mismo contrato exacto que `GET /api/months/{id}` y que
+    `daily` en `GET /api/dashboard` (Regla 4: un mes consolidado no
+    tiene movimientos individuales, y no se inventan)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    category_id: int
+    name: str
+    type: str
+    total: decimal.Decimal
+    last_date: dt.date | None
+    transactions: list[Movimiento] | None
+
+    @field_serializer("total")
+    def _total_como_texto(self, valor: decimal.Decimal) -> str:
+        return f"{valor:.2f}"
