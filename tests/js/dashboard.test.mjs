@@ -69,8 +69,8 @@ async function cargarConDobles() {
       'const EVENTO_CAMBIO = "mes:cambiado";',
     )
     .replace(
-      'import { dibujar as dibujarGraficoDiario, MODOS as MODOS_DIARIO } from "./charts/diario.js";',
-      `import { dibujar as dibujarGraficoDiario, MODOS as MODOS_DIARIO } from "${rutaAbsoluta("charts", "diario.js")}";`,
+      'import {\n  dibujar as dibujarGraficoDiario,\n  MODOS as MODOS_DIARIO,\n  conectarLectura,\n} from "./charts/diario.js";',
+      `import { dibujar as dibujarGraficoDiario, MODOS as MODOS_DIARIO, conectarLectura } from "${rutaAbsoluta("charts", "diario.js")}";`,
     )
     .replace(
       'import { dibujar as dibujarGraficoSeis, MODOS as MODOS_SEIS, etiquetaDeMes } from "./charts/seis.js";',

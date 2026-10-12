@@ -41,7 +41,11 @@ import { tarjetaHeroe, tarjetaMetrica, pintarTarjetas, animarCifras } from "./co
 import { filaCategoria, pintarFilas } from "./components/rows.js";
 import { bloqueCargando, error as estadoError, vacio, consolidado } from "./components/estados.js";
 import { EVENTO_CAMBIO } from "./barra-mes.js";
-import { dibujar as dibujarGraficoDiario, MODOS as MODOS_DIARIO } from "./charts/diario.js";
+import {
+  dibujar as dibujarGraficoDiario,
+  MODOS as MODOS_DIARIO,
+  conectarLectura,
+} from "./charts/diario.js";
 import { dibujar as dibujarGraficoSeis, MODOS as MODOS_SEIS, etiquetaDeMes } from "./charts/seis.js";
 
 const $ = (id) => document.getElementById(id);
@@ -152,6 +156,11 @@ function pintarGrafico() {
   }
 
   caja.innerHTML = dibujarGraficoDiario(dashboard.daily, modoDiario);
+  // La lectura táctil (F06-T09) se conecta de nuevo en cada pintada:
+  // el `<svg>` de arriba es nuevo cada vez (cambió el modo, el mes, o
+  // se reintentó), así que no hay un `<svg>` viejo del que desprender
+  // oyentes.
+  conectarLectura(caja.querySelector("svg"), dashboard.daily, modoDiario);
 }
 
 function conectarModoDiario() {

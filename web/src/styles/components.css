@@ -2143,6 +2143,42 @@
   filter: drop-shadow(0 0 5px var(--color-sav));
 }
 
+/* ---- lectura táctil del gráfico diario · F06-T09 ----
+   Tocar y arrastrar sobre el gráfico muestra el valor del día bajo el
+   dedo (`charts/diario.js`, `conectarLectura`). `touch-action: pan-y`
+   es lo que le saca al navegador el gesto horizontal —si no, un
+   arrastre horizontal scrollearía el `.chart-wrap` en vez de mover la
+   línea guía: Gustavo eligió que la lectura gane ese gesto, así que el
+   scroll horizontal del gráfico queda desactivado mientras se lo usa.
+   El vertical (el de la página) sigue andando porque `pan-y` no lo
+   toca. */
+.lectura-activa {
+  touch-action: pan-y;
+}
+
+.lectura {
+  pointer-events: none;
+}
+
+.lectura-guia {
+  stroke: var(--color-ink-3);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+}
+
+.lectura-fondo {
+  fill: var(--color-bg-1);
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+
+.lectura-texto {
+  font-family: Inter, sans-serif;
+  font-size: 10.5px;
+  font-weight: 600;
+  fill: var(--color-ink);
+}
+
 /* ---- leyenda y pie de cifras de un gráfico ---- */
 
 .legend {

@@ -1319,17 +1319,22 @@ Eje X        días del mes (1…día actual)
 Eje Y izq.   importe diario → barras
              · barra verde  = ingresos del día
              · barra roja   = egresos del día
-Eje Y der.   ahorro del mes acumulado → línea
+Eje Y der.   ahorro del mes acumulado → línea (sólo en modo "Ambos")
              · línea azul grafito, 2,7 px
              · punto y etiqueta en el valor de hoy
              · línea de cero punteada si el ahorro se vuelve negativo
-Modos        Ambos · Egresos · Ingresos · Acumulado
-             (la línea de ahorro se mantiene visible en los cuatro)
+Modos        Ambos · Egresos · Ingresos
+             (el modo "Acumulado" se probó y se sacó — Gustavo,
+             F06-T02 — y la línea de ahorro quedó sólo en "Ambos":
+             en los otros dos el eje izquierdo cambia de escala para
+             esa serie sola, y la línea dejaba de hablar de lo mismo)
 ```
 
 Por qué doble eje: el gasto diario se mueve en decenas de miles y el ahorro acumulado en millones. Con un solo eje la línea aplastaría las barras. La etiqueta "AHORRO" sobre el eje derecho y el color compartido con el token `--color-sav` evitan la confusión.
 
 Lectura que habilita: se ve de un golpe el salto del día del sueldo y cómo el ahorro baja a lo largo del mes con cada gasto; exactamente "cómo va bajando o subiendo el ahorro".
+
+**Lectura táctil (F06-T09):** tocar y arrastrar sobre el gráfico muestra una línea guía más una etiqueta fija arriba a la izquierda con el valor exacto del día bajo el dedo (día, ingreso, egreso y, en "Ambos", el ahorro acumulado). Gana el gesto horizontal por sobre el scroll del `.chart-wrap` en pantallas angostas (`touch-action: pan-y`, decisión explícita de Gustavo): en la mayoría de los celulares el desborde es chico (90 a 160 px), así que casi no hace falta scrollear. `charts/diario.js` expone `geometriaDeDias()`/`contenidoDeLectura()` puras y `conectarLectura()` para el cableado del gesto.
 
 ### 14.2 Resto
 
@@ -1350,6 +1355,7 @@ La evolución patrimonial completa queda para una fase posterior, como indica el
 - Mínimo de 1,5 px de alto en las barras, para que un gasto chico se vea.
 - En móvil el `svg` tiene `min-width: 520px` dentro de un contenedor con scroll horizontal; a partir de 720 px se ajusta al ancho.
 - Sin librería, sin canvas: SVG en el DOM, accesible e inspeccionable.
+- **El cambio de tema ya redibuja solo, sin JavaScript** (verificado F06-T09): todo color de un gráfico sale de `var(--color-*)` puesto directo en `fill`/`stroke`/`stop-color`, y eso reacciona en vivo al cambiar `data-theme` en `<html>` — funciona igual con `document.startViewTransition()` de por medio (`tema.js`), porque el cambio de atributo sigue siendo síncrono dentro de su callback. Nadie tiene que volver a llamar `dibujar()` cuando cambia el tema. Si algún día un gráfico nuevo mostrara un color sin recolorearse solo, la causa casi segura es un color calculado una vez y guardado como string fijo en vez de dejarlo como referencia `var()` viva.
 
 ---
 
