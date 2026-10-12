@@ -134,9 +134,11 @@ function respuestaBase() {
       { year: 2026, month: 10, label: "Octubre 2026", income: "500000.00", expense: "165000.00", saving: "335000.00", saving_rate: "67.0" },
     ],
     categories: [
-      // A propósito, "Gas" pesa más que "Alquiler": así el orden "mayor
-      // gasto" (Gas, Alquiler) y el orden "A–Z" (Alquiler, Gas) dan
-      // resultados distintos, y una prueba de orden que no mueva nada
+      // A propósito, los totales, los nombres y las variaciones dan
+      // los tres órdenes distintos entre sí (F07-T03): "mayor gasto"
+      // da Gas/Luz/Alquiler/Internet, "A–Z" da Alquiler/Gas/Internet/Luz,
+      // "Variación" da Luz/Alquiler/Gas/Internet (Internet, sin dato,
+      // siempre al final) — así una prueba de orden que no mueva nada
       // de verdad no pasa por casualidad.
       {
         category_id: 1,
@@ -144,6 +146,7 @@ function respuestaBase() {
         type: "expense",
         total: "45000.00",
         share: "27.3",
+        variation: "10.0",
         transaction_count: 2,
         last_date: "2026-10-12",
       },
@@ -153,8 +156,29 @@ function respuestaBase() {
         type: "expense",
         total: "120000.00",
         share: "72.7",
+        variation: "-5.0",
         transaction_count: 1,
         last_date: "2026-10-05",
+      },
+      {
+        category_id: 4,
+        name: "Luz",
+        type: "expense",
+        total: "80000.00",
+        share: "48.5",
+        variation: "25.0",
+        transaction_count: 1,
+        last_date: "2026-10-08",
+      },
+      {
+        category_id: 5,
+        name: "Internet",
+        type: "expense",
+        total: "10000.00",
+        share: "6.1",
+        variation: null,
+        transaction_count: 1,
+        last_date: "2026-10-03",
       },
       {
         category_id: 3,
@@ -162,6 +186,7 @@ function respuestaBase() {
         type: "income",
         total: "500000.00",
         share: "100.0",
+        variation: "0.0",
         transaction_count: 1,
         last_date: "2026-10-01",
       },
@@ -199,6 +224,7 @@ const HTML_INICIO = `<!doctype html><html><body>
   <div class="view-switch" id="categorias-orden">
     <button type="button" class="activa" data-orden="mayor">Mayor gasto</button>
     <button type="button" data-orden="az">A–Z</button>
+    <button type="button" data-orden="variacion">Variación</button>
   </div>
   <div class="rows" id="categorias-inicio"></div>
 </body></html>`;
@@ -724,7 +750,7 @@ describe("gastos por categoría (F06-T05)", () => {
     await esperar();
 
     const filas = [...categorias.querySelectorAll(".row")];
-    assert.equal(filas.length, 2, "Alquiler y Gas — Sueldo (ingreso) queda afuera");
+    assert.equal(filas.length, 4, "Alquiler, Gas, Luz e Internet — Sueldo (ingreso) queda afuera");
     assert.ok(!categorias.textContent.includes("Sueldo"));
   });
 
@@ -735,7 +761,7 @@ describe("gastos por categoría (F06-T05)", () => {
     await esperar();
 
     const nombres = [...categorias.querySelectorAll(".row-main b")].map((b) => b.textContent);
-    assert.deepEqual(nombres, ["Gas", "Alquiler"]); // 120000 > 45000
+    assert.deepEqual(nombres, ["Gas", "Luz", "Alquiler", "Internet"]); // 120000 > 80000 > 45000 > 10000
   });
 
   test("tocar «A–Z» ordena alfabéticamente", async () => {
@@ -747,7 +773,47 @@ describe("gastos por categoría (F06-T05)", () => {
     ordenCategorias.querySelector('[data-orden="az"]').click();
 
     const nombres = [...categorias.querySelectorAll(".row-main b")].map((b) => b.textContent);
-    assert.deepEqual(nombres, ["Alquiler", "Gas"]); // distinto del orden "mayor gasto" de arriba
+    assert.deepEqual(nombres, ["Alquiler", "Gas", "Internet", "Luz"]); // distinto del orden "mayor gasto" de arriba
+  });
+
+  test("tocar «Variación» ordena de mayor suba a mayor baja, y deja al final las que no tienen con qué comparar", async () => {
+    const { dom, categorias, ordenCategorias } = await montar();
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    ordenCategorias.querySelector('[data-orden="variacion"]').click();
+
+    const nombres = [...categorias.querySelectorAll(".row-main b")].map((b) => b.textContent);
+    // Luz +25,0% · Alquiler +10,0% · Gas −5,0% · Internet sin dato
+    // (variation: null) — ninguno de los otros dos órdenes da esto.
+    assert.deepEqual(nombres, ["Luz", "Alquiler", "Gas", "Internet"]);
+  });
+
+  test("ordenando por variación, el pie de cada fila muestra la variación y no la última carga", async () => {
+    const { dom, categorias, ordenCategorias } = await montar();
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    ordenCategorias.querySelector('[data-orden="variacion"]').click();
+
+    const filaLuz = [...categorias.querySelectorAll(".row")].find((f) => f.textContent.includes("Luz"));
+    assert.match(filaLuz.textContent, /\+25,0%/);
+    assert.doesNotMatch(filaLuz.textContent, /últ\./);
+
+    const filaInternet = [...categorias.querySelectorAll(".row")].find((f) => f.textContent.includes("Internet"));
+    assert.match(filaInternet.textContent, /N\/A/);
+  });
+
+  test("ordenando por mayor gasto o A–Z, el pie sigue mostrando la última carga, como antes", async () => {
+    const { dom, categorias } = await montar();
+    await esperar();
+    cambiarMes(dom, MES_ACTUAL);
+    await esperar();
+
+    const filaGas = [...categorias.querySelectorAll(".row")].find((f) => f.textContent.includes("Gas"));
+    assert.match(filaGas.textContent, /últ\. 05\/10/);
   });
 
   test("el detalle trae la cantidad de movimientos y el % del gasto", async () => {
@@ -845,7 +911,7 @@ describe("si la API falla", () => {
 
     assert.equal(caja.querySelectorAll(".kpi").length, 5, "el reintento tiene que haber pintado las tarjetas");
     assert.ok(graficoSeis.querySelector("svg"), "el reintento tiene que haber pintado los últimos seis meses");
-    assert.equal(categorias.querySelectorAll(".row").length, 2, "el reintento tiene que haber pintado las categorías");
+    assert.equal(categorias.querySelectorAll(".row").length, 4, "el reintento tiene que haber pintado las categorías");
     const pedidos = llamadas.apiGet.filter((a) => a[0].startsWith("/dashboard?"));
     assert.equal(pedidos.length, 2);
     assert.match(pedidos[1][0], /month=10/);

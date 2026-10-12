@@ -324,7 +324,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Hacer:** cálculo del desglose con porcentaje sobre el total y variación contra el mes anterior; endpoint de detalle de categoría que devuelve sus movimientos, o el total consolidado si el mes es histórico.
   **Aceptación:** · los porcentajes suman 100 · una categoría sin movimientos no aparece o aparece en cero, decidido y consistente · el detalle de un mes histórico devuelve el total sin inventar movimientos.
 
-- [ ] **F07-T03 · Panel de desglose con ordenamiento**
+- [~] **F07-T03 · Panel de desglose con ordenamiento**
   **Tipo:** Frontend · **Ref:** General §15 · *fusiona F07-T03 y F07-T04*
   **Hacer:** panel en el dashboard ordenable por importe, nombre y variación, con la barra proporcional de cada categoría.
   **Aceptación:** · el orden elegido se mantiene al cambiar de mes · en el celular se lee sin desbordar.
