@@ -20,7 +20,6 @@ import {
 import { aviso, pildora } from "../components/avisos.js";
 import { crearHoja } from "../components/sheet.js";
 import { conectarSinConexion } from "../components/estados.js";
-import { toast } from "../components/toast.js";
 import * as D from "../datos-muestra.js";
 
 const $ = (id) => document.getElementById(id);
@@ -244,37 +243,6 @@ function conectarControles() {
   });
 }
 
-/* La hoja de detalle, que abre cualquier fila de muestra. El
-   contenido real de una categoría es de la fase 7, todavía sin
-   construir; acá toma el nombre de la fila para que se vea que es ESA
-   la que se abrió.
-
-   Las filas de movimiento de `#movimientos-lista` NO pasan por acá
-   desde F04-T12: son datos reales y `movimientos.js` tiene su propio
-   oyente, scoped a esa lista, que abre `#hoja-movimiento` en modo
-   edición. Sin esta exclusión, un toque ahí abriría las dos hojas a
-   la vez — la de muestra y la real. */
-function conectarDetalle() {
-  const hoja = $("hoja-detalle");
-  const control = hoja && crearHoja(hoja);
-  if (!control) return;
-
-  document.addEventListener("click", (ev) => {
-    const fila = ev.target.closest("[data-movimiento], [data-categoria]");
-    if (!fila || fila.closest("#movimientos-lista")) return;
-
-    // textContent y no innerHTML: lo que se lee del DOM se trata como
-    // dato, aunque lo haya escrito esta misma aplicación.
-    const nombre = fila.querySelector(".row-main b")?.textContent ?? "Detalle";
-    $("hoja-detalle-titulo").textContent = nombre;
-    $("hoja-detalle-sub").textContent = fila.hasAttribute("data-movimiento")
-      ? "Movimiento"
-      : "Categoría del mes";
-    control.abrir();
-    toast(nombre);
-  });
-}
-
 /* Las alertas viven en una hoja que abre la campanita de la barra
    superior, no en el tablero. En el tablero competían con los
    indicadores y empujaban el resto de la pantalla hacia abajo; acá
@@ -309,7 +277,6 @@ function conectar() {
   pintarVistas();
   conectarAlertas();
   conectarControles();
-  conectarDetalle();
   conectarSinConexion();
 }
 

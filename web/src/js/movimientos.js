@@ -14,11 +14,10 @@
    `components/estados.js::consolidado()` directo.
 
    Tocar una fila abre `#hoja-movimiento` en modo edición
-   (`alta-movimiento.js::abrirEdicion`), no el `#hoja-detalle`
-   genérico que sigue usando `views/vistas.js` para las filas de
-   categoría (F07, todavía no construido) y las de muestra del
-   tablero (Fase 5). Por eso el oyente de acá va en el contenedor de
-   la lista real y no en `document`: así no compite con el genérico. */
+   (`alta-movimiento.js::abrirEdicion`), no `#hoja-detalle` —esa hoja
+   es de `categoria-detalle.js` desde F07-T05, para las filas de
+   `#categorias-inicio`—. Por eso el oyente de acá va en el contenedor
+   de la lista real y no en `document`: así no compite con el otro. */
 
 import { api } from "./api.js";
 import { esc } from "./format.js";

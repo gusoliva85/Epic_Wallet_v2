@@ -1078,11 +1078,6 @@
   color: var(--color-ink-2);
 }
 
-.nota-pie {
-  font-size: var(--text-sub);
-  color: var(--color-ink-3);
-}
-
 /* Altura suficiente para que la página pase del alto de la pantalla y
    se pueda comprobar que la barra superior queda pegada y que al
    cambiar de vista se vuelve arriba. */
@@ -2619,13 +2614,6 @@
   .stagger > * {
     animation-delay: 0ms !important;
   }
-}
-
-/* Relleno alto dentro de la hoja de detalle: sirve para comprobar que
-   la hoja hace scroll por dentro y que el fondo NO se mueve con ella.
-   Se va cuando entre el detalle de verdad (fase 4). */
-.relleno-hoja {
-  height: 80vh;
 }
 
 /* ---- marcador de gráfico pendiente ----

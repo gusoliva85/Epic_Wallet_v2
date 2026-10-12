@@ -329,7 +329,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Hacer:** panel en el dashboard ordenable por importe, nombre y variación, con la barra proporcional de cada categoría.
   **Aceptación:** · el orden elegido se mantiene al cambiar de mes · en el celular se lee sin desbordar.
 
-- [ ] **F07-T05 · Hoja de detalle de categoría**
+- [~] **F07-T05 · Hoja de detalle de categoría**
   **Tipo:** Frontend · **Ref:** General §16 · *fusiona F07-T05, F07-T06, F07-T07 y F07-T08*
   **Hacer:** hoja inferior con los movimientos de la categoría, accesible también tocando el gráfico de categorías, con editar y borrar desde ahí; y el caso del mes consolidado con su mensaje.
   **Aceptación:** · se llega desde el panel y desde el gráfico · editar desde el detalle actualiza el desglose y los indicadores · el mes consolidado explica por qué no hay lista.

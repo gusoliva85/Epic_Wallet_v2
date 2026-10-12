@@ -858,11 +858,9 @@
       <div class="hoja-cuerpo" id="alertas-lista"></div>
     </aside>
 
-    <!-- Hoja de detalle · F01-T11.
-         Desde 900 px es un cajón lateral derecho. El contenido de
-         verdad —los datos del movimiento o de la categoría— llega en
-         la fase 4; acá sirve para probar la hoja con el dedo y el
-         cajón con el mouse. -->
+    <!-- Hoja de detalle de categoría · F01-T11, contenido real desde
+         F07-T05. Desde 900 px es un cajón lateral derecho.
+         `categoria-detalle.js` es quien la conecta y la llena. -->
     <aside
       class="hoja hoja--cajon"
       id="hoja-detalle"
@@ -890,11 +888,8 @@
         </button>
       </div>
       <div class="hoja-cuerpo">
-        <p class="nota-pie">
-          Acá van los datos del movimiento o de la categoría y su lista de
-          movimientos. Fase 4 y fase 5.
-        </p>
-        <div class="relleno-hoja" aria-hidden="true"></div>
+        <div class="chart-foot" id="categoria-detalle-resumen"></div>
+        <div class="rows" id="categoria-detalle-lista"></div>
       </div>
     </aside>
 
@@ -1472,6 +1467,7 @@
     <script type="module" src="/src/js/alta-movimiento.js"></script>
     <script type="module" src="/src/js/movimientos.js"></script>
     <script type="module" src="/src/js/dashboard.js"></script>
+    <script type="module" src="/src/js/categoria-detalle.js"></script>
     <script type="module" src="/src/js/historial.js"></script>
     <script type="module" src="/src/js/app.js"></script>
     <script type="module" src="/src/js/registrar-sw.js"></script>
