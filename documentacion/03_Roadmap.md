@@ -308,7 +308,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Hacer:** los dos gráficos restantes. El patrimonial queda con datos de ejemplo hasta la Fase 9, que es la que trae el dato real.
   **Aceptación:** · la evolución del ahorro usa el acumulado real · el patrimonial queda listo para enchufar y marcado como tal.
 
-- [~] **F06-T09 · Tema, móvil, interacción y mes histórico**
+- [x] **F06-T09 · Tema, móvil, interacción y mes histórico**
   **Tipo:** Frontend · **Ref:** Técnico §14.3, §13.7 · *fusiona F06-T09, F06-T10, F06-T11 y F06-T12*
   **Hacer:** los cinco gráficos respondiendo al cambio de tema sin recargar; toque y arrastre en móvil para ver el valor de un día; y el mes histórico mostrando un mensaje en lugar del gráfico diario, porque no tiene movimientos individuales.
   **Aceptación:** · cambiar de tema redibuja sin recargar · en el celular se puede leer el valor de un día con el dedo · **el mes histórico no inventa una serie diaria**: explica que es un mes consolidado.

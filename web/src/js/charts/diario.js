@@ -232,17 +232,22 @@ export function dibujar(daily, modo = "ambos") {
 //  Lectura táctil · F06-T09
 //
 //  Mantener el dedo quieto sobre el gráfico muestra el valor exacto
-//  del día debajo: una línea guía más una etiqueta fija en la esquina
-//  superior izquierda (fija a propósito, para no tener que calcular
-//  si una etiqueta que siguiera al dedo se sale del gráfico cerca de
-//  cualquiera de los dos bordes).
+//  del día debajo: una línea guía más una etiqueta arriba, centrada en
+//  el día tocado (no en un punto fijo del gráfico — segunda
+//  corrección, F06-T09: con el `.chart-wrap` scrolleado hacia los
+//  últimos días del mes, una etiqueta pegada al borde izquierdo del
+//  `<svg>` entero quedaba fuera de lo que se ve. Centrada en el toque
+//  está siempre a la vista, porque el dedo nunca puede estar en una
+//  parte del gráfico que no se ve). Se mide con `getBBox()` y se
+//  corrige sólo si se sale por un borde del `viewBox`.
 //
 //  Primera versión de esta tarea dejaba que CUALQUIER arrastre, desde
 //  el primer píxel, activara la lectura — con `touch-action: pan-y`
 //  para que ganara el gesto horizontal. Gustavo la probó y pidió
 //  arreglarla: así tapaba el scroll lateral del `.chart-wrap` en
-//  pantallas angostas, que antes de esta tarea funcionaba (corrección,
-//  F06-T09). Ahora se distingue la intención con un pequeño retardo:
+//  pantallas angostas, que antes de esta tarea funcionaba (primera
+//  corrección, F06-T09). Ahora se distingue la intención con un
+//  pequeño retardo:
 //
 //    el dedo se queda quieto RETARDO_MANTENER ms  → se activa la
 //      lectura (toque sostenido)
@@ -341,7 +346,7 @@ export function conectarLectura(svg, daily, modo = "ambos") {
 
   const texto = doc.createElementNS(NS_SVG, "text");
   texto.setAttribute("class", "lectura-texto");
-  texto.setAttribute("x", String(geo.PL + PAD_ETIQUETA + 2));
+  texto.setAttribute("text-anchor", "middle");
 
   grupo.append(guia, fondo, texto);
   svg.appendChild(grupo);
@@ -351,7 +356,13 @@ export function conectarLectura(svg, daily, modo = "ambos") {
     if (!r.width) return;
     // `preserveAspectRatio="none"` escala ancho y alto de forma
     // independiente y lineal: una simple regla de tres contra el
-    // `viewBox` basta, sin pasar por `getScreenCTM()`.
+    // `viewBox` basta, sin pasar por `getScreenCTM()`. `r.left` ya
+    // viene corrido si el `.chart-wrap` está scrolleado, así que esta
+    // cuenta da el día correcto sin importar cuánto se haya scrolleado
+    // — lo que fallaba (Gustavo, F06-T09, segunda corrección) no era
+    // esto, era que la ETIQUETA se dibujaba siempre pegada al borde
+    // izquierdo del gráfico entero, y ese borde queda fuera de vista
+    // apenas se scrollea hacia los últimos días del mes.
     const xSvg = geo.ancho * ((clientX - r.left) / r.width);
     const i = geo.indiceDesdeX(xSvg);
     const cx = geo.x(i);
@@ -359,10 +370,17 @@ export function conectarLectura(svg, daily, modo = "ambos") {
     guia.setAttribute("x1", cx.toFixed(1));
     guia.setAttribute("x2", cx.toFixed(1));
 
+    // Arranca centrada en el día tocado —ahí, por definición, está a
+    // la vista: es donde está el dedo— y no en un punto fijo del
+    // gráfico. Se mide y se corrige después si se sale por algún
+    // borde (el `viewBox` entero, no el recorte visible del
+    // `.chart-wrap`: con el margen que deja `PAD_ETIQUETA` alcanza,
+    // porque el dedo nunca puede estar fuera de lo que se ve).
+    texto.setAttribute("x", cx.toFixed(1));
     texto.replaceChildren(
       ...contenidoDeLectura(daily, modo, i).map((linea, k) => {
         const tspan = doc.createElementNS(NS_SVG, "tspan");
-        tspan.setAttribute("x", String(geo.PL + PAD_ETIQUETA + 2));
+        tspan.setAttribute("x", cx.toFixed(1));
         tspan.setAttribute("dy", k === 0 ? "0" : "13");
         tspan.textContent = linea;
         return tspan;
@@ -373,8 +391,30 @@ export function conectarLectura(svg, daily, modo = "ambos") {
     texto.setAttribute("y", String(geo.PT + 11));
 
     // El fondo se mide después de poner el texto: su ancho depende
-    // de cuál día quedó, "Día 09" no mide lo mismo que "Día 28".
-    const caja = texto.getBBox();
+    // de cuál día quedó, "Día 09" no mide lo mismo que "Día 28". Si
+    // la caja medida se sale por la izquierda o la derecha del
+    // `viewBox`, se corrige corriendo texto y guiones el desvío
+    // justo — la línea guía se queda donde está (sigue marcando el
+    // día de verdad), sólo se mueve la etiqueta.
+    //
+    // El margen es `PAD_ETIQUETA` y no un número aparte: el fondo
+    // dibuja `PAD_ETIQUETA` px más allá de la caja del texto de cada
+    // lado (más abajo), así que recortar el texto a ese mismo margen
+    // es lo que deja el FONDO —no sólo el texto— dentro del `viewBox`.
+    // Con un margen más chico el texto quedaba adentro pero el fondo
+    // se seguía saliendo unos píxeles.
+    let caja = texto.getBBox();
+    let corrimiento = 0;
+    if (caja.x < PAD_ETIQUETA) corrimiento = PAD_ETIQUETA - caja.x;
+    else if (caja.x + caja.width > geo.ancho - PAD_ETIQUETA)
+      corrimiento = geo.ancho - PAD_ETIQUETA - (caja.x + caja.width);
+    if (corrimiento !== 0) {
+      const xCorregida = (cx + corrimiento).toFixed(1);
+      texto.setAttribute("x", xCorregida);
+      for (const tspan of texto.children) tspan.setAttribute("x", xCorregida);
+      caja = texto.getBBox();
+    }
+
     fondo.setAttribute("x", (caja.x - PAD_ETIQUETA).toFixed(1));
     fondo.setAttribute("y", (caja.y - PAD_ETIQUETA).toFixed(1));
     fondo.setAttribute("width", (caja.width + PAD_ETIQUETA * 2).toFixed(1));

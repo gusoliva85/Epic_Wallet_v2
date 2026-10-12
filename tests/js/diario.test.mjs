@@ -96,10 +96,20 @@ describe("contenidoDeLectura", () => {
 describe("conectarLectura", () => {
   function montarSvg() {
     const dom = new JSDOM(`<!doctype html><html><body></body></html>`, { pretendToBeVisual: true });
-    // jsdom no implementa getBBox ni mide layout de verdad: se lo
-    // reemplaza por una caja fija, sólo para poder ejercitar el
-    // cableado del gesto sin que explote por una API que no existe acá.
-    dom.window.SVGElement.prototype.getBBox = () => ({ x: 10, y: 10, width: 80, height: 40 });
+    // jsdom no implementa getBBox ni mide layout de verdad: se la
+    // reemplaza por una caja de ancho fijo (220, bien ancha a
+    // propósito) centrada en el `x` que el texto tenga puesto en ese
+    // momento — así se puede ejercitar de verdad el recorte contra los
+    // bordes del `viewBox` sin un navegador real, que es justo lo que
+    // F06-T09 (segunda corrección) tiene que proteger: con un `x`
+    // cerca de cualquiera de los dos bordes, una caja de ese ancho se
+    // sale, tal como pasaría con la etiqueta real.
+    dom.window.SVGElement.prototype.getBBox = function () {
+      if (this.tagName.toLowerCase() !== "text") return { x: 10, y: 10, width: 80, height: 40 };
+      const anchoFalso = 220;
+      const centro = Number(this.getAttribute("x")) || 0;
+      return { x: centro - anchoFalso / 2, y: 10, width: anchoFalso, height: 40 };
+    };
     dom.window.SVGElement.prototype.setPointerCapture = () => {};
     const svg = dom.window.document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("viewBox", "0 0 760 262");
@@ -196,6 +206,62 @@ describe("conectarLectura", () => {
 
     svg.dispatchEvent(puntero(dom, "pointermove", { clientX: geo.x(5), clientY: 0 }));
     assert.match(svg.querySelector(".lectura-texto").textContent, /Día 06/);
+  });
+
+  // ------------------------------------------- posición de la etiqueta
+  // (F06-T09, segunda corrección: Gustavo scrolleó el gráfico hasta
+  // los últimos días del mes y la etiqueta no aparecía — quedaba
+  // dibujada pegada al borde izquierdo del `<svg>` entero, que con el
+  // `.chart-wrap` scrolleado hacia la derecha queda fuera de lo que se
+  // ve. Ahora sigue al día tocado en vez de un punto fijo.)
+
+  test("la etiqueta queda centrada en el día tocado, no en un punto fijo del gráfico", (t) => {
+    t.mock.timers.enable({ apis: ["setTimeout"] });
+    const { dom, svg } = montarSvg();
+    conectarLectura(svg, daily({ dias: 28 }), "ambos");
+    const geo = geometriaDeDias(28, "ambos");
+    const fondo = svg.querySelector(".lectura-fondo");
+
+    svg.dispatchEvent(puntero(dom, "pointerdown", { clientX: geo.x(14), clientY: 0 }));
+    t.mock.timers.tick(RETARDO_MANTENER);
+    const centroDia14 = Number(fondo.getAttribute("x")) + Number(fondo.getAttribute("width")) / 2;
+
+    svg.dispatchEvent(puntero(dom, "pointermove", { clientX: geo.x(20), clientY: 0 }));
+    const centroDia20 = Number(fondo.getAttribute("x")) + Number(fondo.getAttribute("width")) / 2;
+
+    // No tienen que coincidir: si la etiqueta estuviera fija, los dos
+    // "centros" medirían lo mismo sin importar qué día se tocó.
+    assert.notEqual(centroDia14.toFixed(0), centroDia20.toFixed(0));
+    // Y tienen que seguir la dirección del dedo: el día 20 está más a
+    // la derecha que el 14 en el gráfico.
+    assert.ok(centroDia20 > centroDia14);
+  });
+
+  test("tocar el primer día no deja la etiqueta recortada por el borde izquierdo del viewBox", (t) => {
+    t.mock.timers.enable({ apis: ["setTimeout"] });
+    const { dom, svg } = montarSvg();
+    conectarLectura(svg, daily({ dias: 28 }), "ambos");
+    const geo = geometriaDeDias(28, "ambos");
+    const fondo = svg.querySelector(".lectura-fondo");
+
+    svg.dispatchEvent(puntero(dom, "pointerdown", { clientX: geo.x(0), clientY: 0 }));
+    t.mock.timers.tick(RETARDO_MANTENER);
+
+    assert.ok(Number(fondo.getAttribute("x")) >= 0, "el fondo de la etiqueta no puede arrancar en negativo");
+  });
+
+  test("tocar el último día no deja la etiqueta recortada por el borde derecho del viewBox (el bug reportado)", (t) => {
+    t.mock.timers.enable({ apis: ["setTimeout"] });
+    const { dom, svg } = montarSvg();
+    conectarLectura(svg, daily({ dias: 28 }), "ambos");
+    const geo = geometriaDeDias(28, "ambos");
+    const fondo = svg.querySelector(".lectura-fondo");
+
+    svg.dispatchEvent(puntero(dom, "pointerdown", { clientX: geo.x(27), clientY: 0 }));
+    t.mock.timers.tick(RETARDO_MANTENER);
+
+    const borde = Number(fondo.getAttribute("x")) + Number(fondo.getAttribute("width"));
+    assert.ok(borde <= geo.ancho, `el fondo de la etiqueta (hasta ${borde}) no puede pasarse del ancho del gráfico (${geo.ancho})`);
   });
 
   test("arrastrar sin haber tocado antes (pointermove suelto) no muestra nada", () => {
