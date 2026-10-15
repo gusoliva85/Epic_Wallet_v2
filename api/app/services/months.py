@@ -225,3 +225,42 @@ def abrir_mes_actual(sesion: Session, user_id: str, *, ahora: dt.datetime | None
     """El mes actual del usuario. `ahora` es para las pruebas, igual
     que en `mes_actual`."""
     return abrir_mes(sesion, user_id, mes_actual(ahora))
+
+
+def recalcular_saldos_acumulados(sesion: Session, user_id: str) -> None:
+    """Recalcula y guarda `opening_balance`/`closing_balance` de TODOS
+    los meses del usuario, encadenados desde el saldo inicial del
+    perfil (Técnico §7.2, punto 3). F08-T03 es la tarea que empieza a
+    escribir esto de verdad en la base; antes, esas dos columnas
+    quedaban en cero sin que nada las tocara (F03-T05).
+
+    Se llama después de crear o corregir un mes histórico: ese cambio
+    puede correr el acumulado de cualquier mes posterior (criterio de
+    aceptación de F08-T01), y recalcular todos juntos —en vez de
+    adivinar cuáles cambiaron— es más simple y no se puede desalinear.
+    Con el volumen real del proyecto (algunos años de meses por
+    cuenta) es una lectura y una escritura chicas.
+
+    No la llama el recálculo de movimientos (F04-T05): el mes en curso
+    es siempre el último cronológicamente, así que su acumulado vuelve
+    a quedar al día en cuanto se carga o corrige cualquier mes
+    histórico; mientras tanto, `GET /api/dashboard` y
+    `GET /api/months/savings-evolution` lo calculan al vuelo y nunca
+    quedan desactualizados."""
+    # Import local: `services.calc` importa `HISTORICO` de este mismo
+    # módulo, así que importarlo arriba de todo crearía un ciclo.
+    from ..repos import profiles as repos_perfiles
+    from . import calc
+
+    perfil = repos_perfiles.buscar(sesion)
+    saldo_inicial = perfil.opening_balance if perfil else decimal.Decimal("0")
+
+    meses = sorted(repos.listar(sesion), key=lambda m: (m.year, m.month))
+    serie = calc.serie_de_ahorro_acumulado(saldo_inicial, [m.saving_total for m in meses])
+
+    anterior = saldo_inicial
+    for mes, saldo in zip(meses, serie, strict=True):
+        mes.opening_balance = anterior
+        mes.closing_balance = saldo
+        anterior = saldo
+    sesion.flush()

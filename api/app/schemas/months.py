@@ -13,7 +13,9 @@ from __future__ import annotations
 import datetime as dt
 import decimal
 
-from pydantic import BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, field_serializer, field_validator, model_validator
+
+from ..services.months import totales_historicos_son_validos
 
 
 class MesResumen(BaseModel):
@@ -29,10 +31,15 @@ class MesResumen(BaseModel):
     income_total: decimal.Decimal
     expense_total: decimal.Decimal
     saving_total: decimal.Decimal
-    # Es "el saldo acumulado" que pide la Técnico §9.1: hoy sale tal
-    # cual de la columna, porque todavía no existe el servicio de
-    # recálculo (F04) que lo encadena entre meses. No está mal, está
-    # incompleto a propósito: esta tarea no lo calcula, lo expone.
+    # Es "el saldo acumulado" que pide la Técnico §9.1: sale tal cual
+    # de la columna. Queda al día en cuanto se carga o corrige un mes
+    # histórico (F08-T03, `services.months.recalcular_saldos_acumulados`
+    # lo encadena y lo guarda); si después cambia un movimiento del mes
+    # en curso sin que se toque ningún histórico, este número puede
+    # quedar atrás hasta la próxima carga histórica —el mes en curso es
+    # siempre el último cronológicamente, así que mientras tanto
+    # `GET /api/dashboard` y `GET /api/months/savings-evolution` siguen
+    # mostrando el acumulado real, calculado al vuelo.
     closing_balance: decimal.Decimal
 
     @field_serializer("income_total", "expense_total", "saving_total", "closing_balance")
@@ -76,3 +83,67 @@ class MesDetalle(MesResumen):
     @field_serializer("opening_balance")
     def _opening_como_texto(self, valor: decimal.Decimal) -> str:
         return f"{valor:.2f}"
+
+
+class TotalDeCategoriaHistorico(BaseModel):
+    """Un total manual por categoría, parte de la carga de un mes
+    histórico (General §18)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    category_id: int
+    total_amount: decimal.Decimal
+
+    @field_validator("total_amount")
+    @classmethod
+    def _total_no_negativo(cls, v: decimal.Decimal) -> decimal.Decimal:
+        if v < 0:
+            raise ValueError("el total de una categoría no puede ser negativo")
+        return v
+
+
+class CargaDeMesHistorico(BaseModel):
+    """Lo que acepta `POST /api/months/historical` (Técnico §9.1):
+    crea el mes consolidado si no existe, o lo actualiza si ya existe
+    como histórico."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    year: int
+    month: int
+    income_total: decimal.Decimal
+    expense_total: decimal.Decimal
+    saving_total: decimal.Decimal
+    categories: list[TotalDeCategoriaHistorico] = []
+    # True para reemplazar un mes `open` que ya tiene movimientos
+    # cargados (General §6.3, Regla 4 de la §50): sin esto, la API
+    # rechaza la carga en vez de pisarlos en silencio
+    # (F08-T01, `requiere_confirmacion_para_historico`). Los
+    # movimientos no se borran —quedan en la base, sin mostrarse—,
+    # sólo deja de leerlos el contrato de mes histórico (Técnico §6.6).
+    confirm: bool = False
+
+    @model_validator(mode="after")
+    def _totales_no_negativos(self) -> CargaDeMesHistorico:
+        if not totales_historicos_son_validos(self.income_total, self.expense_total, self.saving_total):
+            raise ValueError("los totales de un mes histórico no pueden ser negativos")
+        return self
+
+
+class CorreccionDeMesHistorico(BaseModel):
+    """Lo que acepta `PATCH /api/months/{id}`: corrige los totales de
+    un mes que ya es histórico (General §6.3 — "un mes histórico podrá
+    editarse si el usuario detecta un error")."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    income_total: decimal.Decimal
+    expense_total: decimal.Decimal
+    saving_total: decimal.Decimal
+    categories: list[TotalDeCategoriaHistorico] = []
+
+    @model_validator(mode="after")
+    def _totales_no_negativos(self) -> CorreccionDeMesHistorico:
+        if not totales_historicos_son_validos(self.income_total, self.expense_total, self.saving_total):
+            raise ValueError("los totales de un mes histórico no pueden ser negativos")
+        return self

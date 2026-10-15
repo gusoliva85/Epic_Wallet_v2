@@ -60,3 +60,37 @@ def reemplazar_automaticos(
             )
         )
     sesion.flush()
+
+
+def reemplazar_manuales(
+    sesion: Session,
+    *,
+    user_id: str,
+    month_id: int,
+    totales: dict[int, decimal.Decimal],
+) -> None:
+    """Deja las filas de un mes histórico coincidiendo con `totales`
+    (F08-T03): borra TODAS las filas que hubiera para ese mes —
+    automáticas o manuales— y vuelve a insertar las manuales que
+    correspondan.
+
+    Borra sin distinguir `is_manual_summary` a propósito, a diferencia
+    de `reemplazar_automaticos`: un mes que se consolida puede traer
+    filas automáticas viejas de cuando todavía era `open` (F04-T05 las
+    dejó ahí antes de convertirlo), y esas filas quedarían huérfanas
+    —ningún `transactions` detrás— si no se limpian. Esto borra el
+    resumen por categoría, nunca los movimientos individuales: esos no
+    se tocan (General §6.3, §50 R4; CLAUDE.md "no se eliminan datos
+    reales")."""
+    sesion.execute(delete(MonthlyCategoryTotal).where(MonthlyCategoryTotal.month_id == month_id))
+    for category_id, total in totales.items():
+        sesion.add(
+            MonthlyCategoryTotal(
+                user_id=user_id,
+                month_id=month_id,
+                category_id=category_id,
+                total_amount=total,
+                is_manual_summary=True,
+            )
+        )
+    sesion.flush()
