@@ -342,7 +342,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 
 **Al cerrar esta fase la aplicación ya te sirve todos los días:** tenés tu histórico adentro, el mes en curso al día y los gráficos con datos reales.
 
-- [~] **F08-T01 · Lógica de mes histórico y saldo acumulado en cadena**
+- [x] **F08-T01 · Lógica de mes histórico y saldo acumulado en cadena**
   **Tipo:** Cálculo · **Ref:** General §18, §19, §50 R4 · *fusiona F08-T01 y F08-T02*
   **Hacer:** validación de un mes histórico (totales no negativos, no pisar un mes con movimientos) y el saldo acumulado encadenado desde el saldo inicial, mes por mes.
   **Aceptación:** · **cargar un mes histórico recalcula el acumulado de todos los meses posteriores**, no sólo el propio · un mes `open` con movimientos no se puede convertir en consolidado sin aviso explícito · el acumulado parte del saldo inicial del perfil.
