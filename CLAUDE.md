@@ -41,6 +41,7 @@ Criterio para el futuro: *si el test falla, ¿me enteré de algo que la pantalla
 
 - **Las dos naturalezas de mes.** Un mes `open` saca sus totales de `transactions`; un mes `historical` de sus propios campos y devuelve **`transactions: null`** — distinto de `[]`. Nunca se inventan movimientos para un mes consolidado.
 - **Aislamiento entre cuentas.** `user_id` en toda consulta **y RLS activo** en cada tabla de datos de usuario, incluidas las nuevas. Es la única exigencia de seguridad que no se negocia.
+- **Los datos reales que Gustavo ya cargó no se tocan.** Ningún fix, migración ni script corre un `DELETE`, `TRUNCATE` o `DROP` contra la base real sin explicar antes qué se va a borrar (tabla, filas, motivo) y esperar su confirmación explícita — nunca como efecto secundario de otra cosa. No aplica a las cuentas de prueba que se crean y se borran dentro de una misma tarea de QA, ni a lo que la aplicación ya le permite hacer desde la interfaz (borrar un movimiento, vender una inversión — Reglas 10 y 11 del documento general): eso sigue funcionando como está diseñado.
 - **Importes en `numeric(14,2)`** en la base y `Decimal` en Python. Nunca `float`.
 - **Una sola llamada para el dashboard** (`GET /api/dashboard`), por debajo de 400 ms.
 - **Tasa de ahorro con ingresos en cero devuelve `null`**, no un error ni una división.
