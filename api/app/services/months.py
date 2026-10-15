@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import calendar
 import datetime as dt
+import decimal
 from collections.abc import Sequence
 from typing import Literal, NamedTuple
 from zoneinfo import ZoneInfo
@@ -159,6 +160,36 @@ def transacciones_del_mes(
     if status == HISTORICO:
         return None
     return movimientos if movimientos is not None else []
+
+
+def totales_historicos_son_validos(
+    income_total: decimal.Decimal,
+    expense_total: decimal.Decimal,
+    saving_total: decimal.Decimal,
+) -> bool:
+    """Los tres totales de un mes histórico (General §18, Técnico §9.4)
+    se cargan a mano, no se suman desde `transactions` —no hay un
+    `CHECK` de la base que los proteja todavía como al importe de un
+    movimiento (Técnico §6.2, F08-T03)—, así que se valida acá antes
+    de guardar: ninguno puede ser negativo. Cero es válido —un mes sin
+    ingresos o sin gastos cargados es un dato real, no un error."""
+    return income_total >= 0 and expense_total >= 0 and saving_total >= 0
+
+
+def requiere_confirmacion_para_historico(status_actual: str | None, tiene_movimientos: bool) -> bool:
+    """Si hace falta un aviso explícito antes de convertir el mes en
+    histórico consolidado (General §6.3, Regla 4 de la §50 — criterio
+    de aceptación de F08-T01: "un mes `open` con movimientos no se
+    puede convertir en consolidado sin aviso explícito").
+
+    Un mes `open` con movimientos cargados perdería esos movimientos
+    individuales en favor de los totales manuales que trae la carga
+    histórica: no se pisan datos sin que el usuario lo decida a
+    propósito. Un mes que todavía no existe (`status_actual is None`)
+    o que ya es histórico —se lo está corrigiendo, General §6.3— no
+    tiene movimientos individuales que perder, así que no hace falta
+    pedir nada."""
+    return status_actual == ABIERTO and tiene_movimientos
 
 
 # ===================================================================
