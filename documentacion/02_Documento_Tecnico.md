@@ -192,7 +192,7 @@ Implementa las secciones 31 a 43 del documento general. DDL para Postgres (Supab
 - Timestamps `timestamptz`, con `default now()`. La aplicación muestra en `America/Argentina/Buenos_Aires`.
 - Todas las tablas de datos del usuario llevan `user_id uuid not null` para que RLS funcione.
 - Nombres de tablas y columnas en inglés y `snake_case`; los textos visibles van en español en el frontend.
-- Todas las tablas viven en el esquema que indica `DB_SCHEMA` (`public` en producción, `dev` en desarrollo). El DDL de abajo se aplica dentro de ese esquema; `auth.users` es siempre el de Supabase, compartido.
+- Todas las tablas viven en el esquema que indica `DB_SCHEMA`, siempre `public` (§4.1.1: un solo esquema para los tres entornos). El DDL de abajo se aplica dentro de ese esquema; `auth.users` es siempre el de Supabase, compartido.
 
 ### 6.2 DDL
 
@@ -1040,7 +1040,7 @@ Reglas no negociables:
 - `SUPABASE_SERVICE_ROLE_KEY` y `SUPABASE_JWT_SECRET` **nunca** llegan al navegador ni se escriben en el repositorio.
 - El frontend sólo conoce `SUPABASE_URL` y `SUPABASE_ANON_KEY`, inyectadas en el build.
 - Se usa el **pooler** de Supabase (puerto 6543, modo transaction) porque las funciones serverless abren y cierran conexiones constantemente y agotarían el límite de conexiones directas.
-- `DB_SCHEMA` **nunca** es `public` cuando `APP_ENV=development`: sería trabajar contra los datos reales. `scripts/check_db.py` lo verifica y falla si ocurre.
+- `DB_SCHEMA` es siempre `public`, en los tres entornos (§4.1.1); `scripts/check_db.py` verifica que esté definida y que valga eso. Lo que sí exige `APP_ENV=production` explícito en la línea de comando es **migrar** (`migrations/env.py`, §16.4): es la operación destructiva del proyecto, y que pida ser consciente es deliberado.
 
 ---
 
@@ -1523,7 +1523,7 @@ DB_SCHEMA=public APP_ENV=production alembic upgrade head
 Lo que hay que tener antes de la primera línea de lógica de negocio (es la Fase 0 del roadmap):
 
 1. Repositorio en GitHub con la estructura de la sección 10.
-2. Un proyecto Supabase con los esquemas `public` y `dev` creados; anotar URL, claves y secreto de JWT.
+2. Un proyecto Supabase con el esquema `public` creado; anotar URL, claves y secreto de JWT.
 3. Proyecto en Vercel vinculado al repositorio, con las variables de entorno cargadas en los tres entornos.
 4. `/api/health` respondiendo en la URL de producción.
 5. `index.html` mínimo con el estilo aplicado, instalable como PWA en el celular.

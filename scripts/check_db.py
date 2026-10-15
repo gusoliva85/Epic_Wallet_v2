@@ -5,9 +5,8 @@ Uso:  python scripts/check_db.py
 Lee .env del directorio del proyecto y comprueba:
   1. que estén todas las variables requeridas
   2. que DATABASE_URL apunte al pooler (6543) y use el driver psycopg
-  3. que DB_SCHEMA sea coherente con APP_ENV (dev para desarrollo,
-     public para producción), porque con un solo proyecto de Supabase
-     los esquemas son lo que separa los datos de prueba de los reales
+  3. que DB_SCHEMA sea 'public': el proyecto usa un solo esquema para
+     los tres entornos (02_Documento_Tecnico §4.1.1)
   4. que la conexión funcione, con versión de Postgres y latencia
   5. que las claves de Supabase tengan la forma esperada
 
@@ -125,31 +124,20 @@ def revisar_database_url(url: str) -> None:
 
 
 def revisar_esquema(env: dict[str, str]) -> None:
-    """Con un solo proyecto, el esquema es la única separación real."""
+    """Un solo esquema para los tres entornos (02_Documento_Tecnico §4.1.1)."""
     print("\n--- esquema ---")
     esquema = env.get("DB_SCHEMA", "")
-    entorno = env.get("APP_ENV", "")
 
     if not esquema:
         problemas.append("DB_SCHEMA sin definir")
-        print(f"{BAD}DB_SCHEMA sin definir · tiene que ser 'dev' o 'public'")
+        print(f"{BAD}DB_SCHEMA sin definir · tiene que ser 'public'")
         return
 
-    print(f"{OK}{'DB_SCHEMA':30} {esquema}")
-
-    if entorno == "development" and esquema == "public":
-        problemas.append(
-            "APP_ENV=development apuntando al esquema 'public': trabajarías contra los datos reales"
-        )
-        print(f"{BAD}desarrollo apuntando a 'public' · usá 'dev' para no tocar datos reales")
-    elif entorno == "production" and esquema != "public":
-        problemas.append(f"APP_ENV=production con DB_SCHEMA={esquema}: debería ser 'public'")
-        print(f"{BAD}producción debería usar el esquema 'public'")
-    elif esquema not in {"dev", "public", "main"}:
-        avisos.append(f"DB_SCHEMA={esquema} no es uno de los esperados")
-        print(f"{WARN}esquema inesperado · se esperaba 'dev' o 'public'")
+    if esquema == "public":
+        print(f"{OK}{'DB_SCHEMA':30} {esquema}")
     else:
-        print(f"{OK}coherente con APP_ENV={entorno}")
+        avisos.append(f"DB_SCHEMA={esquema}: el proyecto usa un solo esquema ('public')")
+        print(f"{WARN}{'DB_SCHEMA':30} {esquema} · se esperaba 'public'")
 
 
 def probar_conexion(url: str, esquema: str = "") -> None:

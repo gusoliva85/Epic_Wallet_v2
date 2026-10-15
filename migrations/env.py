@@ -7,11 +7,11 @@ Dos cosas que este archivo garantiza:
    `DB_SCHEMA=public alembic upgrade head` manda sobre lo que diga
    el archivo.
 
-2. **DB_SCHEMA es obligatorio y sin valor por defecto.** Con un solo
-   proyecto de Supabase, el esquema es lo único que separa los datos
-   reales de los de prueba (02_Documento_Tecnico §4.1.1). Si falta,
-   Alembic aborta con un mensaje claro en lugar de asumir uno y
-   escribir donde no debe.
+2. **DB_SCHEMA es obligatorio y sin valor por defecto.** Hay un solo
+   esquema (`public`) para los tres entornos (02_Documento_Tecnico
+   §4.1.1), así que no hay margen para asumir uno: si falta, Alembic
+   aborta con un mensaje claro en lugar de migrar sin que haya sido
+   una decisión consciente.
 """
 
 from __future__ import annotations
@@ -40,8 +40,9 @@ if config.config_file_name is not None:
 def cargar_dotenv() -> None:
     """Carga .env SIN pisar lo que ya venga del shell.
 
-    El orden importa: `DB_SCHEMA=public alembic ...` tiene que poder
-    sobreescribir el DB_SCHEMA=dev del archivo.
+    El orden importa: una variable pasada en la línea de comando
+    (por ejemplo `APP_ENV=production alembic ...`) tiene que poder
+    sobreescribir lo que diga el archivo .env.
 
     EPIC_WALLET_IGNORAR_DOTENV=1 saltea la carga. Lo usan los tests
     para poder comprobar que las protecciones de abajo funcionan: sin
@@ -85,19 +86,22 @@ ESQUEMA = os.getenv("DB_SCHEMA", "").strip() or None
 if not ES_SQLITE and not ESQUEMA:
     abortar(
         "DB_SCHEMA no está definida.",
-        "No tiene valor por defecto a propósito: una migración en el esquema "
-        "equivocado tocaría los datos reales.\n"
-        "  Usá:  DB_SCHEMA=dev alembic upgrade head        (desarrollo)\n"
-        "        DB_SCHEMA=public alembic upgrade head     (producción)",
+        "No tiene valor por defecto a propósito: migrar es la operación "
+        "destructiva del proyecto, y que pida ser explícita es deliberado.\n"
+        "  Usá:  DB_SCHEMA=public APP_ENV=production alembic upgrade head",
     )
 
-# Coherencia con el entorno declarado: no dejar que desarrollo escriba en producción.
+# El esquema 'public' es el único que existe y tiene datos reales:
+# exigir APP_ENV=production para migrarlo es la señal consciente de
+# que se lo va a tocar, aunque se esté trabajando desde una máquina
+# de desarrollo (que normalmente tiene APP_ENV=development en su .env).
 APP_ENV = os.getenv("APP_ENV", "").strip()
 if APP_ENV == "development" and ESQUEMA == "public":
     abortar(
-        "APP_ENV=development apuntando al esquema 'public'.",
-        "Eso escribiría sobre los datos reales. Usá DB_SCHEMA=dev, o poné "
-        "APP_ENV=production si de verdad querés migrar producción.",
+        "APP_ENV=development migrando el esquema 'public'.",
+        "Es el único esquema real (02_Documento_Tecnico §4.1.1). Para "
+        "migrarlo de verdad, pasá APP_ENV=production explícito en la "
+        "línea de comando (ver CLAUDE.md § Migraciones).",
     )
 
 config.set_main_option("sqlalchemy.url", URL)
