@@ -167,13 +167,20 @@ def totales_historicos_son_validos(
     expense_total: decimal.Decimal,
     saving_total: decimal.Decimal,
 ) -> bool:
-    """Los tres totales de un mes histórico (General §18, Técnico §9.4)
-    se cargan a mano, no se suman desde `transactions` —no hay un
-    `CHECK` de la base que los proteja todavía como al importe de un
-    movimiento (Técnico §6.2, F08-T03)—, así que se valida acá antes
-    de guardar: ninguno puede ser negativo. Cero es válido —un mes sin
-    ingresos o sin gastos cargados es un dato real, no un error."""
-    return income_total >= 0 and expense_total >= 0 and saving_total >= 0
+    """`income_total` y `expense_total` de un mes histórico (General
+    §18, Técnico §9.4) se cargan a mano, no se suman desde
+    `transactions` —no hay un `CHECK` de la base que los proteja
+    todavía como al importe de un movimiento (Técnico §6.2, F08-T03)—,
+    así que se valida acá antes de guardar: ninguno de los dos puede
+    ser negativo. Cero es válido —un mes sin ingresos o sin gastos
+    cargados es un dato real, no un error.
+
+    `saving_total` NO se valida contra cero: un mes donde se gastó más
+    de lo que entró da un ahorro negativo, y es un resultado válido
+    que se muestra con signo menos, no un error (Técnico §7.1, mismo
+    criterio que `calc.ahorro_del_mes`). Bug encontrado por Gustavo
+    cargando un mes real: esta función lo rechazaba sin motivo."""
+    return income_total >= 0 and expense_total >= 0
 
 
 def requiere_confirmacion_para_historico(status_actual: str | None, tiene_movimientos: bool) -> bool:

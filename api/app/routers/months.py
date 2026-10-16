@@ -31,6 +31,7 @@ from ..repos import profiles as repos_perfiles
 from ..repos import transactions as repos_movimientos
 from ..schemas.months import (
     CargaDeMesHistorico,
+    CategoriaDelMes,
     CorreccionDeMesHistorico,
     MesDetalle,
     MesResumen,
@@ -78,12 +79,16 @@ def _totales_por_categoria(
     return totales
 
 
-def _detalle_de(mes: Month) -> MesDetalle:
+def _detalle_de(sesion: SesionDeUsuario, mes: Month) -> MesDetalle:
     detalle = MesDetalle.model_validate(mes, from_attributes=True)
     return detalle.model_copy(
         update={
             "transactions": transacciones_del_mes(mes.status, None),
             "saving_rate": _tasa(mes),
+            "categories": [
+                CategoriaDelMes.model_validate(t, from_attributes=True)
+                for t in repos_totales.listar_por_mes(sesion, mes.id)
+            ],
         }
     )
 
@@ -160,7 +165,7 @@ def leer_mes(month_id: int, sesion: SesionDeUsuario) -> MesDetalle:
     # devuelve la lista vacía que ya resuelve `transacciones_del_mes`
     # para "sin movimientos que pasarle", y uno histórico sigue dando
     # `None` sin importar qué se le pase.
-    return _detalle_de(mes)
+    return _detalle_de(sesion, mes)
 
 
 @router.post(
@@ -217,7 +222,7 @@ def cargar_mes_historico(
     )
     recalcular_saldos_acumulados(sesion, usuario.id)
 
-    return _detalle_de(mes)
+    return _detalle_de(sesion, mes)
 
 
 @router.patch("/{month_id}", response_model=MesDetalle, summary="Corregir un mes histórico")
@@ -248,4 +253,4 @@ def corregir_mes_historico(
     )
     recalcular_saldos_acumulados(sesion, usuario.id)
 
-    return _detalle_de(mes)
+    return _detalle_de(sesion, mes)

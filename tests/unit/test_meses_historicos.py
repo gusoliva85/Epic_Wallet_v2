@@ -42,17 +42,25 @@ def test_totales_en_cero_son_validos() -> None:
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
-    "income,expense,saving",
+    "income,expense",
     [
-        (D("-1"), D("0"), D("0")),
-        (D("0"), D("-1"), D("0")),
-        (D("0"), D("0"), D("-1")),
+        (D("-1"), D("0")),
+        (D("0"), D("-1")),
     ],
 )
-def test_cualquier_total_negativo_no_es_valido(
-    income: decimal.Decimal, expense: decimal.Decimal, saving: decimal.Decimal
+def test_ingreso_o_egreso_negativo_no_es_valido(
+    income: decimal.Decimal, expense: decimal.Decimal
 ) -> None:
-    assert months.totales_historicos_son_validos(income, expense, saving) is False
+    assert months.totales_historicos_son_validos(income, expense, D("0")) is False
+
+
+@pytest.mark.unit
+def test_el_ahorro_negativo_es_valido() -> None:
+    """Criterio de aceptación de la tarea (bug real, encontrado por
+    Gustavo cargando un mes donde gastó más de lo que ganó): el
+    ahorro negativo no es un error, ingresos y egresos siguen siendo
+    los dos no negativos."""
+    assert months.totales_historicos_son_validos(D("100000.00"), D("150000.00"), D("-50000.00")) is True
 
 
 # ===================================================================

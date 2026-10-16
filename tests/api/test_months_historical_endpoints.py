@@ -224,6 +224,37 @@ def test_carga_un_mes_historico_nuevo_con_sus_totales(
 
 
 @sin_entorno
+def test_el_detalle_del_mes_trae_lo_ya_cargado_por_categoria(
+    cliente, cuentas: tuple[Cuenta, Cuenta], limpiar_meses
+) -> None:
+    """Bug real (Gustavo): la hoja de carga histórica tiene que poder
+    precargar lo que ya existe de un mes, o un segundo guardado sin
+    repetir las líneas de antes las pisa en silencio. Hace falta que
+    `GET /api/months/{id}` devuelva el desglose por categoría."""
+    a, _ = cuentas
+    sueldo = _categoria_id(a.uid, "Sueldo", "income")
+    r = cliente.post(
+        "/api/months/historical",
+        json={
+            "year": 2025,
+            "month": 9,
+            "income_total": "500000.00",
+            "expense_total": "0",
+            "saving_total": "500000.00",
+            "categories": [{"category_id": sueldo, "total_amount": "500000.00"}],
+        },
+        headers=a.cabeceras,
+    )
+    assert r.status_code == 201, r.text
+    month_id = r.json()["id"]
+    assert r.json()["categories"] == [{"category_id": sueldo, "total_amount": "500000.00"}]
+
+    r = cliente.get(f"/api/months/{month_id}", headers=a.cabeceras)
+    assert r.status_code == 200, r.text
+    assert r.json()["categories"] == [{"category_id": sueldo, "total_amount": "500000.00"}]
+
+
+@sin_entorno
 def test_rechaza_totales_negativos(cliente, cuentas: tuple[Cuenta, Cuenta], limpiar_meses) -> None:
     a, _ = cuentas
     r = cliente.post(
@@ -232,6 +263,27 @@ def test_rechaza_totales_negativos(cliente, cuentas: tuple[Cuenta, Cuenta], limp
         headers=a.cabeceras,
     )
     assert r.status_code == 422, r.text
+
+
+@sin_entorno
+def test_acepta_un_ahorro_negativo(cliente, cuentas: tuple[Cuenta, Cuenta], limpiar_meses) -> None:
+    """Bug real (Gustavo, cargando un mes donde gastó más de lo que
+    ganó): un ahorro negativo es un resultado válido, no un error —
+    sólo ingresos y egresos tienen que ser no negativos."""
+    a, _ = cuentas
+    r = cliente.post(
+        "/api/months/historical",
+        json={
+            "year": 2025,
+            "month": 6,
+            "income_total": "100000.00",
+            "expense_total": "150000.00",
+            "saving_total": "-50000.00",
+        },
+        headers=a.cabeceras,
+    )
+    assert r.status_code == 201, r.text
+    assert r.json()["saving_total"] == "-50000.00"
 
 
 @sin_entorno

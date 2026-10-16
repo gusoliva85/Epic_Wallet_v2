@@ -228,8 +228,6 @@ function mesActualArgentina() {
   return FORMATO_MES_ARG.format(new Date()).slice(0, 7);
 }
 
-const ETIQUETA_TIPO_CATEGORIA = { income: "Ingreso", expense: "Egreso" };
-
 /** Todas las categorías activas (ingreso y egreso), pedidas al abrir
  * la hoja. Cada línea elige una de acá; crear una nueva la agrega a
  * esta misma lista para que la próxima línea ya pueda ofrecerla. */
@@ -283,10 +281,31 @@ function htmlDeLinea(idLinea, idCategoriaPreseleccionada) {
   );
 }
 
-function agregarLinea(idCategoriaPreseleccionada) {
+function agregarLinea(idCategoriaPreseleccionada, montoPreseleccionado) {
   const caja = $("historico-lineas");
   if (!caja) return;
   caja.insertAdjacentHTML("beforeend", htmlDeLinea(proximoIdDeLinea++, idCategoriaPreseleccionada));
+  if (montoPreseleccionado != null) {
+    const importe = /** @type {HTMLInputElement} */ (caja.lastElementChild.querySelector("[data-cat-importe]"));
+    importe.value = formatearImporte(String(Math.round(Number(montoPreseleccionado))));
+  }
+}
+
+/** Para que "+ Agregar categoría" no deje acumular líneas vacías ni a
+ * medio crear (pedido de Gustavo: "si ya existe un 'elegí categoría'
+ * que no se eligió, no me tendría que dejar agregar una nueva"). */
+function hayLineaIncompleta() {
+  for (const fila of document.querySelectorAll("#historico-lineas .hist-linea-wrap")) {
+    if (!fila.querySelector("[data-modo='crear']").hidden) return true;
+    const elegir = fila.querySelector("[data-modo='elegir']");
+    if (!elegir.hidden && !elegir.querySelector("[data-cat-select]").value) return true;
+  }
+  return false;
+}
+
+function actualizarBotonAgregar() {
+  const boton = /** @type {HTMLButtonElement | null} */ ($("historico-agregar-linea"));
+  if (boton) boton.disabled = hayLineaIncompleta();
 }
 
 /** Ingresos, egresos y ahorro son siempre la suma de las líneas — no
@@ -342,6 +361,50 @@ async function alAbrirFormulario() {
   if (caja) caja.innerHTML = "";
   agregarLinea(); // una línea en blanco de entrada, para no abrir a una lista vacía
   recalcularTotalesFormulario();
+  actualizarBotonAgregar();
+}
+
+/**
+ * Al elegir un mes que ya existe, trae lo que ya tiene cargado por
+ * categoría y reemplaza las líneas en blanco por esas — bug real
+ * (Gustavo): sin esto, volver a guardar ese mes sin repetir todas las
+ * líneas de antes las pisa en silencio (`reemplazar_manuales` borra
+ * y vuelve a insertar). Un mes que todavía no existe no toca nada de
+ * lo que ya se haya empezado a escribir.
+ */
+async function alCambiarPeriodo() {
+  const valor = /** @type {HTMLInputElement} */ ($("historico-periodo")).value;
+  if (!valor) return;
+  const [year, month] = valor.split("-").map(Number);
+
+  let lista = [];
+  try {
+    lista = await mesesCacheados();
+  } catch {
+    return;
+  }
+  const existente = lista.find((m) => m.year === year && m.month === month);
+  if (!existente) return;
+
+  const caja = $("historico-lineas");
+  if (caja) caja.innerHTML = bloqueCargando("fila", 2);
+  try {
+    const detalle = await api.get(`/months/${existente.id}`);
+    proximoIdDeLinea = 0;
+    if (caja) caja.innerHTML = "";
+    if (detalle.categories?.length) {
+      for (const c of detalle.categories) agregarLinea(c.category_id, c.total_amount);
+    } else {
+      agregarLinea();
+    }
+  } catch (e) {
+    if (caja) caja.innerHTML = "";
+    agregarLinea();
+    mostrarErrorFormulario("Ese mes ya existe, pero no se pudo traer lo que tiene cargado.");
+    console.error("historial: no se pudo precargar el mes existente", e);
+  }
+  recalcularTotalesFormulario();
+  actualizarBotonAgregar();
 }
 
 /* ------------------------------------------------- crear categoría */
@@ -359,6 +422,7 @@ function activarModoCrear(fila) {
     b.classList.toggle("activa", b.dataset.nuevaTipo === "expense");
   }
   nueva.querySelector("[data-nueva-nombre]").focus();
+  actualizarBotonAgregar();
 }
 
 function volverAModoElegir(fila, idCategoriaSeleccionada) {
@@ -366,6 +430,7 @@ function volverAModoElegir(fila, idCategoriaSeleccionada) {
   elegir.querySelector("[data-cat-select]").innerHTML = opcionesDeCategoria(idCategoriaSeleccionada);
   elegir.hidden = false;
   fila.querySelector("[data-modo='crear']").hidden = true;
+  actualizarBotonAgregar();
 }
 
 async function crearCategoriaDeLinea(fila) {
@@ -499,7 +564,12 @@ function conectarFormulario() {
   control = crearHoja(hoja, { disparador, alAbrir: alAbrirFormulario });
   if (!control) return;
 
-  $("historico-agregar-linea")?.addEventListener("click", () => agregarLinea());
+  $("historico-periodo")?.addEventListener("change", alCambiarPeriodo);
+
+  $("historico-agregar-linea")?.addEventListener("click", () => {
+    agregarLinea();
+    actualizarBotonAgregar();
+  });
 
   $("historico-lineas")?.addEventListener("change", (ev) => {
     const select = /** @type {HTMLElement} */ (ev.target);
@@ -509,6 +579,7 @@ function conectarFormulario() {
       return;
     }
     recalcularTotalesFormulario();
+    actualizarBotonAgregar();
   });
 
   $("historico-lineas")?.addEventListener("input", (ev) => {
@@ -525,6 +596,7 @@ function conectarFormulario() {
     if (quitar) {
       filaDe(quitar).remove();
       recalcularTotalesFormulario();
+      actualizarBotonAgregar();
       return;
     }
 

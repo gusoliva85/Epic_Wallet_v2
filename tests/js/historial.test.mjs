@@ -168,6 +168,18 @@ const CATEGORIAS_DE_PRUEBA = [
   { id: 3, name: "Mascota", type: "expense", active: false },
 ];
 
+// El detalle del mes id=6 (septiembre 2026, histórico) ya tiene una
+// línea de Sueldo cargada — lo que hace falta para probar que abrir
+// ese mes de nuevo la precarga en vez de arrancar en blanco.
+const DETALLE_MES_6 = {
+  ...MESES_DE_PRUEBA[1],
+  opening_balance: "0.00",
+  created_at: "2026-09-01T00:00:00Z",
+  updated_at: "2026-09-01T00:00:00Z",
+  transactions: null,
+  categories: [{ category_id: 1, total_amount: "500000.00" }],
+};
+
 let proximoIdCreado = 100;
 
 /**
@@ -199,6 +211,7 @@ async function montar({ apiGet, apiPostHistorico = async () => ({}), apiPostCate
     if (path === "/months") return structuredClone(MESES_DE_PRUEBA);
     if (path.startsWith("/months/savings-evolution")) return serieBase();
     if (path === "/categories") return structuredClone(CATEGORIAS_DE_PRUEBA);
+    if (path === "/months/6") return structuredClone(DETALLE_MES_6);
     throw new Error(`ruta no esperada en la prueba: ${path}`);
   };
 
@@ -442,13 +455,14 @@ describe("abrir la hoja de carga", () => {
     assert.doesNotMatch(select.innerHTML, /Mascota/); // está archivada
   });
 
-  test("+ Agregar categoría suma una línea más", async () => {
+  test("+ Agregar categoría suma una línea más, una vez elegida la anterior", async () => {
     const { dom } = await montar();
     entrarA(dom, "historial");
     await esperar();
     $(dom, "btn-cargar-historico").click();
     await esperar();
 
+    cambiar(selectDe(lineas(dom)[0]), "2");
     $(dom, "historico-agregar-linea").click();
     assert.equal(lineas(dom).length, 2);
   });
@@ -467,6 +481,87 @@ describe("abrir la hoja de carga", () => {
     lineas(dom)[0].querySelector("[data-quitar]").click();
     assert.equal(lineas(dom).length, 0);
     assert.equal($(dom, "historico-total-egresos").textContent, "$0");
+  });
+});
+
+describe('"+ Agregar categoría" se bloquea con una línea incompleta', () => {
+  test("arranca bloqueado: la primera línea todavía no tiene categoría", async () => {
+    const { dom } = await montar();
+    entrarA(dom, "historial");
+    await esperar();
+    $(dom, "btn-cargar-historico").click();
+    await esperar();
+
+    assert.equal($(dom, "historico-agregar-linea").disabled, true);
+  });
+
+  test("se habilita apenas la línea tiene categoría elegida", async () => {
+    const { dom } = await montar();
+    entrarA(dom, "historial");
+    await esperar();
+    $(dom, "btn-cargar-historico").click();
+    await esperar();
+
+    cambiar(selectDe(lineas(dom)[0]), "2");
+    assert.equal($(dom, "historico-agregar-linea").disabled, false);
+  });
+
+  test("se vuelve a bloquear mientras se está creando una categoría nueva", async () => {
+    const { dom } = await montar();
+    entrarA(dom, "historial");
+    await esperar();
+    $(dom, "btn-cargar-historico").click();
+    await esperar();
+
+    cambiar(selectDe(lineas(dom)[0]), "2");
+    cambiar(selectDe(lineas(dom)[0]), "__nueva__");
+    assert.equal($(dom, "historico-agregar-linea").disabled, true);
+  });
+
+  test("quitar la única línea incompleta vuelve a habilitar el botón", async () => {
+    const { dom } = await montar();
+    entrarA(dom, "historial");
+    await esperar();
+    $(dom, "btn-cargar-historico").click();
+    await esperar();
+
+    assert.equal($(dom, "historico-agregar-linea").disabled, true);
+    lineas(dom)[0].querySelector("[data-quitar]").click();
+    assert.equal($(dom, "historico-agregar-linea").disabled, false);
+  });
+});
+
+describe("precargar un mes que ya tiene datos", () => {
+  test("elegir un mes ya cargado reemplaza la línea en blanco por lo que ya tiene", async () => {
+    const { dom, llamadas } = await montar();
+    entrarA(dom, "historial");
+    await esperar();
+    $(dom, "btn-cargar-historico").click();
+    await esperar();
+
+    cambiar($(dom, "historico-periodo"), "2026-09"); // es el mes id=6, ya histórico
+    await esperar();
+
+    assert.ok(llamadas.apiGet.some((a) => a[0] === "/months/6"));
+    assert.equal(lineas(dom).length, 1);
+    assert.equal(selectDe(lineas(dom)[0]).value, "1"); // Sueldo
+    assert.equal($(dom, "historico-total-ingresos").textContent, "$500.000");
+  });
+
+  test("elegir un mes que todavía no existe no toca las líneas ya escritas", async () => {
+    const { dom, llamadas } = await montar();
+    entrarA(dom, "historial");
+    await esperar();
+    $(dom, "btn-cargar-historico").click();
+    await esperar();
+
+    cambiar(selectDe(lineas(dom)[0]), "2"); // Alquiler, a medio llenar
+    cambiar($(dom, "historico-periodo"), "2024-01"); // no existe en /months
+    await esperar();
+
+    assert.ok(!llamadas.apiGet.some((a) => /^\/months\/\d+$/.test(a[0])), "no pidió ningún detalle");
+    assert.equal(lineas(dom).length, 1);
+    assert.equal(selectDe(lineas(dom)[0]).value, "2"); // sigue como estaba
   });
 });
 

@@ -69,6 +69,23 @@ class SaldoMensual(BaseModel):
         return f"{valor:.2f}"
 
 
+class CategoriaDelMes(BaseModel):
+    """Una fila de `monthly_category_totals` tal como quedó guardada.
+    Sin nombre ni tipo: el frontend ya tiene su propia lista de
+    categorías (`GET /api/categories`) y cruza por `category_id` —
+    duplicar nombre y tipo acá sólo daría dos lugares para que se
+    desincronicen."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    category_id: int
+    total_amount: decimal.Decimal
+
+    @field_serializer("total_amount")
+    def _total_como_texto(self, valor: decimal.Decimal) -> str:
+        return f"{valor:.2f}"
+
+
 class MesDetalle(MesResumen):
     """`GET /api/months/{id}`: lo del resumen, más lo que falta para
     ver el mes entero."""
@@ -85,6 +102,13 @@ class MesDetalle(MesResumen):
     # modelo de SQLAlchemy no tiene —el router lo pisa después con
     # `transacciones_del_mes()`, nunca lo dejan puesto por descuido.
     transactions: list[dict[str, object]] | None = None
+
+    # Lo que ya está guardado por categoría de este mes (F08-T07):
+    # hace falta para que la hoja de carga histórica pueda precargar
+    # un mes que ya tiene datos, en vez de reemplazarlos a ciegas.
+    # Default en `[]` por el mismo motivo que `transactions` en `None`
+    # arriba — el router lo completa con lo que haya de verdad.
+    categories: list[CategoriaDelMes] = []
 
     @field_serializer("opening_balance")
     def _opening_como_texto(self, valor: decimal.Decimal) -> str:
@@ -132,7 +156,7 @@ class CargaDeMesHistorico(BaseModel):
     @model_validator(mode="after")
     def _totales_no_negativos(self) -> CargaDeMesHistorico:
         if not totales_historicos_son_validos(self.income_total, self.expense_total, self.saving_total):
-            raise ValueError("los totales de un mes histórico no pueden ser negativos")
+            raise ValueError("los ingresos y los egresos de un mes histórico no pueden ser negativos")
         return self
 
 
@@ -151,5 +175,5 @@ class CorreccionDeMesHistorico(BaseModel):
     @model_validator(mode="after")
     def _totales_no_negativos(self) -> CorreccionDeMesHistorico:
         if not totales_historicos_son_validos(self.income_total, self.expense_total, self.saving_total):
-            raise ValueError("los totales de un mes histórico no pueden ser negativos")
+            raise ValueError("los ingresos y los egresos de un mes histórico no pueden ser negativos")
         return self
