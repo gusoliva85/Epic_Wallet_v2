@@ -347,7 +347,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Hacer:** validación de un mes histórico (totales no negativos, no pisar un mes con movimientos) y el saldo acumulado encadenado desde el saldo inicial, mes por mes.
   **Aceptación:** · **cargar un mes histórico recalcula el acumulado de todos los meses posteriores**, no sólo el propio · un mes `open` con movimientos no se puede convertir en consolidado sin aviso explícito · el acumulado parte del saldo inicial del perfil.
 
-- [~] **F08-T03 · Endpoints de meses históricos**
+- [x] **F08-T03 · Endpoints de meses históricos**
   **Tipo:** Backend · **Ref:** Técnico §9.1 · *fusiona F08-T03, F08-T04 y F08-T05*
   **Hacer:** `POST /api/months/historical` para crear un mes consolidado con sus totales por categoría (`is_manual_summary = true`), `PATCH /api/months/{id}` para corregirlo, y `GET /api/months` devolviendo el saldo acumulado de cada uno.
   **Aceptación:** · un mes consolidado queda con sus totales y sin movimientos · corregir un total propaga el acumulado hacia adelante · los totales por categoría de un mes histórico quedan marcados como manuales.
