@@ -86,3 +86,7 @@ $RECYCLE.BIN/
 *.bak
 /backups/
 /tmp/
+
+# Datos financieros reales (histórico para cargar a mano, F08-T06):
+# nunca se versionan, es información personal de Gustavo, no documentación.
+documentacion/*.csv
