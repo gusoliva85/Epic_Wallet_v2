@@ -352,7 +352,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Hacer:** `POST /api/months/historical` para crear un mes consolidado con sus totales por categoría (`is_manual_summary = true`), `PATCH /api/months/{id}` para corregirlo, y `GET /api/months` devolviendo el saldo acumulado de cada uno.
   **Aceptación:** · un mes consolidado queda con sus totales y sin movimientos · corregir un total propaga el acumulado hacia adelante · los totales por categoría de un mes histórico quedan marcados como manuales.
 
-- [ ] **F08-T06 · Script de carga asistida del histórico**
+- [~] **F08-T06 · Script de carga asistida del histórico**
   **Tipo:** Infra
   **Hacer:** script que toma los totales mes por mes desde un CSV o desde la consola y los carga por la API, mostrando qué va a escribir antes de hacerlo y pudiendo repetirse sin duplicar.
   **Aceptación:** · muestra un resumen y pide confirmación antes de escribir · correrlo dos veces con los mismos datos no duplica nada.
