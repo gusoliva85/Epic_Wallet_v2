@@ -357,7 +357,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Hacer:** script que toma los totales mes por mes desde un CSV o desde la consola y los carga por la API, mostrando qué va a escribir antes de hacerlo y pudiendo repetirse sin duplicar.
   **Aceptación:** · muestra un resumen y pide confirmación antes de escribir · correrlo dos veces con los mismos datos no duplica nada.
 
-- [x] **F08-T07 · Vista de historial**
+- [~] **F08-T07 · Vista de historial**
   **Tipo:** Frontend · **Ref:** General §17, §18 · *fusiona F08-T07, F08-T08, F08-T09 y F08-T10*
   **Hacer:** lista de meses con ingresos, gastos, ahorro y acumulado; formulario de carga de un mes histórico con sus totales por categoría; advertencia visible si los totales por categoría no suman el total del mes; y el gráfico de evolución del ahorro.
   **Aceptación:** · se carga un mes histórico completo desde el celular · si las categorías no suman el total, avisa y deja decidir · los meses consolidados se distinguen de los abiertos de un vistazo.

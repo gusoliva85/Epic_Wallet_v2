@@ -1,5 +1,7 @@
 /* Pruebas del controlador de la vista Historial · F06-T07 (gráfico) y
-   F08-T07 (tabla y carga de mes histórico).
+   F08-T07 (tabla y carga de mes histórico, rediseñada a pedido de
+   Gustavo: cada línea es una categoría con su importe, Sueldo
+   incluido; ingresos/egresos/ahorro se suman solos).
 
    El HTML sale del `index.html` real, mismo criterio que
    `config-categorias.test.mjs`: la sección Historial y la hoja
@@ -17,12 +19,13 @@
 
    Lo que puede fallar en silencio y por eso se prueba: el gráfico y la
    tabla piden sus datos recién al entrar a Historial y los vuelven a
-   pedir cada vez (sin caché vieja); el ahorro del formulario se
-   calcula solo, nunca se escribe a mano; el aviso de categorías
-   aparece y desaparece según si la suma coincide con el egreso; y un
-   409 del servidor (mes abierto con movimientos) se confirma con
-   `window.confirm` antes de reintentar con `confirm: true` — cancelar
-   no manda nada. */
+   pedir cada vez (sin caché vieja); los totales del formulario son
+   siempre la suma de las líneas, nunca un campo editable; una línea
+   de ingreso (Sueldo) suma a ingresos y una de egreso a egresos;
+   crear una categoría nueva sin salir de la hoja la deja elegida y
+   lista para escribir el importe; y un 409 del servidor (mes abierto
+   con movimientos) se confirma con `window.confirm` antes de
+   reintentar con `confirm: true` — cancelar no manda nada. */
 
 import { test, describe, after } from "node:test";
 import assert from "node:assert/strict";
@@ -92,8 +95,8 @@ async function cargarConDobles() {
       `import { bloqueCargando, error as estadoError } from "${rutaAbsoluta("components", "estados.js")}";`,
     )
     .replace(
-      'import { aviso, pildora } from "./components/avisos.js";',
-      `import { aviso, pildora } from "${rutaAbsoluta("components", "avisos.js")}";`,
+      'import { pildora } from "./components/avisos.js";',
+      `import { pildora } from "${rutaAbsoluta("components", "avisos.js")}";`,
     )
     .replace(
       'import { crearHoja } from "./components/sheet.js";',
@@ -116,8 +119,9 @@ async function cargarConDobles() {
         "const invalidarMeses = () => globalThis.__espia.invalidarMeses();",
     )
     .replace(
-      'import { activas as categoriasActivas } from "./cache-categorias.js";',
-      'const categoriasActivas = async () => (await globalThis.__espia.apiGet("/categories")).filter((c) => c.active);',
+      'import { activas as categoriasActivas, invalidarCategorias } from "./cache-categorias.js";',
+      'const categoriasActivas = async () => (await globalThis.__espia.apiGet("/categories")).filter((c) => c.active);\n' +
+        "const invalidarCategorias = () => globalThis.__espia.invalidarCategorias();",
     );
 
   const unico = `\n// ${Math.random()}\n`;
@@ -164,12 +168,17 @@ const CATEGORIAS_DE_PRUEBA = [
   { id: 3, name: "Mascota", type: "expense", active: false },
 ];
 
+let proximoIdCreado = 100;
+
 /**
  * @param {object} opciones
  * @param {(path:string)=>Promise<any>} [opciones.apiGet]
- * @param {(path:string, datos:object)=>Promise<any>} [opciones.apiPost]
+ * @param {(path:string, datos:object)=>Promise<any>} [opciones.apiPostHistorico]
+ *   sólo para POST /months/historical — la creación de categorías
+ *   (POST /categories) la resuelve `montar` siempre igual, salvo que
+ *   se pase explícitamente.
  */
-async function montar({ apiGet, apiPost = async () => ({}) } = {}) {
+async function montar({ apiGet, apiPostHistorico = async () => ({}), apiPostCategoria } = {}) {
   const html =
     `<!doctype html><html><body>${htmlDeHistorial()}${htmlDeLaHoja()}` +
     `<div class="fondo-hoja" id="fondo-hoja"></div></body></html>`;
@@ -186,26 +195,37 @@ async function montar({ apiGet, apiPost = async () => ({}) } = {}) {
   // `window.confirm` no existe en jsdom: por defecto, "aceptar".
   dom.window.confirm = () => true;
 
-  const resolver = (path) => {
+  const resolverGet = (path) => {
     if (path === "/months") return structuredClone(MESES_DE_PRUEBA);
     if (path.startsWith("/months/savings-evolution")) return serieBase();
     if (path === "/categories") return structuredClone(CATEGORIAS_DE_PRUEBA);
     throw new Error(`ruta no esperada en la prueba: ${path}`);
   };
 
-  const llamadas = { apiGet: [], apiPost: [], toasts: [], invalidaciones: 0 };
+  const crearCategoria = (datos) => ({
+    id: proximoIdCreado++,
+    active: true,
+    sort_order: 99,
+    ...datos,
+  });
+
+  const llamadas = { apiGet: [], apiPost: [], toasts: [], invalidaciones: 0, invalidacionesCategorias: 0 };
   globalThis.__espia = {
     apiGet: async (...a) => {
       llamadas.apiGet.push(a);
-      return (apiGet ?? resolver)(...a);
+      return (apiGet ?? resolverGet)(...a);
     },
-    apiPost: async (...a) => {
-      llamadas.apiPost.push(a);
-      return apiPost(...a);
+    apiPost: async (ruta, datos) => {
+      llamadas.apiPost.push([ruta, datos]);
+      if (ruta === "/categories") return (apiPostCategoria ?? crearCategoria)(datos);
+      return apiPostHistorico(ruta, datos);
     },
     toast: (...a) => llamadas.toasts.push(a),
     invalidarMeses: () => {
       llamadas.invalidaciones++;
+    },
+    invalidarCategorias: () => {
+      llamadas.invalidacionesCategorias++;
     },
   };
 
@@ -223,6 +243,23 @@ function entrarA(dom, id) {
 function tipear(campo, valor) {
   if (valor !== undefined) campo.value = valor;
   campo.dispatchEvent(new campo.ownerDocument.defaultView.Event("input", { bubbles: true }));
+}
+
+function cambiar(campo, valor) {
+  if (valor !== undefined) campo.value = valor;
+  campo.dispatchEvent(new campo.ownerDocument.defaultView.Event("change", { bubbles: true }));
+}
+
+/** Las líneas de la hoja de carga histórica, en orden. */
+function lineas(dom) {
+  return [...dom.window.document.querySelectorAll("#historico-lineas .hist-linea-wrap")];
+}
+
+function selectDe(fila) {
+  return fila.querySelector("[data-cat-select]");
+}
+function importeDe(fila) {
+  return fila.querySelector("[data-cat-importe]");
 }
 
 function enviar(dom, idForm) {
@@ -378,7 +415,7 @@ describe("la tabla de meses", () => {
 // ===================================================================
 
 describe("abrir la hoja de carga", () => {
-  test("limpia los campos y ofrece sólo las categorías de egreso activas", async () => {
+  test("limpia el mes y arranca con una línea en blanco, no vacía", async () => {
     const { dom } = await montar();
     entrarA(dom, "historial");
     await esperar();
@@ -388,28 +425,68 @@ describe("abrir la hoja de carga", () => {
 
     assert.equal($(dom, "hoja-historico").classList.contains("abierta"), true);
     assert.equal($(dom, "historico-periodo").value, "");
-    assert.equal($(dom, "historico-ingresos").value, "");
-
-    const caja = $(dom, "historico-categorias");
-    assert.match(caja.textContent, /Alquiler/);
-    assert.doesNotMatch(caja.textContent, /Sueldo/); // es de ingreso
-    assert.doesNotMatch(caja.textContent, /Mascota/); // está archivada
+    assert.equal(lineas(dom).length, 1);
+    assert.equal(selectDe(lineas(dom)[0]).value, "");
   });
-});
 
-describe("el ahorro del formulario", () => {
-  test("se calcula solo: ingresos menos egresos, nunca se escribe a mano", async () => {
+  test("cada línea ofrece las categorías activas, de ingreso y de egreso, agrupadas", async () => {
     const { dom } = await montar();
     entrarA(dom, "historial");
     await esperar();
     $(dom, "btn-cargar-historico").click();
     await esperar();
 
-    assert.equal($(dom, "historico-ahorro").hasAttribute("disabled"), true);
+    const select = selectDe(lineas(dom)[0]);
+    assert.match(select.innerHTML, /<optgroup label="Ingresos">[\s\S]*Sueldo/);
+    assert.match(select.innerHTML, /<optgroup label="Egresos">[\s\S]*Alquiler/);
+    assert.doesNotMatch(select.innerHTML, /Mascota/); // está archivada
+  });
 
-    tipear($(dom, "historico-ingresos"), "500000");
-    tipear($(dom, "historico-egresos"), "320000");
-    assert.match($(dom, "historico-ahorro").value, /180\.000/);
+  test("+ Agregar categoría suma una línea más", async () => {
+    const { dom } = await montar();
+    entrarA(dom, "historial");
+    await esperar();
+    $(dom, "btn-cargar-historico").click();
+    await esperar();
+
+    $(dom, "historico-agregar-linea").click();
+    assert.equal(lineas(dom).length, 2);
+  });
+
+  test("quitar una línea la saca de la lista y de los totales", async () => {
+    const { dom } = await montar();
+    entrarA(dom, "historial");
+    await esperar();
+    $(dom, "btn-cargar-historico").click();
+    await esperar();
+
+    cambiar(selectDe(lineas(dom)[0]), "2"); // Alquiler
+    tipear(importeDe(lineas(dom)[0]), "50000");
+    assert.equal($(dom, "historico-total-egresos").textContent, "$50.000");
+
+    lineas(dom)[0].querySelector("[data-quitar]").click();
+    assert.equal(lineas(dom).length, 0);
+    assert.equal($(dom, "historico-total-egresos").textContent, "$0");
+  });
+});
+
+describe("los totales se suman solos, nunca se escriben a mano", () => {
+  test("una línea de ingreso (Sueldo) suma a ingresos, una de egreso a egresos", async () => {
+    const { dom } = await montar();
+    entrarA(dom, "historial");
+    await esperar();
+    $(dom, "btn-cargar-historico").click();
+    await esperar();
+
+    cambiar(selectDe(lineas(dom)[0]), "1"); // Sueldo, ingreso
+    tipear(importeDe(lineas(dom)[0]), "500000");
+    $(dom, "historico-agregar-linea").click();
+    cambiar(selectDe(lineas(dom)[1]), "2"); // Alquiler, egreso
+    tipear(importeDe(lineas(dom)[1]), "320000");
+
+    assert.equal($(dom, "historico-total-ingresos").textContent, "$500.000");
+    assert.equal($(dom, "historico-total-egresos").textContent, "$320.000");
+    assert.equal($(dom, "historico-total-ahorro").textContent, "$180.000");
   });
 
   test("el ahorro puede quedar negativo, sin impedirlo", async () => {
@@ -419,39 +496,102 @@ describe("el ahorro del formulario", () => {
     $(dom, "btn-cargar-historico").click();
     await esperar();
 
-    tipear($(dom, "historico-ingresos"), "100000");
-    tipear($(dom, "historico-egresos"), "400000");
-    assert.match($(dom, "historico-ahorro").value, /−\$300\.000/);
+    cambiar(selectDe(lineas(dom)[0]), "1");
+    tipear(importeDe(lineas(dom)[0]), "100000");
+    $(dom, "historico-agregar-linea").click();
+    cambiar(selectDe(lineas(dom)[1]), "2");
+    tipear(importeDe(lineas(dom)[1]), "400000");
+
+    assert.equal($(dom, "historico-total-ahorro").textContent, "−$300.000");
+  });
+
+  test("dos líneas con la misma categoría se suman entre sí", async () => {
+    const { dom } = await montar();
+    entrarA(dom, "historial");
+    await esperar();
+    $(dom, "btn-cargar-historico").click();
+    await esperar();
+
+    cambiar(selectDe(lineas(dom)[0]), "2");
+    tipear(importeDe(lineas(dom)[0]), "30000");
+    $(dom, "historico-agregar-linea").click();
+    cambiar(selectDe(lineas(dom)[1]), "2");
+    tipear(importeDe(lineas(dom)[1]), "20000");
+
+    assert.equal($(dom, "historico-total-egresos").textContent, "$50.000");
   });
 });
 
-describe("el aviso de categorías", () => {
-  test("aparece cuando la suma de categorías no coincide con el egreso", async () => {
+describe("crear una categoría nueva sin salir de la hoja", () => {
+  test("elegir «+ Crear categoría nueva» muestra el mini-formulario y oculta el selector", async () => {
     const { dom } = await montar();
     entrarA(dom, "historial");
     await esperar();
     $(dom, "btn-cargar-historico").click();
     await esperar();
 
-    tipear($(dom, "historico-egresos"), "100000");
-    const campoAlquiler = $(dom, "historico-categorias").querySelector("[data-cat-id]");
-    tipear(campoAlquiler, "40000");
+    const fila = lineas(dom)[0];
+    cambiar(selectDe(fila), "__nueva__");
 
-    assert.match($(dom, "historico-aviso").textContent, /no coincide con el total de egresos/);
+    assert.equal(fila.querySelector("[data-modo='elegir']").hidden, true);
+    assert.equal(fila.querySelector("[data-modo='crear']").hidden, false);
   });
 
-  test("desaparece cuando coinciden", async () => {
-    const { dom } = await montar();
+  test("sin nombre, muestra un error y no llama a la API", async () => {
+    const { dom, llamadas } = await montar();
     entrarA(dom, "historial");
     await esperar();
     $(dom, "btn-cargar-historico").click();
     await esperar();
 
-    tipear($(dom, "historico-egresos"), "40000");
-    const campoAlquiler = $(dom, "historico-categorias").querySelector("[data-cat-id]");
-    tipear(campoAlquiler, "40000");
+    const fila = lineas(dom)[0];
+    cambiar(selectDe(fila), "__nueva__");
+    fila.querySelector("[data-nueva-crear]").click();
+    await esperar();
 
-    assert.equal($(dom, "historico-aviso").innerHTML, "");
+    assert.equal(llamadas.apiPost.length, 0);
+    assert.equal($(dom, "historico-error").hidden, false);
+  });
+
+  test("crear una categoría la deja elegida en la línea, lista para el importe", async () => {
+    const { dom, llamadas } = await montar();
+    entrarA(dom, "historial");
+    await esperar();
+    $(dom, "btn-cargar-historico").click();
+    await esperar();
+
+    const fila = lineas(dom)[0];
+    cambiar(selectDe(fila), "__nueva__");
+    tipear(fila.querySelector("[data-nueva-nombre]"), "Gimnasio");
+    fila.querySelector("[data-nueva-tipo='income']").click(); // elegida Ingreso
+    fila.querySelector("[data-nueva-crear]").click();
+    await esperar();
+
+    assert.deepEqual(llamadas.apiPost.at(-1), ["/categories", { name: "Gimnasio", type: "income" }]);
+    assert.equal(llamadas.invalidacionesCategorias, 1);
+    assert.equal(fila.querySelector("[data-modo='elegir']").hidden, false);
+    assert.equal(fila.querySelector("[data-modo='crear']").hidden, true);
+    assert.match(selectDe(fila).innerHTML, /selected/);
+
+    // Ya se puede escribir el importe y que cuente como ingreso.
+    tipear(importeDe(fila), "15000");
+    assert.equal($(dom, "historico-total-ingresos").textContent, "$15.000");
+  });
+
+  test("cancelar vuelve al selector sin crear nada", async () => {
+    const { dom, llamadas } = await montar();
+    entrarA(dom, "historial");
+    await esperar();
+    $(dom, "btn-cargar-historico").click();
+    await esperar();
+
+    const fila = lineas(dom)[0];
+    cambiar(selectDe(fila), "__nueva__");
+    fila.querySelector("[data-nueva-cancelar]").click();
+
+    assert.equal(llamadas.apiPost.length, 0);
+    assert.equal(fila.querySelector("[data-modo='elegir']").hidden, false);
+    assert.equal(fila.querySelector("[data-modo='crear']").hidden, true);
   });
 });
 
@@ -463,6 +603,9 @@ describe("guardar la carga", () => {
     $(dom, "btn-cargar-historico").click();
     await esperar();
 
+    cambiar(selectDe(lineas(dom)[0]), "2");
+    tipear(importeDe(lineas(dom)[0]), "300000");
+
     enviar(dom, "form-historico");
     await esperar();
 
@@ -470,7 +613,7 @@ describe("guardar la carga", () => {
     assert.equal($(dom, "historico-error").hidden, false);
   });
 
-  test("manda los totales, las categorías con importe y cierra avisando", async () => {
+  test("manda los totales armados desde las líneas y cierra avisando", async () => {
     const { dom, llamadas } = await montar();
     entrarA(dom, "historial");
     await esperar();
@@ -478,9 +621,11 @@ describe("guardar la carga", () => {
     await esperar();
 
     tipear($(dom, "historico-periodo"), "2025-06");
-    tipear($(dom, "historico-ingresos"), "500000");
-    tipear($(dom, "historico-egresos"), "300000");
-    tipear($(dom, "historico-categorias").querySelector("[data-cat-id]"), "300000");
+    cambiar(selectDe(lineas(dom)[0]), "1"); // Sueldo, ingreso
+    tipear(importeDe(lineas(dom)[0]), "500000");
+    $(dom, "historico-agregar-linea").click();
+    cambiar(selectDe(lineas(dom)[1]), "2"); // Alquiler, egreso
+    tipear(importeDe(lineas(dom)[1]), "300000");
 
     enviar(dom, "form-historico");
     await esperar();
@@ -493,14 +638,17 @@ describe("guardar la carga", () => {
     assert.equal(cuerpo.income_total, "500000.00");
     assert.equal(cuerpo.expense_total, "300000.00");
     assert.equal(cuerpo.saving_total, "200000.00");
-    assert.deepEqual(cuerpo.categories, [{ category_id: 2, total_amount: "300000.00" }]);
+    assert.deepEqual(cuerpo.categories, [
+      { category_id: 1, total_amount: "500000.00" },
+      { category_id: 2, total_amount: "300000.00" },
+    ]);
 
     assert.equal($(dom, "hoja-historico").classList.contains("abierta"), false);
     assert.equal(llamadas.invalidaciones, 1);
     assert.equal(llamadas.toasts.length, 1);
   });
 
-  test("una categoría sin importe no se manda", async () => {
+  test("una línea sin categoría elegida, o con importe en cero, no se manda", async () => {
     const { dom, llamadas } = await montar();
     entrarA(dom, "historial");
     await esperar();
@@ -508,19 +656,40 @@ describe("guardar la carga", () => {
     await esperar();
 
     tipear($(dom, "historico-periodo"), "2025-06");
-    tipear($(dom, "historico-ingresos"), "500000");
-    tipear($(dom, "historico-egresos"), "0");
+    cambiar(selectDe(lineas(dom)[0]), "1");
+    tipear(importeDe(lineas(dom)[0]), "500000");
+    $(dom, "historico-agregar-linea").click(); // línea en blanco, sin tocar
 
     enviar(dom, "form-historico");
     await esperar();
 
-    assert.deepEqual(llamadas.apiPost[0][1].categories, []);
+    assert.deepEqual(llamadas.apiPost[0][1].categories, [{ category_id: 1, total_amount: "500000.00" }]);
+  });
+
+  test("dos líneas de la misma categoría se mandan sumadas, no se pisan", async () => {
+    const { dom, llamadas } = await montar();
+    entrarA(dom, "historial");
+    await esperar();
+    $(dom, "btn-cargar-historico").click();
+    await esperar();
+
+    tipear($(dom, "historico-periodo"), "2025-06");
+    cambiar(selectDe(lineas(dom)[0]), "2");
+    tipear(importeDe(lineas(dom)[0]), "30000");
+    $(dom, "historico-agregar-linea").click();
+    cambiar(selectDe(lineas(dom)[1]), "2");
+    tipear(importeDe(lineas(dom)[1]), "20000");
+
+    enviar(dom, "form-historico");
+    await esperar();
+
+    assert.deepEqual(llamadas.apiPost[0][1].categories, [{ category_id: 2, total_amount: "50000.00" }]);
   });
 
   test("un 409 (mes en curso con movimientos) se confirma y reintenta con confirm:true", async () => {
     let intentos = 0;
     const { dom, llamadas } = await montar({
-      apiPost: async (_ruta, cuerpo) => {
+      apiPostHistorico: async (_ruta, cuerpo) => {
         intentos++;
         if (!cuerpo.confirm) {
           throw new ApiError({ code: "CONFLICT", message: "Ese mes ya tiene movimientos." });
@@ -534,8 +703,8 @@ describe("guardar la carga", () => {
     await esperar();
 
     tipear($(dom, "historico-periodo"), "2026-10");
-    tipear($(dom, "historico-ingresos"), "100000");
-    tipear($(dom, "historico-egresos"), "0");
+    cambiar(selectDe(lineas(dom)[0]), "1");
+    tipear(importeDe(lineas(dom)[0]), "100000");
 
     // `window.confirm` está doblado para aceptar (ver `montar`).
     enviar(dom, "form-historico");
@@ -547,7 +716,7 @@ describe("guardar la carga", () => {
 
   test("cancelar la confirmación no reintenta ni cierra la hoja", async () => {
     const { dom, llamadas } = await montar({
-      apiPost: async () => {
+      apiPostHistorico: async () => {
         throw new ApiError({ code: "CONFLICT", message: "Ese mes ya tiene movimientos." });
       },
     });
@@ -559,8 +728,8 @@ describe("guardar la carga", () => {
     await esperar();
 
     tipear($(dom, "historico-periodo"), "2026-10");
-    tipear($(dom, "historico-ingresos"), "100000");
-    tipear($(dom, "historico-egresos"), "0");
+    cambiar(selectDe(lineas(dom)[0]), "1");
+    tipear(importeDe(lineas(dom)[0]), "100000");
 
     enviar(dom, "form-historico");
     await esperar();

@@ -28,13 +28,13 @@
 import { api, ApiError } from "./api.js";
 import { esc, fmtK, fmtS, pctPlano } from "./format.js";
 import { bloqueCargando, error as estadoError } from "./components/estados.js";
-import { aviso, pildora } from "./components/avisos.js";
+import { pildora } from "./components/avisos.js";
 import { crearHoja } from "./components/sheet.js";
 import { toast } from "./components/toast.js";
 import { EVENTO as EVENTO_RUTA } from "./router.js";
 import { dibujar as dibujarGraficoAhorro } from "./charts/ahorro.js";
 import { meses as mesesCacheados, invalidarMeses } from "./cache-meses.js";
-import { activas as categoriasActivas } from "./cache-categorias.js";
+import { activas as categoriasActivas, invalidarCategorias } from "./cache-categorias.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -189,6 +189,17 @@ function conectarReintentarTabla() {
 
 /* ===================================================================
    Carga de mes histórico · F08-T07
+
+   Rediseño a pedido de Gustavo (versión original: totales escritos a
+   mano, con un panel fijo de categorías de egreso que no incluía
+   ingresos ni dejaba crear una categoría nueva — "no tiene forma de
+   agregar el sueldo", "esto no sirve para nada"). Ahora cada línea es
+   una categoría (de ingreso o egreso, Sueldo incluido) con su
+   importe; ingresos, egresos y ahorro son de sólo lectura, sumados a
+   partir de las líneas — mismo criterio que ya usa `recalcular_mes`
+   del lado del servidor para un mes en curso (suma todo por
+   category_id, sin distinguir tipo). Si la categoría no existe, se
+   crea sin salir de la hoja.
    =================================================================== */
 
 /* Mismo truco de `alta-movimiento.js`: el campo es `type="text"` para
@@ -217,61 +228,86 @@ function mesActualArgentina() {
   return FORMATO_MES_ARG.format(new Date()).slice(0, 7);
 }
 
+const ETIQUETA_TIPO_CATEGORIA = { income: "Ingreso", expense: "Egreso" };
+
+/** Todas las categorías activas (ingreso y egreso), pedidas al abrir
+ * la hoja. Cada línea elige una de acá; crear una nueva la agrega a
+ * esta misma lista para que la próxima línea ya pueda ofrecerla. */
 let categoriasDelFormulario = [];
+let proximoIdDeLinea = 0;
 
-function pintarCategoriasFormulario() {
-  const caja = $("historico-categorias");
-  if (!caja) return;
-  if (!categoriasDelFormulario.length) {
-    caja.innerHTML = '<p class="ghost-note">No tenés categorías de egreso activas todavía.</p>';
-    return;
-  }
-  caja.innerHTML = categoriasDelFormulario
-    .map(
-      (c) =>
-        '<div class="cfg-row cg">' +
-        `<div><b>${esc(c.name)}</b></div>` +
-        `<input class="inp num hist-cat-importe" type="text" inputmode="numeric" ` +
-        `placeholder="0" autocomplete="off" aria-label="${esc(c.name)}" data-cat-id="${c.id}">` +
-        "</div>",
-    )
-    .join("");
-}
+function opcionesDeCategoria(idSeleccionado) {
+  const agrupar = (tipo) =>
+    categoriasDelFormulario
+      .filter((c) => c.type === tipo)
+      .map(
+        (c) =>
+          `<option value="${c.id}" ${String(c.id) === String(idSeleccionado) ? "selected" : ""}>` +
+          `${esc(c.name)}</option>`,
+      )
+      .join("");
 
-function actualizarAhorroFormulario() {
-  const ingresos = numeroDe($("historico-ingresos"));
-  const egresos = numeroDe($("historico-egresos"));
-  const campo = /** @type {HTMLInputElement | null} */ ($("historico-ahorro"));
-  if (campo) campo.value = fmtS(ingresos - egresos);
-}
-
-/* Regla textual de General §18: "La suma de las categorías no
-   coincide con el total de egresos." Es un aviso, no un bloqueo —el
-   criterio de aceptación de la tarea deja decidir, no obliga a que
-   coincidan. */
-function actualizarAvisoCategorias() {
-  const caja = $("historico-aviso");
-  if (!caja) return;
-
-  const egresos = numeroDe($("historico-egresos"));
-  const sumaCategorias = [...document.querySelectorAll("#historico-categorias [data-cat-id]")].reduce(
-    (acc, inp) => acc + numeroDe(/** @type {HTMLInputElement} */ (inp)),
-    0,
+  return (
+    '<option value="">Elegí una categoría…</option>' +
+    `<optgroup label="Ingresos">${agrupar("income")}</optgroup>` +
+    `<optgroup label="Egresos">${agrupar("expense")}</optgroup>` +
+    '<option value="__nueva__">+ Crear categoría nueva…</option>'
   );
+}
 
-  if (egresos === 0 && sumaCategorias === 0) {
-    caja.innerHTML = "";
-    return;
+function htmlDeLinea(idLinea, idCategoriaPreseleccionada) {
+  return (
+    `<div class="hist-linea-wrap" data-linea="${idLinea}">` +
+    `<div class="hist-linea cg" data-modo="elegir">` +
+    `<select class="inp" data-cat-select aria-label="Categoría">` +
+    opcionesDeCategoria(idCategoriaPreseleccionada) +
+    "</select>" +
+    `<input class="inp num hist-linea-importe" type="text" inputmode="numeric" ` +
+    `placeholder="0" autocomplete="off" aria-label="Importe" data-cat-importe>` +
+    `<button class="hist-linea-quitar" type="button" data-quitar aria-label="Quitar categoría">` +
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>' +
+    "</button>" +
+    "</div>" +
+    `<div class="hist-linea-nueva cg" data-modo="crear" hidden>` +
+    `<input class="inp" type="text" maxlength="60" placeholder="Nombre de la categoría" data-nueva-nombre>` +
+    '<div class="view-switch" role="group" aria-label="Tipo de categoría">' +
+    '<button type="button" data-nueva-tipo="expense" class="activa">Egreso</button>' +
+    '<button type="button" data-nueva-tipo="income">Ingreso</button>' +
+    "</div>" +
+    '<div class="hist-linea-nueva-botones">' +
+    '<button class="chip" type="button" data-nueva-cancelar>Cancelar</button>' +
+    '<button class="chip solid" type="button" data-nueva-crear>Crear</button>' +
+    "</div>" +
+    "</div>" +
+    "</div>"
+  );
+}
+
+function agregarLinea(idCategoriaPreseleccionada) {
+  const caja = $("historico-lineas");
+  if (!caja) return;
+  caja.insertAdjacentHTML("beforeend", htmlDeLinea(proximoIdDeLinea++, idCategoriaPreseleccionada));
+}
+
+/** Ingresos, egresos y ahorro son siempre la suma de las líneas — no
+ * hay ningún campo donde se escriban directo (pedido de Gustavo:
+ * "que no se pueda editar, que se vaya cargando automáticamente"). */
+function recalcularTotalesFormulario() {
+  let ingresos = 0;
+  let egresos = 0;
+
+  for (const fila of document.querySelectorAll("#historico-lineas [data-modo='elegir']:not([hidden])")) {
+    const select = /** @type {HTMLSelectElement} */ (fila.querySelector("[data-cat-select]"));
+    const categoria = categoriasDelFormulario.find((c) => String(c.id) === select.value);
+    if (!categoria) continue;
+    const monto = numeroDe(fila.querySelector("[data-cat-importe]"));
+    if (categoria.type === "income") ingresos += monto;
+    else egresos += monto;
   }
-  if (sumaCategorias === egresos) {
-    caja.innerHTML = "";
-    return;
-  }
-  caja.innerHTML = aviso({
-    severidad: "warn",
-    titulo: "La suma de las categorías no coincide con el total de egresos.",
-    texto: `Diferencia de ${fmtS(Math.abs(egresos - sumaCategorias))}. Podés corregirla o guardar igual.`,
-  });
+
+  $("historico-total-ingresos").textContent = fmtS(ingresos);
+  $("historico-total-egresos").textContent = fmtS(egresos);
+  $("historico-total-ahorro").textContent = fmtS(ingresos - egresos);
 }
 
 function mostrarErrorFormulario(mensaje) {
@@ -291,23 +327,78 @@ function marcarCargandoFormulario(cargandoAhora) {
 
 async function alAbrirFormulario() {
   mostrarErrorFormulario(null);
-  $("historico-aviso").innerHTML = "";
   /** @type {HTMLInputElement} */ ($("historico-periodo")).value = "";
   /** @type {HTMLInputElement} */ ($("historico-periodo")).max = mesActualArgentina();
-  /** @type {HTMLInputElement} */ ($("historico-ingresos")).value = "";
-  /** @type {HTMLInputElement} */ ($("historico-egresos")).value = "";
-  actualizarAhorroFormulario();
 
-  const caja = $("historico-categorias");
-  if (caja) caja.innerHTML = bloqueCargando("fila", 3);
+  const caja = $("historico-lineas");
+  if (caja) caja.innerHTML = bloqueCargando("fila", 2);
   try {
-    categoriasDelFormulario = (await categoriasActivas()).filter((c) => c.type === "expense");
+    categoriasDelFormulario = await categoriasActivas();
   } catch (e) {
     categoriasDelFormulario = [];
     console.error("historial: no se pudieron pedir las categorías", e);
   }
-  pintarCategoriasFormulario();
+  proximoIdDeLinea = 0;
+  if (caja) caja.innerHTML = "";
+  agregarLinea(); // una línea en blanco de entrada, para no abrir a una lista vacía
+  recalcularTotalesFormulario();
 }
+
+/* ------------------------------------------------- crear categoría */
+
+function filaDe(elemento) {
+  return elemento.closest("[data-linea]");
+}
+
+function activarModoCrear(fila) {
+  fila.querySelector("[data-modo='elegir']").hidden = true;
+  const nueva = fila.querySelector("[data-modo='crear']");
+  nueva.hidden = false;
+  /** @type {HTMLInputElement} */ (nueva.querySelector("[data-nueva-nombre]")).value = "";
+  for (const b of nueva.querySelectorAll("[data-nueva-tipo]")) {
+    b.classList.toggle("activa", b.dataset.nuevaTipo === "expense");
+  }
+  nueva.querySelector("[data-nueva-nombre]").focus();
+}
+
+function volverAModoElegir(fila, idCategoriaSeleccionada) {
+  const elegir = fila.querySelector("[data-modo='elegir']");
+  elegir.querySelector("[data-cat-select]").innerHTML = opcionesDeCategoria(idCategoriaSeleccionada);
+  elegir.hidden = false;
+  fila.querySelector("[data-modo='crear']").hidden = true;
+}
+
+async function crearCategoriaDeLinea(fila) {
+  const campoNombre = /** @type {HTMLInputElement} */ (fila.querySelector("[data-nueva-nombre]"));
+  const nombre = campoNombre.value.trim();
+  if (!nombre) {
+    mostrarErrorFormulario("Escribí un nombre para la categoría nueva.");
+    campoNombre.focus();
+    return;
+  }
+  const tipo = fila.querySelector("[data-nueva-tipo].activa")?.dataset.nuevaTipo ?? "expense";
+  mostrarErrorFormulario(null);
+
+  const boton = /** @type {HTMLButtonElement} */ (fila.querySelector("[data-nueva-crear]"));
+  boton.disabled = true;
+  try {
+    const categoria = await api.post("/categories", { name: nombre, type: tipo });
+    categoriasDelFormulario.push(categoria);
+    invalidarCategorias();
+    volverAModoElegir(fila, categoria.id);
+    recalcularTotalesFormulario();
+    fila.querySelector("[data-cat-importe]")?.focus();
+  } catch (e) {
+    mostrarErrorFormulario(
+      e instanceof ApiError ? e.message : "No se pudo crear la categoría. Probá de nuevo.",
+    );
+    if (!(e instanceof ApiError)) console.error("historial: error al crear categoría", e);
+  } finally {
+    boton.disabled = false;
+  }
+}
+
+/* ---------------------------------------------------- guardar todo */
 
 let control = null;
 let guardando = false;
@@ -349,15 +440,27 @@ async function alGuardarHistorico(evento) {
   }
   const [year, month] = campoPeriodo.value.split("-").map(Number);
 
-  const ingresos = numeroDe($("historico-ingresos"));
-  const egresos = numeroDe($("historico-egresos"));
-  const categories = [...document.querySelectorAll("#historico-categorias [data-cat-id]")]
-    .map((inp) => ({
-      category_id: Number(/** @type {HTMLInputElement} */ (inp).dataset.catId),
-      importe: numeroDe(/** @type {HTMLInputElement} */ (inp)),
-    }))
-    .filter((c) => c.importe > 0)
-    .map((c) => ({ category_id: c.category_id, total_amount: `${c.importe}.00` }));
+  // Por categoría: si la misma categoría aparece en más de una línea
+  // (por accidente), se suman en vez de que la segunda pise a la
+  // primera — mismo criterio que `recalcular_mes` del servidor.
+  let ingresos = 0;
+  let egresos = 0;
+  const porCategoria = new Map();
+  for (const fila of document.querySelectorAll("#historico-lineas [data-modo='elegir']:not([hidden])")) {
+    const select = /** @type {HTMLSelectElement} */ (fila.querySelector("[data-cat-select]"));
+    const categoria = categoriasDelFormulario.find((c) => String(c.id) === select.value);
+    if (!categoria) continue;
+    const monto = numeroDe(fila.querySelector("[data-cat-importe]"));
+    if (monto <= 0) continue;
+    if (categoria.type === "income") ingresos += monto;
+    else egresos += monto;
+    porCategoria.set(categoria.id, (porCategoria.get(categoria.id) ?? 0) + monto);
+  }
+
+  const categories = [...porCategoria].map(([category_id, monto]) => ({
+    category_id,
+    total_amount: `${monto}.00`,
+  }));
 
   guardando = true;
   marcarCargandoFormulario(true);
@@ -396,21 +499,50 @@ function conectarFormulario() {
   control = crearHoja(hoja, { disparador, alAbrir: alAbrirFormulario });
   if (!control) return;
 
-  $("historico-ingresos")?.addEventListener("input", (ev) => {
-    enmascarar(/** @type {HTMLInputElement} */ (ev.target));
-    actualizarAhorroFormulario();
-    actualizarAvisoCategorias();
+  $("historico-agregar-linea")?.addEventListener("click", () => agregarLinea());
+
+  $("historico-lineas")?.addEventListener("change", (ev) => {
+    const select = /** @type {HTMLElement} */ (ev.target);
+    if (!select.matches("[data-cat-select]")) return;
+    if (/** @type {HTMLSelectElement} */ (select).value === "__nueva__") {
+      activarModoCrear(filaDe(select));
+      return;
+    }
+    recalcularTotalesFormulario();
   });
-  $("historico-egresos")?.addEventListener("input", (ev) => {
-    enmascarar(/** @type {HTMLInputElement} */ (ev.target));
-    actualizarAhorroFormulario();
-    actualizarAvisoCategorias();
-  });
-  $("historico-categorias")?.addEventListener("input", (ev) => {
+
+  $("historico-lineas")?.addEventListener("input", (ev) => {
     const campo = /** @type {HTMLElement} */ (ev.target);
-    if (!campo.matches("[data-cat-id]")) return;
+    if (!campo.matches("[data-cat-importe]")) return;
     enmascarar(/** @type {HTMLInputElement} */ (campo));
-    actualizarAvisoCategorias();
+    recalcularTotalesFormulario();
+  });
+
+  $("historico-lineas")?.addEventListener("click", (ev) => {
+    const el = /** @type {HTMLElement} */ (ev.target);
+
+    const quitar = el.closest("[data-quitar]");
+    if (quitar) {
+      filaDe(quitar).remove();
+      recalcularTotalesFormulario();
+      return;
+    }
+
+    const tipoBoton = el.closest("[data-nueva-tipo]");
+    if (tipoBoton) {
+      for (const b of filaDe(tipoBoton).querySelectorAll("[data-nueva-tipo]")) {
+        b.classList.toggle("activa", b === tipoBoton);
+      }
+      return;
+    }
+
+    if (el.closest("[data-nueva-cancelar]")) {
+      volverAModoElegir(filaDe(el), "");
+      return;
+    }
+
+    const crear = el.closest("[data-nueva-crear]");
+    if (crear) crearCategoriaDeLinea(filaDe(crear));
   });
 
   form.addEventListener("submit", alGuardarHistorico);
