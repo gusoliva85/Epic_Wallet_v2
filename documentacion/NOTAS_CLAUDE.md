@@ -8,10 +8,10 @@ pero sabe que está. Si algo de acá contradice los tres documentos
 oficiales o el roadmap, **ganan ellos**, esto está desactualizado y hay
 que corregirlo o borrarlo.
 
-Última actualización: commit `078b6ad` (F07-T05, recién pedido
-aprobación), rama `main`, HEAD de ese momento. Si el repo ya avanzó
-más, esto es historia vieja —leer el roadmap primero, y si alcanza con
-eso, no hace falta leer el resto de este archivo.
+Última actualización: commit `83f3b1f` (cierre de F08-T07, aprobada),
+rama `main`, HEAD de ese momento. Si el repo ya avanzó más, esto es
+historia vieja —leer el roadmap primero, y si alcanza con eso, no hace
+falta leer el resto de este archivo.
 
 ## Leer esto primero, en este orden
 
@@ -26,125 +26,205 @@ eso, no hace falta leer el resto de este archivo.
 
 ## Estado al cierre de la última sesión
 
-**Fases 0 a 6 completas y aprobadas.** Fase 7 (Desglose y detalle de
-categoría) también completa en código; la última tarea,
-**`F07-T05` (hoja de detalle de categoría), está `[~]`** —implementada,
-pedida la aprobación, todavía sin confirmar por Gustavo porque no pude
-cerrar una prueba de punta a punta con navegador real (ver "cold-boot
-401" más abajo). El resto de la Fase 7 (`F07-T01`, `F07-T03`) está
-`[x]`, aprobada.
+**Fases 0 a 7 completas y aprobadas.** Fase 8 (Histórico y carga del
+Excel) tiene **F08-T01, F08-T03, F08-T06 y F08-T07 aprobadas**. Queda
+**F08-T11 · Carga real del histórico del Excel** (QA) — y ahí la
+Fase 8 cierra.
 
-**Siguiente tarea cuando Gustavo apruebe F07-T05**: Fase 8 — Histórico
-y carga del Excel. Primera tarea: `F08-T03 · Endpoints de meses
-históricos` (`POST /api/months/historical`, `PATCH /api/months/{id}`,
-y recién ahí `GET /api/months` puede devolver un `closing_balance`
-real —ver más abajo por qué hoy esa columna no sirve para nada).
-Leer el roadmap para la lista completa y el orden exacto; no asumir
-que sigue siendo así si pasó tiempo.
+**F08-T11 no es una tarea de código: depende de que Gustavo termine de
+cargar sus datos reales a mano.** No hay nada para implementar; si se
+retoma esto, lo que corresponde es preguntar en qué quedó la carga, no
+escribir nada nuevo sin que él lo pida. El contexto completo:
 
-## Qué se construyó (Fases 5, 6 y 7 — resumen, no el detalle línea por línea)
+- Gustavo tiene su historial real de enero a septiembre 2026 en
+  `documentacion/Backup_2026.csv` (nunca se versiona, ver
+  `.gitignore`: `documentacion/*.csv`). Es información financiera
+  personal de verdad, no un archivo de prueba.
+- Construí `scripts/load_history.py` (F08-T06) para cargarlo
+  automático, probado y funcionando — pero Gustavo **no quiso darme
+  usuario y contraseña por el chat** para que yo lo corra, y prefirió
+  cargarlo él mismo a mano desde la hoja "+ Cargar mes histórico" de
+  la vista Historial. Decisión suya, no hay que volver a ofrecerle
+  el script salvo que él lo pida.
+- Para ayudarlo armé un artifact de referencia con los nueve meses ya
+  parseados (ingresos, egresos, categoría por categoría, con
+  checklist de progreso en `localStorage`):
+  <https://claude.ai/artifact/EBxRLRMYiEAdGZ3c8zE4U8> ("Histórico
+  2026"). Si hace falta regenerarlo, el parseo real está en
+  `scripts/load_history.py::parsear_csv` / `armar_vista_previa` —
+  correrlo a mano con el CSV real da los mismos números.
+- **Decisiones ya tomadas sobre nombres de categoría** (no volver a
+  preguntarlas): "Da Vincci" (sin nada más) se renombra a la
+  categoría existente "Da Vinci"; "Da Vincci + Exámenes" y
+  "Da Vincci + Matrícula" quedan como categorías propias, separadas;
+  "Sube" queda separada de "Subte" (confirmado explícitamente por
+  Gustavo, son cosas distintas para él).
+- **`profiles.opening_balance` ($4.140.505) todavía no está puesto.**
+  No hay campo en la interfaz para editarlo (llega con F09-T05); el
+  endpoint `PATCH /api/me` ya lo acepta, así que es técnicamente
+  posible cargarlo ahora mismo si Gustavo lo pide, pero por ahora
+  quedó explícitamente pendiente hasta que exista la pantalla.
+- Gustavo ya cargó **septiembre** (al menos la línea de Sueldo) antes
+  de que arreglara el bug del ahorro negativo — revisar que ese mes
+  haya quedado completo y no a medias.
+
+**Siguiente paso real cuando se retome:** preguntarle a Gustavo cuántos
+meses le quedan y si necesita algo más del lado del código para
+seguir cargando. Recién cuando los nueve meses estén cargados y él
+confirme que el acumulado final coincide con lo que tiene en el
+Excel, F08-T11 se marca `[x]` y arranca la Fase 9.
+
+## Lo que pasó con F08-T07 — vale la pena entenderlo antes de tocar algo parecido
+
+La primera versión de la hoja de carga histórica (totales de
+ingresos/egresos/ahorro escritos a mano + una lista fija de
+categorías de egreso nada más) la rechazó de punta a punta: "esto no
+sirve para nada", "no tengo forma de agregar el sueldo". El rediseño
+que quedó aprobado es bien distinto, y es el patrón a seguir si
+aparece otra pantalla de carga de totales:
+
+- **Una lista dinámica de líneas, no campos de total fijos.** Cada
+  línea es una categoría (de ingreso o de egreso, sin distinguir:
+  Sueldo es una categoría más) con su importe. Ingresos, egresos y
+  ahorro son de **sólo lectura**, sumados desde las líneas visibles
+  —mismo criterio que ya usa `services.transactions.recalcular_mes`
+  del lado del servidor para sumar un mes en curso: todo por
+  `category_id`, sin que la pantalla decida nada.
+- **Crear una categoría nueva, sin salir de la hoja.** El selector de
+  cada línea tiene una opción "+ Crear categoría nueva…" que abre un
+  mini-formulario (nombre + tipo) **dentro de la misma línea**, llama
+  a `POST /api/categories` y vuelve a dejar la línea lista para el
+  importe. Nunca se abre una segunda hoja encima: `components/sheet.js`
+  comparte `#fondo-hoja` entre todas las hojas, así que dos abiertas a
+  la vez rompen el velo (ver más abajo, "Patrones ya establecidos").
+- **Precargar un mes que ya existe.** Al elegir en el campo "Mes" un
+  período que ya tiene datos, se pide `GET /api/months/{id}` (ahora
+  devuelve `categories`, se agregó justo para esto) y se reemplazan
+  las líneas en blanco por lo que ya está guardado. Sin esto, volver
+  a guardar ese mes sin repetir todas las líneas de antes las pisaba
+  en silencio —`repos.monthly_category_totals.reemplazar_manuales`
+  borra todas las filas del mes y vuelve a insertar sólo lo que llega
+  en el pedido—. Es el bug real que Gustavo encontró con septiembre.
+- **El botón "+ Agregar categoría" se bloquea con una línea
+  incompleta** (sin categoría elegida, o a medio crear). Evita que se
+  acumulen líneas sueltas sin sentido.
+- Todo esto vive en `web/src/js/historial.js` (un solo archivo para
+  el gráfico de evolución, la tabla y la hoja de carga) y se prueba
+  en `tests/js/historial.test.mjs` con el HTML recortado del
+  `index.html` real.
+
+**Bug de backend que salió de este mismo feedback:**
+`services.months.totales_historicos_son_validos` exigía
+`saving_total >= 0`. Está mal: un mes donde se gastó más de lo que
+entró da un ahorro negativo, y es un resultado válido (Técnico §7.1),
+no un error. Ya está corregido —sólo `income_total` y `expense_total`
+no pueden ser negativos—, con tests en los tres niveles (unit, API
+real, JS). Si en algún lugar nuevo aparece una validación parecida
+sobre un total que puede ser negativo legítimamente (el ahorro, una
+variación, un rendimiento), repasar que no se le esté pidiendo `>= 0`
+por costumbre.
+
+## Qué se construyó (Fases 5 a 8 — resumen, no el detalle línea por línea)
 
 - **`GET /api/dashboard`** (F05-T04): el contrato único del tablero de
   Inicio. Indicadores, serie diaria, últimos seis meses, desglose por
-  categoría —todo en una sola llamada, menos de 400 ms. `dashboard.js`
-  es el único dueño de esos cuatro contenedores en Inicio; nada más
-  les escribe.
-- **Los 5 gráficos** (`web/src/js/charts/`): `diario.js`, `seis.js`,
-  `ahorro.js`, más `svg.js` con las utilidades compartidas
-  (`escalaRedonda`, `ejeConCero`, `tramoDeBarra`, `grilla`,
-  `ejeDeCategorias`, etc.). El quinto, "composición patrimonial"
-  (Patrimonio → Composición), es una barra apilada simple en
-  `views/vistas.js` con **datos de ejemplo a propósito** —marcado
-  como tal en pantalla— hasta que exista F10 (inversiones).
-- **El cambio de tema ya redibuja los gráficos solo**, sin JS: todo
-  color sale de `var(--color-*)` puesto directo en `fill`/`stroke`, y
-  eso reacciona en vivo. Lo verifiqué en un navegador real antes de
-  dar F06-T09 por andando en esa parte —no hacía falta código nuevo.
-- **Lectura táctil del gráfico diario** (F06-T09, dos correcciones):
-  mantener el dedo quieto 350 ms muestra el valor del día, centrado en
-  el punto tocado (no en una esquina fija del gráfico —si no, con el
-  `.chart-wrap` scrolleado hacia el final del mes la etiqueta quedaba
-  fuera de lo que se ve). Moverse más de 10 px **antes** de esos 350 ms
-  se trata como scroll y no activa nada: `touch-action` se dejó en su
-  valor por defecto a propósito, la primera versión lo restringía y le
-  sacaba el scroll lateral al navegador —Gustavo lo probó y pidió
-  devolverlo. Documentado con detalle en Técnico §14.1 y §14.3.
-- **Desglose por categoría** (F07-T01, F07-T03): `calc.porcentajes_de_categorias`
-  reemplazó a `participacion()` por categoría suelta —con esa, la suma
-  de los `share` de un mismo tipo podía quedar en 99,9 o 100,1 por
-  redondeo independiente; ahora usa el método del mayor resto y da
-  exactamente 100. Cada categoría también trae `variation` (contra el
-  mes anterior, `null` si no había dato). El panel se puede ordenar
-  por mayor gasto, A–Z o variación.
-- **`GET /api/categories/{id}/detail?year&month`** (F07-T01): total
-  del mes, última carga y los movimientos de esa categoría —
-  `transactions: null` si el mes es histórico, nunca una lista
-  inventada (Regla 4). `year`/`month` son obligatorios, sin default a
-  "mes actual" (a diferencia de `/dashboard`).
-- **Hoja de detalle de categoría** (F07-T05): `categoria-detalle.js`,
-  módulo nuevo. Se abre tocando una fila de `#categorias-inicio` (el
-  panel ES el "gráfico de categorías" del General §54 —no hay un SVG
-  aparte). Tocar un movimiento ahí adentro **cierra esta hoja y abre
-  `alta-movimiento.js::abrirEdicion`** (el mismo formulario que usa la
-  vista Movimientos) en vez de reconstruir un editor propio.
-  **Importante:** `components/sheet.js` no está pensado para dos hojas
-  abiertas a la vez —comparten `#fondo-hoja`, y cerrar la de arriba le
-  saca el velo a la de abajo aunque siga abierta; el `Escape` tampoco
-  respeta cuál es "la de más arriba"—. Por eso la hoja de categoría se
-  cierra ANTES de abrir la de edición, nunca las dos apiladas. Si
-  alguna tarea futura necesita de verdad dos hojas a la vez, hay que
-  arreglar `sheet.js` primero (darle a cada par hoja/velo su propio
-  `fondo`, y que el oyente de `Escape` sólo cierre la última abierta),
-  no improvisarlo por tarea.
-- **Limpieza de Inicio**: se sacó "Últimos movimientos" (duplicaba la
-  vista Movimientos sin aportar nada — pedido directo de Gustavo,
-  General §55 actualizado para decirlo) y el cartel "Cifras de
-  muestra" (ya quedaba todo con datos reales, el aviso mentía).
+  categoría —todo en una sola llamada, menos de 400 ms.
+- **Los 5 gráficos** (`web/src/js/charts/`), con cambio de tema en
+  vivo sin JS (todo color sale de `var(--color-*)`).
+- **Desglose y detalle de categoría** (Fase 7): `calc.porcentajes_de_categorias`
+  (método del mayor resto, suma exacto 100) y la hoja de detalle que
+  se abre tocando una categoría o un movimiento.
+- **Historial y carga de meses históricos** (Fase 8):
+  - `services/months.py`: `totales_historicos_son_validos`,
+    `requiere_confirmacion_para_historico` (F08-T01) y
+    `recalcular_saldos_acumulados` (F08-T03) —encadena y guarda
+    `opening_balance`/`closing_balance` de **todos** los meses del
+    usuario cada vez que se crea o corrige un mes histórico—.
+  - `POST /api/months/historical` (crea o actualiza por año/mes) y
+    `PATCH /api/months/{id}` (corrige uno ya histórico). Convertir un
+    mes `open` con movimientos pide `confirm: true`; los movimientos
+    **no se borran**, sólo dejan de leerse (Técnico §6.6, y es ahora
+    además una regla propia del proyecto, ver más abajo).
+  - `GET /api/months` trae `saving_rate` por mes (calculado por el
+    router, `calc.tasa_de_ahorro`, `None` con ingresos en cero).
+    `GET /api/months/{id}` trae además `categories` —lo que ya está
+    guardado por categoría de ese mes, usado para precargar la hoja.
+  - `scripts/load_history.py` (F08-T06): parsea el CSV de la planilla
+    y carga por la API real. Probado, pero Gustavo eligió no usarlo
+    esta vez (ver arriba).
+  - La vista Historial completa (F08-T07): tabla real, gráfico de
+    evolución del ahorro (ya desde F06-T07) y la hoja de carga
+    rediseñada (ver la sección de arriba).
 
 ## Cosas que NO están hechas y conviene no asumir que sí
 
-- **`months.closing_balance`/`opening_balance` son columnas fantasma.**
-  Existen en la base (`server_default='0'`) pero **nada las escribe
-  nunca**, en ningún `repo` ni `service`. Quedó así a propósito: F08-T03
-  es la tarea que las va a encadenar de verdad. Mientras tanto, el
-  saldo acumulado real se calcula al vuelo —`calc.ahorro_acumulado`/
-  `calc.serie_de_ahorro_acumulado`, usados por `GET /api/dashboard` y
-  por `GET /api/months/savings-evolution` (F06-T07)— a partir de
-  `profiles.opening_balance` + la suma de `saving_total` mes a mes.
-  **No leer `closing_balance` de la base para nada hasta que F08-T03
-  esté hecha.**
-- **La tabla de `#historial-tabla` (vista Historial) sigue siendo 100%
-  dato de muestra.** Sólo el gráfico de arriba (evolución del ahorro)
-  es real, desde F06-T07. Conectar la tabla a `GET /api/months` de
-  verdad es trabajo de F08-T07.
-- **Composición patrimonial** (Patrimonio → Composición): dato de
-  ejemplo marcado como tal, a propósito, hasta F10.
+- **El histórico real de Gustavo (enero–septiembre 2026) está a medio
+  cargar.** Ver la sección de arriba, es lo más importante de esta
+  nota.
+- **`profiles.opening_balance` sigue sin un campo en la interfaz**
+  (F09-T05). El endpoint ya funciona.
+- **La composición patrimonial** (Patrimonio → Composición) sigue con
+  datos de ejemplo, a propósito, hasta F10.
+- **El acumulado del mes en curso puede quedar un paso atrás en
+  `GET /api/months`** si se carga un movimiento nuevo sin que se toque
+  ningún mes histórico después: `recalcular_saldos_acumulados` sólo
+  la llaman los endpoints de histórico, no
+  `services.transactions.recalcular_y_guardar_mes` (F04-T05, ya
+  aprobada, decidí no tocarla para no reabrir una tarea cerrada). El
+  tablero de Inicio y la evolución del ahorro no tienen este problema:
+  calculan el acumulado al vuelo, siempre en vivo. Si esto llega a
+  confundir a Gustavo viendo la tabla de Historial, la solución es
+  agregar la misma llamada al final de `recalcular_y_guardar_mes`, no
+  rediseñar nada.
+
+## Regla nueva del proyecto: no se eliminan datos reales sin avisar
+
+Gustavo la pidió explícitamente (2026-10-15), después de ver que el
+agente corre scripts y migraciones contra la base real. Ya está en
+`CLAUDE.md` § "Cosas que no se pueden romper", resumida: **ningún
+fix, migración ni script corre un `DELETE`, `TRUNCATE` o `DROP` contra
+la base real sin explicar antes qué se va a borrar y esperar
+confirmación explícita.** No aplica a cuentas de prueba de QA (se
+siguen creando y borrando libremente dentro de una misma tarea) ni a
+lo que la aplicación ya le permite hacer a Gustavo desde la interfaz
+(borrar un movimiento, vender una inversión).
+
+Consecuencia directa de esto en F08-T06/T07: convertir un mes `open`
+con movimientos a histórico **nunca borra esos movimientos** —quedan
+en la base, simplemente dejan de leerse (la columna `status` decide
+qué se muestra). Cualquier operación nueva que "reemplace" datos
+históricos (totales por categoría, por ejemplo) tiene que seguir el
+mismo criterio: borrar y reinsertar un resumen derivado está bien
+(`monthly_category_totals` ya es así desde F04-T05), borrar datos que
+la persona cargó a mano no.
 
 ## El "cold-boot 401": un problema del entorno, no de la aplicación
 
-Varias veces esta sesión, al crear una cuenta de prueba nueva y
-loguearse por la UI real (Playwright + Chromium) para hacer QA visual
-de punta a punta, las primeras llamadas a la API daban 401
-("La sesión no es válida") de forma persistente —ni uno ni varios
-`page.reload()` lo arreglaban siempre; a veces sí, a veces no, sin
-patrón claro—. **No es un bug de la aplicación**: los mismos endpoints,
-con las mismas cuentas recién creadas, funcionan sin problema cuando
-se los llama directo por HTTP (`tests/api/`, con `pytest`, que corrió
-limpio todas las veces). El problema es específico de este entorno
-local levantando el navegador contra el cliente de Supabase del
-frontend.
+Varias veces, al crear una cuenta de prueba nueva y loguearse por la
+UI real (Playwright + Chromium) para hacer QA visual de punta a
+punta, las primeras llamadas a la API daban 401 de forma persistente
+—ni uno ni varios `page.reload()` lo arreglaban siempre—. **No es un
+bug de la aplicación**: los mismos endpoints, con las mismas cuentas,
+funcionan sin problema llamados directo por HTTP (`tests/api/`, con
+pytest). El problema es específico de levantar el navegador local
+contra el cliente de Supabase del frontend.
 
 **Qué hacer cuando bloquea una prueba visual:** no insistir mucho
-tiempo con reintentos de login. En vez de eso, armar un harness
-aislado sin autenticación —un `.html` suelto en `web/` (nunca
-commiteado) que importa los módulos JS reales (`charts/*.js`,
-`components/*.js`, etc.) con datos de prueba fijos, servido por el
-mismo `lanzar_local.py`, y manejado con Playwright para capturas y
-chequeos de geometría (`getBoundingClientRect`, scroll, overflow).
-Esta técnica funcionó bien varias veces esta sesión cuando el login
-real no quería cooperar. Si hace falta probar algo que sí necesita la
-API real (un endpoint nuevo, por ejemplo), usar `tests/api/` con
-`pytest` en vez de UI —ya está probado que ese camino es confiable.
+tiempo con reintentos de login. Armar un harness aislado sin
+autenticación —un `.html` suelto en `web/` (nunca commiteado) que
+importa los módulos JS reales con datos de prueba fijos— y manejarlo
+con Playwright para capturas y chequeos de geometría.
+
+**Actualización de la sesión F08:** esta vez no hubo ninguna
+herramienta de navegador disponible, ni siquiera para intentar el
+harness de arriba. Toda la verificación de interfaz fue por
+comportamiento —`tests/js/*.test.mjs` con jsdom, HTML recortado del
+`index.html` real— y toda la verificación visual la hizo Gustavo
+directamente en su celular, con comentarios detallados de usabilidad
+que terminaron en el rediseño de F08-T07. Funcionó bien como
+alternativa completa cuando no hay navegador a mano: tests de
+comportamiento + que la persona mire la pantalla de verdad, en vez de
+forzar una herramienta de navegador que no está disponible.
 
 ## Cosas del entorno que cuestan tiempo si se olvidan
 
@@ -152,31 +232,22 @@ API real (un endpoint nuevo, por ejemplo), usar `tests/api/` con
   las dependencias. Siempre `./.venv/Scripts/python.exe -m pytest`
   (o `ruff`/`mypy`), no el `python` pelado.
 - **mypy:** correr `mypy api/app` (o archivos puntuales dentro de ahí),
-  **no** `mypy .` desde la raíz —con un argumento posicional mal
-  puesto encuentra `api/app/main.py` con dos nombres de módulo
-  distintos y falla sin que tenga nada que ver con el código.
-- **JS: usar `npm test`, no `node --test tests/js/*.test.mjs` a mano.**
-  `tests/js/auth.test.mjs` deja vivo un `setInterval` de un cliente de
-  Supabase; sin la flag `--test-force-exit` que ya tiene el script de
-  `package.json`, el proceso de Node se queda colgado para siempre.
+  **no** `mypy .` desde la raíz.
+- **JS: usar `npm test`, no `node --test tests/js/*.test.mjs` a mano**
+  sin `--test-force-exit` (ya lo tiene el script de `package.json`) —
+  `auth.test.mjs` deja vivo un `setInterval` que cuelga el proceso.
 - **Build de Tailwind:** `npm run build` hace falta cada vez que se
-  toca algo en `web/src/styles/` **o se agrega una clase CSS nueva
-  usada sólo en HTML/JS** —me pasó más de una vez esta sesión hacer
-  QA visual contra un `app.css` viejo y ver colores negros/rotos que
-  en realidad ya estaban bien en el código, sólo que sin reconstruir.
-  `web/public/app.css` está en `.gitignore`, no se commitea nunca.
-- **No correr dos `pytest` completos en paralelo.** Pisan la misma
-  base real de Supabase (cuentas/categorías con nombres que pueden
-  coincidir, fixtures de módulo compartidas) y salen fallos cruzados
-  que no tienen nada que ver con el código —me pasó esta sesión,
-  perdí tiempo pensando que había roto algo. Si hace falta confirmar
-  un resultado, esperar a que termine la corrida anterior.
-- **Scratchpad y QA descartable:** scripts `_qa_temp_*.mjs` y fixtures
-  `web/_qa_*_aislado.html` se escriben en la raíz del repo o en
-  `web/`, se usan, y se borran siempre antes de terminar la tarea —
-  nunca se commitean. Cuentas de Supabase de prueba creadas para QA se
-  borran con el service role key al terminar
-  (`DELETE {SUPABASE_URL}/auth/v1/admin/users/{uid}`).
+  toca algo en `web/src/styles/` o se agrega una clase CSS nueva
+  usada sólo en HTML/JS. `web/public/app.css` está en `.gitignore`.
+- **No correr dos `pytest` completos en paralelo** contra la base
+  real: pisan las mismas cuentas de prueba.
+- **`documentacion/*.csv` está en `.gitignore`** (agregado en F08):
+  cualquier CSV con datos reales que Gustavo deje ahí para una carga
+  asistida no se versiona.
+- **Scratchpad y QA descartable:** scripts y fixtures temporales se
+  escriben, se usan y se borran siempre antes de terminar la tarea —
+  nunca se commitean. Cuentas de Supabase de prueba creadas para QA
+  se borran con el service role key al terminar.
 
 ## Patrones ya establecidos (para no reinventarlos)
 
@@ -188,52 +259,62 @@ API real (un endpoint nuevo, por ejemplo), usar `tests/api/` con
 - **RLS en vez de `where user_id = ...` a mano.** Ninguna consulta de
   `repos/` filtra por usuario: `SesionDeUsuario` ya deja a Postgres
   actuando como `auth.uid()` del token.
-- **404, nunca 403**, para un recurso de otra cuenta (`_sin_mes`,
-  `_sin_categoria`, `_sin_perfil`): no se revela que existe. Cada
-  router repite su propia versión chiquita de este helper —no se
-  comparte entre routers aunque el texto sea igual, son tres líneas.
-- **`IntegrityError` → 409 con mensaje**, nunca un 500 crudo.
+- **404, nunca 403**, para un recurso de otra cuenta. **`IntegrityError`
+  → 409 con mensaje**, nunca un 500 crudo.
 - **Las dos naturalezas de mes:** `open` saca sus totales de
   `transactions`; `historical` de sus propios campos y
-  `transactions: null` —nunca `[]`, nunca inventado. El mismo
-  contrato se repite en cada endpoint nuevo que devuelva movimientos
-  de un mes puntual (`services/months.py::transacciones_del_mes` es
-  el helper compartido; acepta `Sequence`, no `list`, justamente para
-  poder reusarse con cualquier tipo de lista sin pelearse con mypy).
-- **Frontend nunca calcula dinero.** Pasó varias veces esta sesión que
-  se agregó una suma del lado del cliente (porcentajes acumulados de
-  un gráfico, por ejemplo) y se terminó sacando porque violaba esto —
-  si hace falta un número, se agrega al endpoint, no se deriva en JS.
+  `transactions: null` —nunca `[]`, nunca inventado.
+  `services/months.py::transacciones_del_mes` es el helper compartido.
+- **Frontend nunca calcula dinero** — con una excepción explícita y
+  deliberada: una resta trivial sobre dos números que la persona ya
+  está escribiendo en la MISMA pantalla (ingresos − egresos = ahorro,
+  en la hoja de carga histórica) no es "lógica financiera que viene
+  del backend", es formatear lo que ya está ahí. La frontera sigue
+  siendo la misma: si el número hay que traerlo de otro lado o
+  decidir algo sobre él, va al backend.
 - **Porcentajes que tienen que sumar 100 exacto:** método del mayor
-  resto (`calc.porcentajes_de_categorias`), no redondeo independiente
-  por ítem. Mismo problema puede aparecer en cualquier desglose nuevo.
+  resto (`calc.porcentajes_de_categorias`), no redondeo independiente.
+- **Dos hojas no andan bien a la vez.** `components/sheet.js` comparte
+  `#fondo-hoja`: cerrar la de arriba le saca el velo a la de abajo
+  aunque siga abierta. Patrón para "necesito otra acción sin perder
+  el contexto de esta hoja": un sub-estado **dentro** de la misma
+  hoja (mostrar/ocultar un bloque interno, como la creación de
+  categoría en F08-T07), nunca abrir una segunda hoja encima.
 - **Git: directo a `main`, no hay ramas `feat/...` en esta sesión.**
-  (Una nota vieja de este archivo decía lo contrario —era de antes;
-  en la práctica, de F05 en adelante, cada tarea es uno o más commits
-  directo a `main`, pusheados con `git push origin main` apenas se
-  cierra o se corrige algo. Puede haber un commit de implementación
-  y, después de la vuelta de Gustavo, uno o más de corrección, y por
-  último uno de cierre cuando aprueba.)
+  `git push origin main` apenas se cierra o se corrige algo —nunca
+  dejar un cierre sólo en commit local.
 - **Commits:** `tipo(F0X-TYY): descripción corta en minúscula`,
   terminan con `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`.
+  Un cierre de tarea aprobada es su propio commit: `docs(F0X-TYY):
+  cierra la tarea, aprobada`.
 - **JS de pantallas reales:** módulos ES nativos, sin bundler. Para
   testear un módulo con dependencias, la técnica es reescribir cada
   línea de `import` por una versión doblada (red/eventos/módulos
   pesados) o por un `import` real apuntando a un `file:///` absoluto
-  (formato/componentes puros, que sí interesa probar de verdad), y
-  cargar el resultado como `data:text/javascript;base64,...`. Ver
-  `tests/js/dashboard.test.mjs`, `movimientos.test.mjs` o
-  `categoria-detalle.test.mjs` para el patrón completo. `crearHoja`
-  (`components/sheet.js`) se importa real pero con `?t=${Math.random()}`
-  al final de la URL —si no, su estado interno (`abiertas`, el conteo
-  de hojas abiertas) queda compartido entre archivos de test distintos
-  dentro del mismo proceso de Node.
+  (formato/componentes puros), cargado como
+  `data:text/javascript;base64,...`. Ver `historial.test.mjs` o
+  `config-categorias.test.mjs` para el patrón completo —incluido
+  cómo doblar `api.post` enrutando por path cuando un mismo módulo
+  llama a más de un endpoint. `crearHoja` se importa real pero con
+  `?t=${Math.random()}` al final de la URL, para que su estado interno
+  no quede compartido entre archivos de test.
+- **El HTML de un test se recorta del `index.html` real**, nunca se
+  reescribe a mano: así una prueba nota si el `id` que usa el JS deja
+  de existir en la plantilla (buscar el ancla con `indexOf`, cortar
+  con `lastIndexOf("<section"/"<aside", ancla)` y `indexOf("</section>"/"</aside>", ancla)`).
 - **jsdom no implementa varias APIs de geometría SVG/puntero:**
-  `getBBox()`, `setPointerCapture()`, `getScreenCTM()` no existen;
-  `getBoundingClientRect()` siempre da 0×0 salvo que se lo pise a
-  mano. Cualquier test que dibuje algo que dependa de eso necesita
-  mockear esos métodos en el `SVGElement.prototype` del `window` de
-  esa prueba (ver `tests/js/diario.test.mjs`, la función `montarSvg`).
+  `getBBox()`, `setPointerCapture()`, `getScreenCTM()`,
+  `getBoundingClientRect()`. Cualquier test que dibuje algo que
+  dependa de eso necesita mockear esos métodos en el
+  `SVGElement.prototype` del `window` de esa prueba.
 - **Roadmap:** `[ ]` pendiente → `[~]` implementada, esperando prueba
-  → `[x]` sólo cuando Gustavo lo dice explícitamente. Nunca se marca
-  `[x]` sin que él lo apruebe primero.
+  → `[x]` sólo cuando Gustavo lo dice explícitamente. Un feedback de
+  usabilidad fuerte después de un primer `[x]` puede volver la tarea a
+  `[~]` para que la reapruebe sobre la versión corregida —pasó con
+  F08-T07, está bien que pase.
+- **Antes de tocar datos reales con un script, una migración o un
+  fix: explicar qué se va a hacer y esperar que Gustavo diga que sí.**
+  Ver la sección de arriba sobre la regla nueva. Si hace falta
+  ejecutar algo contra su cuenta real y requiere sus credenciales,
+  **no pedírselas por el chat** salvo que él las ofrezca —dejar que
+  lo haga él mismo desde la interfaz, aunque sea más lento.
