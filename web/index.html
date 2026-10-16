@@ -381,7 +381,7 @@
               <h2 id="t-hist">Historial mensual</h2>
               <p>Los meses cerrados se conservan consolidados.</p>
             </div>
-            <button class="link-btn" type="button">
+            <button class="link-btn" type="button" id="btn-cargar-historico">
               + Cargar mes histórico
             </button>
           </div>
@@ -964,6 +964,113 @@
           ></p>
 
           <button class="btn btn--principal" id="categoria-guardar" type="submit">
+            <span class="btn-texto">Guardar</span>
+            <span class="btn-girador" aria-hidden="true"></span>
+          </button>
+        </form>
+      </div>
+    </aside>
+
+    <!-- Carga de mes histórico · F08-T07.
+         La abre #btn-cargar-historico, en la vista Historial. Un solo
+         año/mes por vez (General §18); si ese mes ya existe abierto
+         con movimientos, el servidor devuelve 409 y se confirma con
+         window.confirm() antes de reintentar con confirm=true —los
+         movimientos no se borran, sólo dejan de leerse (regla del
+         proyecto sobre no eliminar datos reales). El ahorro no se
+         escribe a mano: sale de ingresos menos egresos. -->
+    <aside
+      class="hoja hoja--modal"
+      id="hoja-historico"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="hoja-historico-titulo"
+      aria-hidden="true"
+      tabindex="-1"
+    >
+      <div class="hoja-asa" aria-hidden="true"></div>
+      <div class="hoja-cabeza">
+        <div>
+          <h2 id="hoja-historico-titulo">Cargar mes histórico</h2>
+          <p>Totales consolidados, sin movimientos individuales.</p>
+        </div>
+        <button
+          class="hoja-cerrar"
+          type="button"
+          data-cerrar
+          aria-label="Cerrar"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
+      <div class="hoja-cuerpo">
+        <form id="form-historico" novalidate>
+          <div class="campo">
+            <label for="historico-periodo">Mes</label>
+            <input class="inp" id="historico-periodo" name="periodo" type="month" required />
+          </div>
+
+          <div class="campo">
+            <label for="historico-ingresos">Ingresos</label>
+            <input
+              class="inp num"
+              id="historico-ingresos"
+              name="income_total"
+              type="text"
+              inputmode="numeric"
+              autocomplete="off"
+              placeholder="0"
+              required
+            />
+          </div>
+
+          <div class="campo">
+            <label for="historico-egresos">Egresos</label>
+            <input
+              class="inp num"
+              id="historico-egresos"
+              name="expense_total"
+              type="text"
+              inputmode="numeric"
+              autocomplete="off"
+              placeholder="0"
+              required
+            />
+          </div>
+
+          <div class="campo">
+            <label for="historico-ahorro">Ahorro</label>
+            <input class="inp num" id="historico-ahorro" type="text" disabled />
+          </div>
+
+          <div class="campo">
+            <label id="historico-categorias-etiqueta">
+              Categorías
+              <span
+                style="text-transform: none; letter-spacing: 0; color: var(--color-ink-4); font-weight: 500"
+                >(opcional)</span
+              >
+            </label>
+            <div
+              id="historico-categorias"
+              role="group"
+              aria-labelledby="historico-categorias-etiqueta"
+            ></div>
+          </div>
+
+          <div id="historico-aviso"></div>
+
+          <p
+            class="acceso-error"
+            id="historico-error"
+            role="alert"
+            aria-live="assertive"
+            hidden
+          ></p>
+
+          <button class="btn btn--principal" id="historico-guardar" type="submit">
             <span class="btn-texto">Guardar</span>
             <span class="btn-girador" aria-hidden="true"></span>
           </button>

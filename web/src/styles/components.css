@@ -2376,6 +2376,15 @@
   cursor: pointer;
 }
 
+/* Importe por categoría en la carga de mes histórico (F08-T07): la
+   fila es la misma .cfg-row que el resto de los ajustes, sólo cambia
+   el control de la derecha —un número en vez de un interruptor—. */
+.hist-cat-importe {
+  flex: none;
+  width: 104px;
+  text-align: right;
+}
+
 .toggle {
   position: relative;
   flex: none;

@@ -246,6 +246,39 @@ def test_los_importes_vienen_como_texto(
     assert mes["income_total"] == "0.00"
 
 
+@sin_entorno
+def test_la_tasa_de_ahorro_viene_calculada(
+    cliente, motor, cuentas: tuple[Cuenta, Cuenta], limpiar_meses
+) -> None:
+    a, _ = cuentas
+    month_id = _crear_mes(a.uid, year=2025, month=6, status="historical")
+    with escritura(motor) as con:
+        con.execute(
+            text(
+                f'update "{ESQUEMA}".months set income_total = 200000.00, '
+                "expense_total = 150000.00, saving_total = 50000.00 where id = :id"
+            ),
+            {"id": month_id},
+        )
+
+    r = cliente.get("/api/months", headers=a.cabeceras)
+    mes = next(m for m in r.json() if m["year"] == 2025)
+    assert mes["saving_rate"] == "25.0"
+
+
+@sin_entorno
+def test_la_tasa_de_ahorro_con_ingresos_en_cero_da_null(
+    cliente, cuentas: tuple[Cuenta, Cuenta], limpiar_meses
+) -> None:
+    """Criterio que no se negocia (CLAUDE.md): nunca 0% ni una división."""
+    a, _ = cuentas
+    _crear_mes(a.uid, year=2025, month=7, status="historical")
+
+    r = cliente.get("/api/months", headers=a.cabeceras)
+    mes = next(m for m in r.json() if m["year"] == 2025)
+    assert mes["saving_rate"] is None
+
+
 # ===================================================================
 #  GET /api/months/{id}
 # ===================================================================

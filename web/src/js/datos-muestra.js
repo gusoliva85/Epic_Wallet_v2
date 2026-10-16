@@ -54,60 +54,6 @@ export const CATEGORIAS = [
   },
 ];
 
-/* Mes en curso primero. El tipo importa: un mes consolidado no tiene
-   movimientos individuales y la interfaz no los puede inventar
-   (regla 4 del documento general). */
-export const HISTORIAL = [
-  {
-    mes: "Octubre 2026",
-    ingresos: "$2.105.000",
-    egresos: "$820.700",
-    ahorro: "$1.284.300",
-    tasa: "61,0%",
-    tipo: "abierto",
-  },
-  {
-    mes: "Septiembre 2026",
-    ingresos: "$1.980.000",
-    egresos: "$937.400",
-    ahorro: "$1.042.600",
-    tasa: "52,7%",
-    tipo: "transaccional",
-  },
-  {
-    mes: "Agosto 2026",
-    ingresos: "$1.980.000",
-    egresos: "$1.104.200",
-    ahorro: "$875.800",
-    tasa: "44,2%",
-    tipo: "transaccional",
-  },
-  {
-    mes: "Julio 2026",
-    ingresos: "$1.820.000",
-    egresos: "$1.236.900",
-    ahorro: "$583.100",
-    tasa: "32,0%",
-    tipo: "consolidado",
-  },
-  {
-    mes: "Junio 2026",
-    ingresos: "$1.820.000",
-    egresos: "$988.300",
-    ahorro: "$831.700",
-    tasa: "45,7%",
-    tipo: "consolidado",
-  },
-  {
-    mes: "Mayo 2026",
-    ingresos: "$1.650.000",
-    egresos: "$1.012.500",
-    ahorro: "$637.500",
-    tasa: "38,6%",
-    tipo: "consolidado",
-  },
-];
-
 export const INVERSIONES = [
   {
     id: "al30",

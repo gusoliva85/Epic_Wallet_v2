@@ -80,11 +80,16 @@ def _totales_por_categoria(
 
 def _detalle_de(mes: Month) -> MesDetalle:
     detalle = MesDetalle.model_validate(mes, from_attributes=True)
-    return detalle.model_copy(update={"transactions": transacciones_del_mes(mes.status, None)})
+    return detalle.model_copy(
+        update={
+            "transactions": transacciones_del_mes(mes.status, None),
+            "saving_rate": _tasa(mes),
+        }
+    )
 
 
 @router.get("", response_model=list[MesResumen], summary="Los meses del usuario")
-def listar_meses(sesion: SesionDeUsuario, usuario: UsuarioDelToken) -> list[Month]:
+def listar_meses(sesion: SesionDeUsuario, usuario: UsuarioDelToken) -> list[MesResumen]:
     # `months.user_id` referencia `profiles.id`: sin perfil, abrir el
     # mes actual de una cuenta nueva fallaría con una violación de
     # clave foránea (un 500 sin explicación). `asegurar_perfil_y_categorias`
@@ -100,7 +105,17 @@ def listar_meses(sesion: SesionDeUsuario, usuario: UsuarioDelToken) -> list[Mont
     # visita posterior esto no inserta una fila de más, sólo encuentra
     # la que ya estaba.
     abrir_mes_actual(sesion, usuario.id)
-    return repos.listar(sesion)
+    return [
+        MesResumen.model_validate(mes, from_attributes=True).model_copy(
+            update={"saving_rate": _tasa(mes)}
+        )
+        for mes in repos.listar(sesion)
+    ]
+
+
+def _tasa(mes: Month) -> str | None:
+    tasa = calc.tasa_de_ahorro(mes.income_total, mes.saving_total)
+    return None if tasa is None else f"{tasa:.1f}"
 
 
 @router.get(

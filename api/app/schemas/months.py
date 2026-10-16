@@ -41,6 +41,12 @@ class MesResumen(BaseModel):
     # `GET /api/dashboard` y `GET /api/months/savings-evolution` siguen
     # mostrando el acumulado real, calculado al vuelo.
     closing_balance: decimal.Decimal
+    # Tasa de ahorro del mes (General §52): `None` con ingresos en
+    # cero, nunca `0%` ni una división — mismo criterio y misma forma
+    # de texto que `saving_rate` en `GET /api/dashboard` (F05-T04). No
+    # sale de un atributo de `Month`: el router la calcula con
+    # `calc.tasa_de_ahorro` antes de armar esta fila (`listar_meses`).
+    saving_rate: str | None = None
 
     @field_serializer("income_total", "expense_total", "saving_total", "closing_balance")
     def _importe_como_texto(self, valor: decimal.Decimal) -> str:

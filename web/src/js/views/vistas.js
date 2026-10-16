@@ -17,7 +17,6 @@ import {
   tarjetaMetrica,
   pintarTarjetas,
 } from "../components/kpi.js";
-import { aviso, pildora } from "../components/avisos.js";
 import { crearHoja } from "../components/sheet.js";
 import { conectarSinConexion } from "../components/estados.js";
 import * as D from "../datos-muestra.js";
@@ -39,34 +38,10 @@ function escribir(id, html) {
 // después de F06-T07: duplicaba esta misma lista sin aportar nada
 // (General §55).
 
-/* --------------------------------------------------------- historial */
-
-/* Qué píldora le toca a cada tipo de mes. El tipo no es decorativo:
-   decide si la pantalla puede mostrar movimientos (regla 4). */
-const TIPO_MES = {
-  abierto: { texto: "Abierto", pildora: "info" },
-  transaccional: { texto: "Transaccional", pildora: "ok" },
-  consolidado: { texto: "Consolidado", pildora: "neutral" },
-};
-
-function historial() {
-  escribir(
-    "historial-tabla",
-    D.HISTORIAL.map((m) => {
-      const t = TIPO_MES[m.tipo] ?? TIPO_MES.consolidado;
-      return (
-        "<tr>" +
-        `<td>${esc(m.mes)}</td>` +
-        `<td class="num">${esc(m.ingresos)}</td>` +
-        `<td class="num">${esc(m.egresos)}</td>` +
-        `<td class="num">${esc(m.ahorro)}</td>` +
-        `<td class="num">${esc(m.tasa)}</td>` +
-        `<td>${pildora({ texto: t.texto, tipo: t.pildora })}</td>` +
-        "</tr>"
-      );
-    }).join(""),
-  );
-}
+/* La vista Historial (tabla #historial-tabla y la carga de un mes
+   histórico) tiene datos reales desde F08-T07 (historial.js). Ya no
+   hay nada de muestra que escribir acá — mismo caso que Inicio y
+   Movimientos, más arriba. */
 
 /* ----------------------------------------------------------- cartera */
 
@@ -209,7 +184,6 @@ function config() {
 /* ------------------------------------------------------------ armado */
 
 export function pintarVistas() {
-  historial();
   cartera();
   patrimonio();
   analisis();
