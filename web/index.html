@@ -455,12 +455,11 @@
             <div class="card-head">
               <div>
                 <h2>Cartera actual</h2>
-                <p>Última actualización de cotizaciones: hoy 09:12</p>
+                <p>Cargá y actualizá tus posiciones a mano.</p>
               </div>
-              <div style="display: flex; gap: 8px">
-                <button class="chip" type="button">Actualizar</button>
-                <button class="chip solid" type="button">+ Inversión</button>
-              </div>
+              <button class="chip solid" type="button" id="btn-nueva-inversion">
+                + Inversión
+              </button>
             </div>
             <div
               class="tbl-wrap"
@@ -1055,6 +1054,232 @@
       </div>
     </aside>
 
+    <!-- Comprar (alta de posición) · F10-T08. Modal, no cajón: es un
+         formulario, pide atención completa. "Restar del ahorro" es el
+         flag affect_savings del servicio (F10-T06) — apagado, sirve
+         para cargar una cartera que ya existía antes de usar la
+         aplicación, sin inventar un gasto que nunca pasó. -->
+    <aside
+      class="hoja hoja--modal"
+      id="hoja-inversion"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="hoja-inversion-titulo"
+      aria-hidden="true"
+      tabindex="-1"
+    >
+      <div class="hoja-asa" aria-hidden="true"></div>
+      <div class="hoja-cabeza">
+        <div>
+          <h2 id="hoja-inversion-titulo">Nueva inversión</h2>
+        </div>
+        <button
+          class="hoja-cerrar"
+          type="button"
+          data-cerrar
+          aria-label="Cerrar"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
+      <div class="hoja-cuerpo">
+        <form id="form-inversion" novalidate>
+          <div class="campo">
+            <label for="inversion-simbolo">Símbolo</label>
+            <input
+              class="inp"
+              id="inversion-simbolo"
+              type="text"
+              maxlength="40"
+              placeholder="Ej.: AL30"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="campo">
+            <label for="inversion-nombre">Nombre</label>
+            <input
+              class="inp"
+              id="inversion-nombre"
+              type="text"
+              maxlength="120"
+              placeholder="Ej.: Bonar 2030"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="campo">
+            <label for="inversion-tipo">Tipo</label>
+            <select class="inp" id="inversion-tipo">
+              <option value="obligacion_negociable">Obligación Negociable</option>
+              <option value="bono">Bono</option>
+              <option value="cedear">CEDEAR</option>
+              <option value="accion">Acción</option>
+              <option value="fci">FCI</option>
+              <option value="otro" selected>Otro</option>
+            </select>
+          </div>
+
+          <div class="campo">
+            <label id="inversion-modo-etiqueta">Cómo se valúa</label>
+            <div
+              class="view-switch"
+              role="group"
+              aria-labelledby="inversion-modo-etiqueta"
+              id="inversion-modo"
+            >
+              <button type="button" data-modo="unit_price" class="activa">
+                Por cotización
+              </button>
+              <button type="button" data-modo="manual">Valor manual</button>
+            </div>
+          </div>
+
+          <div id="inversion-campos-cotizacion">
+            <div class="campo">
+              <label for="inversion-nominales">Nominales</label>
+              <input
+                class="inp"
+                id="inversion-nominales"
+                type="text"
+                inputmode="decimal"
+                placeholder="0"
+                autocomplete="off"
+              />
+            </div>
+            <div class="campo">
+              <label for="inversion-precio">Precio unitario</label>
+              <input
+                class="inp"
+                id="inversion-precio"
+                type="text"
+                inputmode="decimal"
+                placeholder="0"
+                autocomplete="off"
+              />
+            </div>
+          </div>
+
+          <div class="campo" id="inversion-campo-manual" hidden>
+            <label for="inversion-valor-manual">Valor</label>
+            <input
+              class="inp num"
+              id="inversion-valor-manual"
+              type="text"
+              inputmode="numeric"
+              placeholder="0"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="cfg-row cg">
+            <div>
+              <b>Restar del ahorro</b>
+              <span>Apagalo si ya tenías esta inversión antes de usar la aplicación.</span>
+            </div>
+            <button
+              class="toggle"
+              type="button"
+              role="switch"
+              id="inversion-afecta-ahorro"
+              aria-checked="true"
+              aria-label="Restar del ahorro"
+            ></button>
+          </div>
+
+          <p
+            class="acceso-error"
+            id="inversion-error"
+            role="alert"
+            aria-live="assertive"
+            hidden
+          ></p>
+
+          <button class="btn btn--principal" id="inversion-guardar" type="submit">
+            <span class="btn-texto">Comprar</span>
+            <span class="btn-girador" aria-hidden="true"></span>
+          </button>
+        </form>
+      </div>
+    </aside>
+
+    <!-- Detalle de una posición · F10-T08. Cajón en escritorio: se abre
+         para ver y tocar sin perder de vista la tabla de atrás. -->
+    <aside
+      class="hoja hoja--cajon"
+      id="hoja-inversion-detalle"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="inversion-detalle-titulo"
+      aria-hidden="true"
+      tabindex="-1"
+    >
+      <div class="hoja-asa" aria-hidden="true"></div>
+      <div class="hoja-cabeza">
+        <div>
+          <h2 id="inversion-detalle-titulo">—</h2>
+          <p id="inversion-detalle-sub">—</p>
+        </div>
+        <button
+          class="hoja-cerrar"
+          type="button"
+          data-cerrar
+          aria-label="Cerrar"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
+      <div class="hoja-cuerpo">
+        <div class="kv-grid" id="inversion-detalle-kv" style="grid-template-columns: 1fr"></div>
+
+        <div class="day-sep">Actualizar valor</div>
+        <form id="form-inversion-valor" novalidate>
+          <div class="campo" id="inversion-detalle-campo-precio" hidden>
+            <label for="inversion-detalle-precio">Precio unitario</label>
+            <input
+              class="inp"
+              id="inversion-detalle-precio"
+              type="text"
+              inputmode="decimal"
+              placeholder="0"
+              autocomplete="off"
+            />
+          </div>
+          <div class="campo" id="inversion-detalle-campo-valor" hidden>
+            <label for="inversion-detalle-valor">Valor actual</label>
+            <input
+              class="inp num"
+              id="inversion-detalle-valor"
+              type="text"
+              inputmode="numeric"
+              placeholder="0"
+              autocomplete="off"
+            />
+          </div>
+          <p
+            class="acceso-error"
+            id="inversion-detalle-error"
+            role="alert"
+            aria-live="assertive"
+            hidden
+          ></p>
+          <button class="btn btn--principal" id="inversion-detalle-guardar" type="submit">
+            <span class="btn-texto">Actualizar valor</span>
+            <span class="btn-girador" aria-hidden="true"></span>
+          </button>
+        </form>
+
+        <div class="day-sep">Vender</div>
+        <button class="btn btn--peligro" type="button" id="inversion-detalle-vender">
+          Vender
+        </button>
+      </div>
+    </aside>
+
     <!-- Carga de mes histórico · F08-T07, rediseñada a pedido de
          Gustavo (no tenía sentido escribir el total a mano cuando ya
          hay una categoría por línea): cada línea es una categoría con
@@ -1645,6 +1870,7 @@
     <script type="module" src="/src/js/categoria-detalle.js"></script>
     <script type="module" src="/src/js/historial.js"></script>
     <script type="module" src="/src/js/patrimonio.js"></script>
+    <script type="module" src="/src/js/cartera.js"></script>
     <script type="module" src="/src/js/app.js"></script>
     <script type="module" src="/src/js/registrar-sw.js"></script>
   </body>

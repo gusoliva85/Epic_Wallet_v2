@@ -12,11 +12,6 @@
    es de las fases que les corresponden. */
 
 import { esc } from "../format.js";
-import {
-  tarjetaHeroe,
-  tarjetaMetrica,
-  pintarTarjetas,
-} from "../components/kpi.js";
 import { crearHoja } from "../components/sheet.js";
 import { conectarSinConexion } from "../components/estados.js";
 import * as D from "../datos-muestra.js";
@@ -43,48 +38,10 @@ function escribir(id, html) {
    Inicio el 2026-10-17. Ya no hay nada de muestra que escribir acá —
    mismo caso que Inicio y Movimientos, más arriba. */
 
-/* ----------------------------------------------------------- cartera */
-
-function cartera() {
-  pintarTarjetas($("kpis-cartera"), [
-    tarjetaHeroe({
-      etiqueta: "Valor de la cartera",
-      cifra: D.CARTERA.valor,
-      sub: `${D.CARTERA.rendimiento} sobre lo invertido`,
-      porcentaje: 73,
-      pieIzq: `Invertido ${D.CARTERA.invertido}`,
-      pieDer: `${D.CARTERA.posiciones} posiciones`,
-      color: "sav",
-    }),
-    tarjetaMetrica({
-      etiqueta: "Invertido",
-      cifra: D.CARTERA.invertido,
-      sub: "Suma de los valores iniciales",
-      tarjeta: "pat",
-    }),
-    tarjetaMetrica({
-      etiqueta: "Rendimiento",
-      cifra: D.CARTERA.rendimiento,
-      sub: "Sobre el total de la cartera",
-      tarjeta: "inc",
-    }),
-  ]);
-
-  escribir(
-    "cartera-tabla",
-    D.INVERSIONES.map(
-      (i) =>
-        "<tr>" +
-        `<td>${esc(i.nombre)}</td>` +
-        `<td class="num">${esc(i.nominales)}</td>` +
-        `<td class="num">${esc(i.inicial)}</td>` +
-        `<td class="num">${esc(i.actual)}</td>` +
-        `<td class="num amt-in">${esc(i.rendimiento)}</td>` +
-        `<td>${esc(i.fuente)}</td>` +
-        "</tr>",
-    ).join(""),
-  );
-}
+/* La vista Cartera (indicadores, tabla, alta y detalle) tiene datos
+   reales desde F10-T08 (`cartera.js`, `GET /api/investments`). Ya no
+   hay nada de muestra que escribir acá — mismo caso que Inicio,
+   Movimientos, Historial y Patrimonio, más arriba. */
 
 /* La vista Patrimonio (ecuación, composición y su pie) tiene datos
    reales desde F09-T05 (`patrimonio.js`, `GET /api/patrimony`). Ya no
@@ -147,7 +104,6 @@ function config() {
 /* ------------------------------------------------------------ armado */
 
 export function pintarVistas() {
-  cartera();
   analisis();
   config();
 }

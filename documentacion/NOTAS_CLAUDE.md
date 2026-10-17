@@ -9,11 +9,11 @@ oficiales o el roadmap, **ganan ellos**, esto está desactualizado y hay
 que corregirlo o borrarlo.
 
 Última actualización: sesión del 2026-10-17 (Fase 9 cerrada entera
-salvo F09-T08, que espera datos reales; Fase 10: F10-T01 y F10-T04
-aprobadas, F10-T06 en `[~]` —endpoints de inversiones y la
-transferencia con el ahorro—), rama `main`. Si el repo ya avanzó más,
-esto es historia vieja —leer el roadmap primero, y si alcanza con
-eso, no hace falta leer el resto de este archivo.
+salvo F09-T08, que espera datos reales; Fase 10: F10-T01, F10-T04 y
+F10-T06 aprobadas, F10-T08 en `[~]` —la pantalla de Cartera—), rama
+`main`. Si el repo ya avanzó más, esto es historia vieja —leer el
+roadmap primero, y si alcanza con eso, no hace falta leer el resto de
+este archivo.
 
 ## Leer esto primero, en este orden
 
@@ -45,8 +45,8 @@ que Gustavo tenga su histórico real cargado primero. Mismo criterio
 que con F08-T11: no es un bloqueante, no preguntar de nuevo por su
 estado, seguir con el código mientras tanto.
 
-**Fase 10 (Inversiones), misma sesión: F10-T01 y F10-T04 aprobadas,
-F10-T06 en `[~]`.** F10-T01 (Cálculo, `services/calc.py`):
+**Fase 10 (Inversiones), misma sesión: F10-T01, F10-T04 y F10-T06
+aprobadas, F10-T08 en `[~]`.** F10-T01 (Cálculo, `services/calc.py`):
 `valor_de_inversion`, `rendimiento_de_inversion`,
 `rendimiento_porcentual`, `total_invertido`. F10-T04 (Backend): tabla
 `investments` (migración `6216f0b3e56e`, aplicada, `downgrade`
@@ -90,11 +90,42 @@ Implementación final:
 - `services/dashboard.py` y `services/patrimony.py` ya leen
   `investments.current_value` real en vez de un cero fijo.
 
-Todo esto sin pantalla propia todavía (F10-T08): se prueba contra la
-base real, `tests/api/test_investments_endpoints.py` (14 casos,
-HTTP) y `tests/api/test_investments_servicio.py` (11 casos, servicio
-directo, los que son anteriores al endpoint). Nada que ver en el
-celular en esta tarea.
+Todo esto se probó contra la base real antes de tener pantalla propia:
+`tests/api/test_investments_endpoints.py` (14 casos, HTTP) y
+`tests/api/test_investments_servicio.py` (11 casos, servicio directo,
+los anteriores al endpoint).
+
+**F10-T08 (Frontend) es la pantalla de Cartera, `web/src/js/cartera.js`.**
+`GET /api/investments` trae indicadores y tabla en una sola llamada
+(se pide al entrar a la vista, por `epic:ruta`, mismo patrón que
+`patrimonio.js`). Decisiones de esta tarea:
+- **Las tres tarjetas de arriba reusan `components/kpi.js`** (`tarjetaHeroe`/
+  `tarjetaMetrica`/`pintarTarjetas`/`animarCifras`), no HTML a mano:
+  "Valor de la cartera" (héroe, color `sav`), "Invertido" (métrica,
+  color `accent`) y "Rendimiento" (métrica, color `inc`/`egr` según el
+  signo). **No se tocó `TARJETAS_VALIDAS`** (el catálogo cerrado de
+  `inc`/`egr`/`dia`/`pat` del tablero de Inicio): Cartera usa la
+  variante genérica de `tarjetaMetrica` (parámetro `color`, vidrio con
+  acento), no la de fondo sólido.
+- **La fila de la tabla es clickeable, pero es un `<tr>`, no un
+  `<button>`:** un `<button>` no puede contener `<td>` (HTML inválido),
+  así que la fila lleva `tabindex="0"` + `data-id` + CSS
+  `cursor:pointer` (`.tbl-wrap tbody tr[tabindex]`, en
+  `components.css`) y un oyente de `keydown` propio para Enter/Espacio
+  — el anillo de foco ya sale gratis del `:focus-visible` global
+  porque esta tabla no redefine `box-shadow` en `:hover` (al revés que
+  `.row`, ver la nota de abajo sobre foco vs. hover).
+- **`affect_savings` en la hoja de alta** ("Restar del ahorro",
+  default encendido) y la venta invalidan `cache-meses.js`; **`PUT`
+  (actualizar el valor a mano) no invalida nada**, porque nunca toca
+  `transactions` (mismo criterio que el técnico §7.3).
+- Probado en `tests/js/cartera.test.mjs` (29 casos): los tres
+  criterios de aceptación de la tarea están cada uno con su prueba
+  (cargar + actualizar valor en los dos modos de valuación, el color
+  según el signo en la fila y en la tarjeta, vender con
+  `window.confirm`).
+
+Pendiente: probarlo en el celular y que Gustavo apruebe.
 
 **F08-T11 no es una tarea de código: depende de que Gustavo termine de
 cargar sus datos reales a mano.** Si se retoma esto, lo que corresponde

@@ -417,10 +417,11 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Aceptación:** · comprar una inversión **sí aparece** como gasto, bajo "Inversiones", en el total del mes y en el desglose por categoría (decisión de Gustavo 2026-10-17, pisa la redacción original de esta tarea y del técnico §7.3: sin esto "no se entiende por qué tenés plata de menos") · vender devuelve el importe como ingreso, misma categoría, tipo `income` · alta y baja de una posición son **opcionales** respecto del ahorro —un flag para cargar una cartera preexistente sin inventar un movimiento que nunca pasó— · actualizar el valor a mano cambia el patrimonio y no el ahorro del mes (eso nunca pasa por `transactions`, es sólo `current_value`).
   *`GET`/`POST`/`PUT`/`DELETE /api/investments`. Sin endpoint de "detalle" por id aparte: `PUT` ya devuelve la posición completa, no hacía falta otro. `GET /api/dashboard` y `GET /api/patrimony` ya leen la cartera real (antes era un cero fijo). Sin nada que probar en el celular todavía —no hay pantalla (F10-T08)—, validado con `tests/api/test_investments_endpoints.py` (14 casos) contra la base real.*
 
-- [ ] **F10-T08 · Vista de cartera**
+- [~] **F10-T08 · Vista de cartera**
   **Tipo:** Frontend · **Ref:** General §20, §21 · *fusiona F10-T08, F10-T09, F10-T10 y F10-T11*
   **Hacer:** indicadores de la cartera, tabla de posiciones con su rendimiento, alta de posición, y hoja de detalle con actualización manual del valor y venta.
   **Aceptación:** · se carga una posición y se actualiza su valor desde el celular · el rendimiento se ve en color según el signo · vender pide confirmación y deja el ahorro actualizado.
+  *Implementado: `cartera.js` pide `GET /api/investments` al entrar a la vista (indicadores y tabla en una sola llamada). Alta y venta usan `affect_savings` (default `true`) e invalidan el caché de meses; actualizar el valor a mano es `PUT` y no lo toca. Pendiente de probar en el celular y aprobar.*
 
 - [ ] **F10-T12 · Carga real de la cartera**
   **Tipo:** QA
