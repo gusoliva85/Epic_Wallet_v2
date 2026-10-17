@@ -1787,6 +1787,35 @@
   color: var(--color-ink-3);
 }
 
+/* ---- cuerpo de tarjeta con contenido suelto (formularios, botones) ----
+   `.card` no tiene padding propio a propósito: `.rows`, `.kv-grid` y
+   `.card-head` ya traen el suyo (14 px de margen horizontal, el mismo
+   ritmo en los tres). Un formulario puesto directo en la tarjeta —la
+   de Cuenta, F02-T11— no tenía ninguno de esos envoltorios y quedaba
+   pegado al borde de punta a punta (Gustavo, 2026-10-17). `.card-body`
+   es ese cuarto envoltorio, con el mismo ritmo de 14 px. */
+.card-body {
+  padding: 4px 14px 16px;
+}
+
+/* ---- subtítulo de una sección dentro de un formulario de tarjeta ----
+   Distinto de `.day-sep` (separador de día en una lista, Técnico
+   §11.1): acá separa secciones de un formulario — "Nombre visible",
+   "Cambiar contraseña", "Sesión" en Cuenta—, y tiene que leerse como
+   el título de un bloque, no como la etiqueta del campo de abajo
+   (Gustavo, 2026-10-17: "cambiar contraseña" y "contraseña actual" no
+   se distinguían, estaban pegados). */
+.campo-seccion {
+  margin: 20px 0 12px;
+  font-size: var(--text-row);
+  font-weight: 700;
+  color: var(--color-ink-2);
+}
+
+.campo-seccion:first-child {
+  margin-top: 2px;
+}
+
 /* Cabecera de sección, fuera de un panel. */
 .sec-head {
   display: flex;
@@ -2993,13 +3022,16 @@
    formulario de pantalla completa (login, alta de movimiento) o de
    una hoja modal — ahí el ancho completo es correcto a propósito.
    Hereda color, giro y estados de `.btn`/`.btn--principal`; sólo
-   cambia el tamaño (Gustavo, 2026-10-17: "Guardar nombre",
-   "Cambiar contraseña" y "Cerrar sesión" ocupaban todo el ancho de
-   la pantalla dentro de la tarjeta Cuenta). */
+   cambia el tamaño y lo centra (Gustavo, 2026-10-17: "Guardar
+   nombre", "Cambiar contraseña" y "Cerrar sesión" ocupaban todo el
+   ancho de la pantalla dentro de la tarjeta Cuenta, y después de
+   achicarlos pidió que quedaran centrados, no contra el margen
+   izquierdo). */
 .btn--inline {
   width: auto;
   min-height: 40px;
   padding: 10px 22px;
+  margin-inline: auto;
 }
 
 /* El texto NO se reemplaza por «Ingresando…»: cambiarlo mueve el ancho
