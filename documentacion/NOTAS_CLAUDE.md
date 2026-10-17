@@ -44,13 +44,36 @@ que Gustavo tenga su histórico real cargado primero. Mismo criterio
 que con F08-T11: no es un bloqueante, no preguntar de nuevo por su
 estado, seguir con el código mientras tanto.
 
-**Fase 10 (Inversiones) arrancó la misma sesión: F10-T01 en `[~]`**
-(Cálculo, `services/calc.py`: `valor_de_inversion`,
-`rendimiento_de_inversion`, `rendimiento_porcentual`,
-`total_invertido`) — sin servicio ni endpoint todavía, nada que se
-vea en el celular, 12 tests nuevos en `tests/unit/test_calc.py`.
-Sigue **F10-T04** (tabla `investments`, migración, servicio de
-cartera).
+**Fase 10 (Inversiones) arrancó la misma sesión: F10-T01 aprobada,
+F10-T04 en `[~]`.** F10-T01 (Cálculo, `services/calc.py`):
+`valor_de_inversion`, `rendimiento_de_inversion`,
+`rendimiento_porcentual`, `total_invertido`. F10-T04 (Backend): tabla
+`investments` (migración `6216f0b3e56e`, aplicada y con `downgrade`
+probado) y `services/investments.py` con `comprar_posicion`/
+`vender_posicion`/`indicadores_de_cartera`. Ninguna de las dos tiene
+nada que se vea en el celular todavía (sin endpoint, F10-T06 es quien
+lo trae) — se validan con tests contra la base real
+(`tests/api/test_investments_servicio.py`, llamando al servicio
+directo, sin HTTP).
+
+**Decisión de diseño para F10-T06, para no reabrir esto cuando
+llegue:** el técnico (§7.3) dice "el endpoint es uno solo y hace las
+dos puntas en una transacción" —no "el servicio"—, así que
+`comprar_posicion`/`vender_posicion` (F10-T04) sólo tocan la tabla
+`investments`; crear el movimiento `source='system'` con la categoría
+de transferencia (Regla 7, para que comprar realmente reste del
+ahorro) es trabajo del endpoint en F10-T06. Falta decidir recién ahí
+**cómo se marca una categoría como "de transferencia"** —no hay nada
+ya definido en el esquema de `categories` (sólo `type` en
+`'income'/'expense'`)—: lo más simple es una columna nueva
+(`is_transfer boolean`, otra migración chica) y crear esas dos
+categorías (una de ingreso, una de egreso) a demanda la primera vez
+que se compra o se vende, igual que `asegurar_perfil_y_categorias`
+asegura lo que falte. Repasar también si "Total gastado este mes" va
+a incluir el importe de una compra (el técnico sólo dice que se
+excluye del *desglose* y del *gráfico de gastos*, no del total del
+mes) — conviene decírselo a Gustavo antes de decidirlo solo, es un
+cambio de qué significa esa cifra.
 
 **F08-T11 no es una tarea de código: depende de que Gustavo termine de
 cargar sus datos reales a mano.** Si se retoma esto, lo que corresponde

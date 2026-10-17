@@ -405,10 +405,11 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Aceptación:** · **el rendimiento de una inversión no es un ingreso mensual** · comprar no es un gasto de consumo · vender devuelve el valor a los ahorros · el rendimiento porcentual con total invertido en cero devuelve `null`.
   *`services/calc.py`: `valor_de_inversion` (por precio unitario o manual, Técnico §6.2), `rendimiento_de_inversion`, `rendimiento_porcentual` (`None` con valor inicial en cero, delega en `variacion_porcentual` — el valor inicial de una inversión nunca es negativo) y `total_invertido`. Comprar/vender no cambia el patrimonio neto: mismo invariante que F09-T01, probado de nuevo en términos de esta tarea. Sin servicio ni endpoint todavía —eso es F10-T04/T06—, así que no hay nada que se vea distinto en la aplicación; lo valida `tests/unit/test_calc.py` (12 tests nuevos).*
 
-- [ ] **F10-T04 · Tabla `investments` y servicio de cartera**
+- [~] **F10-T04 · Tabla `investments` y servicio de cartera**
   **Tipo:** Backend · **Ref:** Técnico §6.2, §7.3 · *fusiona F10-T04 y F10-T05*
   **Hacer:** modelo, migración y RLS; servicio con los indicadores de la cartera y las operaciones de compra y venta en una transacción.
   **Aceptación:** · `downgrade` probado · una venta a medias no deja la cartera descuadrada · eliminar una inversión pide confirmación (R10).
+  *Tabla `investments` aplicada contra producción, `downgrade` probado (bajada y vuelta a subir sin error). `services/investments.py`: `comprar_posicion`, `vender_posicion` (borra de verdad, sin bitácora, General §21) e `indicadores_de_cartera`. A propósito, esto NO crea todavía el movimiento `source='system'` que mueve la plata del ahorro (Regla 7, Técnico §7.3: "el endpoint es uno solo y hace las dos puntas") — eso, la categoría de transferencia y "eliminar pide confirmación" (R10, es de la interfaz) quedan para F10-T06, que es quien arma el endpoint. Probado con `tests/api/test_investments_servicio.py` contra la base real, llamando al servicio directo sin pasar por HTTP (el endpoint todavía no existe) — mismo patrón que F04-T05.*
 
 - [ ] **F10-T06 · Endpoints de inversiones**
   **Tipo:** Backend · *fusiona F10-T06 y F10-T07*
