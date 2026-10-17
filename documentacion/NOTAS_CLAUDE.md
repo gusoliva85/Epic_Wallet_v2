@@ -8,11 +8,11 @@ pero sabe que está. Si algo de acá contradice los tres documentos
 oficiales o el roadmap, **ganan ellos**, esto está desactualizado y hay
 que corregirlo o borrarlo.
 
-Última actualización: sesión del 2026-10-17 (ajuste de los gráficos de
-Historial + F09-T01 y F09-T03 cerradas + F09-T05 en `[~]`), rama
-`main`. Si el repo ya avanzó más, esto es historia vieja —leer el
-roadmap primero, y si alcanza con eso, no hace falta leer el resto de
-este archivo.
+Última actualización: sesión del 2026-10-17 (Fase 9 cerrada entera —
+F09-T01, F09-T03, F09-T05— salvo F09-T08 que espera datos reales;
+F10-T01 en `[~]`, arrancó la Fase 10), rama `main`. Si el repo ya
+avanzó más, esto es historia vieja —leer el roadmap primero, y si
+alcanza con eso, no hace falta leer el resto de este archivo.
 
 ## Leer esto primero, en este orden
 
@@ -37,12 +37,20 @@ sola a `[x]`, eso lo dice él cuando termine y el acumulado coincida con
 el Excel.
 
 **Fase 9 (Ahorro acumulado y patrimonio), toda en la misma sesión
-(2026-10-17):** **F09-T01 y F09-T03 aprobadas.** **F09-T05 en `[~]`**,
-esperando que Gustavo la pruebe desde el celular: saldo inicial
-editable (Ajustes → Datos laborales → "Editar"), la vista Patrimonio
-con datos reales, y la aclaración en el dashboard de que "Total de
-ahorros" no es el patrimonio. Queda **F09-T08** (QA, verificar contra
-el Excel) para cerrar la fase.
+(2026-10-17): F09-T01, F09-T03 y F09-T05 aprobadas.** Sólo queda
+**F09-T08** (QA, verificar el patrimonio y el acumulado contra el
+Excel) para cerrar la fase del todo — y, igual que F08-T11, depende de
+que Gustavo tenga su histórico real cargado primero. Mismo criterio
+que con F08-T11: no es un bloqueante, no preguntar de nuevo por su
+estado, seguir con el código mientras tanto.
+
+**Fase 10 (Inversiones) arrancó la misma sesión: F10-T01 en `[~]`**
+(Cálculo, `services/calc.py`: `valor_de_inversion`,
+`rendimiento_de_inversion`, `rendimiento_porcentual`,
+`total_invertido`) — sin servicio ni endpoint todavía, nada que se
+vea en el celular, 12 tests nuevos en `tests/unit/test_calc.py`.
+Sigue **F10-T04** (tabla `investments`, migración, servicio de
+cartera).
 
 **F08-T11 no es una tarea de código: depende de que Gustavo termine de
 cargar sus datos reales a mano.** Si se retoma esto, lo que corresponde

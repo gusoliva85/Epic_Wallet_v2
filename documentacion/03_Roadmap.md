@@ -399,10 +399,11 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 
 **Objetivo:** la cartera, con actualización manual del valor. Las cotizaciones automáticas quedan para después del MVP.
 
-- [ ] **F10-T01 · Lógica de valuación, rendimiento y transferencia patrimonial**
+- [~] **F10-T01 · Lógica de valuación, rendimiento y transferencia patrimonial**
   **Tipo:** Cálculo · **Ref:** General §22, §23, §24, §50 R7, R9 · *fusiona F10-T01, F10-T02 y F10-T03*
   **Hacer:** valor actual, rendimiento absoluto y porcentual, total invertido, resultado de cartera; y la regla de que comprar o vender mueve valor entre ahorros e inversiones sin ser un gasto ni un ingreso.
   **Aceptación:** · **el rendimiento de una inversión no es un ingreso mensual** · comprar no es un gasto de consumo · vender devuelve el valor a los ahorros · el rendimiento porcentual con total invertido en cero devuelve `null`.
+  *`services/calc.py`: `valor_de_inversion` (por precio unitario o manual, Técnico §6.2), `rendimiento_de_inversion`, `rendimiento_porcentual` (`None` con valor inicial en cero, delega en `variacion_porcentual` — el valor inicial de una inversión nunca es negativo) y `total_invertido`. Comprar/vender no cambia el patrimonio neto: mismo invariante que F09-T01, probado de nuevo en términos de esta tarea. Sin servicio ni endpoint todavía —eso es F10-T04/T06—, así que no hay nada que se vea distinto en la aplicación; lo valida `tests/unit/test_calc.py` (12 tests nuevos).*
 
 - [ ] **F10-T04 · Tabla `investments` y servicio de cartera**
   **Tipo:** Backend · **Ref:** Técnico §6.2, §7.3 · *fusiona F10-T04 y F10-T05*

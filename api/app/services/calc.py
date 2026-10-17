@@ -158,10 +158,65 @@ def serie_de_ahorro_acumulado(
 
 
 def total_de_inversiones(valores_actuales: list[decimal.Decimal]) -> decimal.Decimal:
-    """General §52: la suma del valor actual de cada posición. Cómo se
-    valúa una posición individual —precio de mercado o valor manual—
-    es de F10; acá sólo se suma lo que ya le llega valuado."""
+    """General §22: "valor actual de cartera", la suma del valor
+    actual de cada posición (`valor_de_inversion`, más abajo, valúa
+    cada una)."""
     return money(sum(valores_actuales, decimal.Decimal("0")))
+
+
+def total_invertido(valores_iniciales: list[decimal.Decimal]) -> decimal.Decimal:
+    """General §22: la suma del valor inicial de cada posición —lo que
+    se puso, no lo que vale hoy. Es la base del "resultado de
+    cartera" (`rendimiento_de_inversion` con los dos totales) y del
+    rendimiento porcentual de la cartera entera."""
+    return money(sum(valores_iniciales, decimal.Decimal("0")))
+
+
+def valor_de_inversion(
+    modo: str,
+    nominales: decimal.Decimal,
+    precio_unitario: decimal.Decimal | None,
+    valor_manual: decimal.Decimal,
+) -> decimal.Decimal:
+    """General §22: el valor actual de una posición, de dos formas
+    según cómo se valúe (Técnico §6.2, columna `valuation_mode`):
+    - `"unit_price"`: nominales por precio unitario, cuando hay
+      cotización cargada;
+    - `"manual"`, o `"unit_price"` sin `precio_unitario` todavía
+      (recién creada, antes de la primera actualización): el valor
+      que cargó la persona a mano. Nunca se multiplica por `None`."""
+    if modo == "unit_price" and precio_unitario is not None:
+        return money(nominales * precio_unitario)
+    return money(valor_manual)
+
+
+def rendimiento_de_inversion(
+    valor_actual: decimal.Decimal, valor_inicial: decimal.Decimal
+) -> decimal.Decimal:
+    """General §22: cuánto ganó o perdió la posición, en pesos —la
+    misma cuenta sirve para una posición sola o para la cartera entera
+    (valor actual total menos invertido total, "resultado de
+    cartera"). Regla 9: este número no es un ingreso del mes —nadie lo
+    suma a `income_total`—, es un dato de la cartera, aparte del flujo
+    mensual de F04/F05."""
+    return money(valor_actual - valor_inicial)
+
+
+def rendimiento_porcentual(
+    valor_actual: decimal.Decimal, valor_inicial: decimal.Decimal
+) -> decimal.Decimal | None:
+    """General §22: el mismo rendimiento, en porcentaje sobre lo
+    invertido. `None` con el valor inicial en cero —"si el valor
+    inicial es cero, el porcentaje no se calcula", textual del
+    documento general—, nunca una división.
+
+    Es la misma cuenta que `variacion_porcentual`: el valor inicial de
+    una inversión nunca es negativo (`check (initial_value >= 0)` en
+    la base), así que dividir por su `abs()` o por él mismo da
+    exactamente lo mismo acá. Se nombra aparte porque es un concepto
+    distinto —el rendimiento de una posición, no un mes contra el
+    anterior— y así se puede tocar uno sin pensar en el otro."""
+    return variacion_porcentual(valor_actual, valor_inicial)
 
 
 def total_de_pasivos(montos: list[decimal.Decimal]) -> decimal.Decimal:

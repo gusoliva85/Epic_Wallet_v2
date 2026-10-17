@@ -269,6 +269,99 @@ def test_total_de_inversiones_sin_posiciones_da_cero() -> None:
 
 
 # ===================================================================
+#  total_invertido · F10-T01
+# ===================================================================
+
+
+@pytest.mark.unit
+def test_total_invertido_suma_el_valor_inicial_de_cada_posicion() -> None:
+    assert calc.total_invertido([D("1000000.00"), D("500000.00")]) == D("1500000.00")
+
+
+@pytest.mark.unit
+def test_total_invertido_sin_posiciones_da_cero() -> None:
+    assert calc.total_invertido([]) == D("0.00")
+
+
+# ===================================================================
+#  valor_de_inversion · F10-T01
+# ===================================================================
+
+
+@pytest.mark.unit
+def test_valor_de_inversion_por_precio_unitario_multiplica_nominales() -> None:
+    assert calc.valor_de_inversion("unit_price", D("732"), D("1527.53"), D("0.00")) == D("1118151.96")
+
+
+@pytest.mark.unit
+def test_valor_de_inversion_por_precio_unitario_sin_cotizacion_cargada_usa_el_manual() -> None:
+    # Recién creada, antes de la primera actualización de precio:
+    # `current_unit_price` todavía es null en la base (Técnico §6.2).
+    valor = calc.valor_de_inversion("unit_price", D("732"), None, D("1117852.00"))
+    assert valor == D("1117852.00")
+
+
+@pytest.mark.unit
+def test_valor_de_inversion_manual_usa_el_valor_cargado_a_mano() -> None:
+    valor = calc.valor_de_inversion("manual", D("0"), None, D("1117852.00"))
+    assert valor == D("1117852.00")
+
+
+# ===================================================================
+#  rendimiento_de_inversion y rendimiento_porcentual · F10-T01
+# ===================================================================
+
+
+@pytest.mark.unit
+def test_rendimiento_de_inversion_es_actual_menos_inicial() -> None:
+    # Ejemplo del documento general.
+    assert calc.rendimiento_de_inversion(D("1117852.00"), D("1122441.00")) == D("-4589.00")
+
+
+@pytest.mark.unit
+def test_rendimiento_porcentual_sobre_lo_invertido() -> None:
+    assert calc.rendimiento_porcentual(D("1200000.00"), D("1000000.00")) == D("20.00")
+
+
+@pytest.mark.unit
+def test_rendimiento_porcentual_con_valor_inicial_en_cero_da_none() -> None:
+    # Criterio de aceptación de la tarea: "el rendimiento porcentual
+    # con total invertido en cero devuelve null".
+    assert calc.rendimiento_porcentual(D("500000.00"), D("0.00")) is None
+
+
+# ===================================================================
+#  comprar y vender no cambian el patrimonio neto (Reglas 7 y 9) ·
+#  F10-T01 — mismo invariante que F09-T01, en los términos de esta
+#  tarea.
+# ===================================================================
+
+
+@pytest.mark.unit
+def test_comprar_una_inversion_mueve_ahorro_a_cartera_sin_cambiar_el_patrimonio() -> None:
+    antes = calc.patrimonio_neto(D("1000000.00"), D("0.00"))
+    despues = calc.patrimonio_neto(D("500000.00"), D("500000.00"))
+    assert antes == despues == D("1000000.00")
+
+
+@pytest.mark.unit
+def test_vender_una_inversion_devuelve_el_valor_al_ahorro_sin_cambiar_el_patrimonio() -> None:
+    antes = calc.patrimonio_neto(D("0.00"), D("1200000.00"))
+    despues = calc.patrimonio_neto(D("1200000.00"), D("0.00"))
+    assert antes == despues == D("1200000.00")
+
+
+@pytest.mark.unit
+def test_el_rendimiento_de_una_inversion_no_entra_en_el_ahorro_del_mes() -> None:
+    # Regla 9: un rendimiento no es un ingreso mensual. `ahorro_del_mes`
+    # no tiene ni un parámetro de inversiones — ganar o perder en la
+    # cartera no puede colarse ahí por accidente, ni aunque el
+    # rendimiento sea grande.
+    calc.rendimiento_de_inversion(D("9000000.00"), D("1000000.00"))  # un rendimiento enorme
+    assert calc.ahorro_del_mes(D("500000.00"), D("300000.00")) == D("200000.00")
+
+
+# ===================================================================
 #  total_de_pasivos
 # ===================================================================
 
