@@ -399,7 +399,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 
 **Objetivo:** la cartera, con actualización manual del valor. Las cotizaciones automáticas quedan para después del MVP.
 
-- [~] **F10-T01 · Lógica de valuación, rendimiento y transferencia patrimonial**
+- [x] **F10-T01 · Lógica de valuación, rendimiento y transferencia patrimonial**
   **Tipo:** Cálculo · **Ref:** General §22, §23, §24, §50 R7, R9 · *fusiona F10-T01, F10-T02 y F10-T03*
   **Hacer:** valor actual, rendimiento absoluto y porcentual, total invertido, resultado de cartera; y la regla de que comprar o vender mueve valor entre ahorros e inversiones sin ser un gasto ni un ingreso.
   **Aceptación:** · **el rendimiento de una inversión no es un ingreso mensual** · comprar no es un gasto de consumo · vender devuelve el valor a los ahorros · el rendimiento porcentual con total invertido en cero devuelve `null`.
