@@ -2988,6 +2988,20 @@
   filter: saturate(0.6) brightness(0.96);
 }
 
+/* Botón compacto: una acción dentro de una tarjeta de ajustes, entre
+   otras tarjetas, no es lo mismo que la acción principal de un
+   formulario de pantalla completa (login, alta de movimiento) o de
+   una hoja modal — ahí el ancho completo es correcto a propósito.
+   Hereda color, giro y estados de `.btn`/`.btn--principal`; sólo
+   cambia el tamaño (Gustavo, 2026-10-17: "Guardar nombre",
+   "Cambiar contraseña" y "Cerrar sesión" ocupaban todo el ancho de
+   la pantalla dentro de la tarjeta Cuenta). */
+.btn--inline {
+  width: auto;
+  min-height: 40px;
+  padding: 10px 22px;
+}
+
 /* El texto NO se reemplaza por «Ingresando…»: cambiarlo mueve el ancho
    del botón y la pantalla salta justo cuando se está esperando. Se
    atenúa y el girador aparece encima. */

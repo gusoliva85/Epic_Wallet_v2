@@ -624,7 +624,7 @@
                 aria-live="assertive"
                 hidden
               ></p>
-              <button class="btn" id="nombre-guardar" type="submit">
+              <button class="btn btn--principal btn--inline" id="nombre-guardar" type="submit">
                 <span class="btn-texto">Guardar nombre</span>
                 <span class="btn-girador" aria-hidden="true"></span>
               </button>
@@ -710,7 +710,7 @@
                 aria-live="assertive"
                 hidden
               ></p>
-              <button class="btn btn--principal" id="clave-guardar" type="submit">
+              <button class="btn btn--principal btn--inline" id="clave-guardar" type="submit">
                 <span class="btn-texto">Cambiar contraseña</span>
                 <span class="btn-girador" aria-hidden="true"></span>
               </button>
@@ -721,12 +721,40 @@
                  entra de nuevo con el mismo correo y la misma
                  contraseña—, así que un diálogo de por medio sería
                  fricción sin nada que evitar. -->
-            <button class="btn" id="btn-cerrar-sesion" type="button">
+            <button class="btn btn--inline" id="btn-cerrar-sesion" type="button">
               Cerrar sesión
             </button>
           </article>
 
+          <!-- Orden a pedido de Gustavo (2026-10-17): Preferencias y
+               Datos laborales primero, bien arriba — Categorías puede
+               tener 21 filas y, si va primera, empuja todo lo demás
+               fuera de la pantalla en el celular. Categorías entre
+               Datos laborales y Copia de seguridad, no al principio. -->
           <div class="grid-2">
+            <article class="card shell">
+              <div class="card-head">
+                <div>
+                  <h2>Preferencias</h2>
+                  <p>Alertas, cotizaciones y resúmenes.</p>
+                </div>
+              </div>
+              <div class="rows" id="config-preferencias"></div>
+            </article>
+
+            <article class="card shell">
+              <div class="card-head">
+                <div>
+                  <h2>Datos laborales</h2>
+                  <p>Sueldo vigente y punto de partida del sistema.</p>
+                </div>
+                <button class="link-btn" type="button" id="btn-editar-saldo-inicial">
+                  Editar
+                </button>
+              </div>
+              <div class="kv-grid" id="config-laborales"></div>
+            </article>
+
             <article class="card shell">
               <div class="card-head">
                 <div>
@@ -743,43 +771,18 @@
               <div class="rows" id="config-categorias"></div>
             </article>
 
-            <div class="grid-2" style="grid-template-columns: 1fr">
-              <article class="card shell">
-                <div class="card-head">
-                  <div>
-                    <h2>Preferencias</h2>
-                    <p>Alertas, cotizaciones y resúmenes.</p>
-                  </div>
+            <article class="card shell">
+              <div class="card-head">
+                <div>
+                  <h2>Copia de seguridad</h2>
+                  <p>Todo lo cargado, en un archivo.</p>
                 </div>
-                <div class="rows" id="config-preferencias"></div>
-              </article>
-
-              <article class="card shell">
-                <div class="card-head">
-                  <div>
-                    <h2>Datos laborales</h2>
-                    <p>Sueldo vigente y punto de partida del sistema.</p>
-                  </div>
-                  <button class="link-btn" type="button" id="btn-editar-saldo-inicial">
-                    Editar
-                  </button>
-                </div>
-                <div class="kv-grid" id="config-laborales"></div>
-              </article>
-
-              <article class="card shell">
-                <div class="card-head">
-                  <div>
-                    <h2>Copia de seguridad</h2>
-                    <p>Todo lo cargado, en un archivo.</p>
-                  </div>
-                </div>
-                <div class="filtros" style="padding-bottom: 14px">
-                  <button class="chip" type="button">Exportar datos</button>
-                  <button class="chip" type="button">Importar</button>
-                </div>
-              </article>
-            </div>
+              </div>
+              <div class="filtros" style="padding-bottom: 14px">
+                <button class="chip" type="button">Exportar datos</button>
+                <button class="chip" type="button">Importar</button>
+              </div>
+            </article>
           </div>
         </section>
       </main>
