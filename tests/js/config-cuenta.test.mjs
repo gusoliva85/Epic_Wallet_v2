@@ -60,6 +60,19 @@ function htmlDeCuenta() {
   return html.slice(desde, hasta);
 }
 
+/** La tarjeta de Sesión, aparte de Cuenta desde el 2026-10-17
+ * (Gustavo: cerrar sesión no es parte del formulario de nombre y
+ * contraseña). `config-cuenta.js` sigue siendo quien conecta el
+ * botón, esté donde esté en el documento. */
+function htmlDeSesion() {
+  const html = readFileSync(INDEX, "utf8");
+  const ancla = html.indexOf("<h2>Sesión</h2>");
+  assert.notEqual(ancla, -1, "no se encuentra la tarjeta de Sesión en index.html");
+  const desde = html.lastIndexOf('<article class="card shell">', ancla);
+  const hasta = html.indexOf("</article>", ancla) + "</article>".length;
+  return html.slice(desde, hasta);
+}
+
 /**
  * Monta la pantalla y carga `config-cuenta.js` con dobles.
  *
@@ -78,7 +91,7 @@ async function montar({
   apiGet = async () => ({ display_name: "Gustavo" }),
   apiPatch = async () => ({ display_name: "Gustavo" }),
 } = {}) {
-  const dom = new JSDOM(`<!doctype html><html><body>${htmlDeCuenta()}</body></html>`, {
+  const dom = new JSDOM(`<!doctype html><html><body>${htmlDeCuenta()}${htmlDeSesion()}</body></html>`, {
     url: "https://epic-wallet-v2.vercel.app/#/config",
     pretendToBeVisual: true,
   });

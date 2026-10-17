@@ -104,7 +104,7 @@ function tarjetas(d) {
     tarjetaMetrica({
       etiqueta: "Total de ahorros",
       cifra: fmtS(ind.savings_balance),
-      sub: "Sin inversiones — ver Patrimonio",
+      sub: "Total acumulado mensual",
       tarjeta: "pat",
     }),
   ];

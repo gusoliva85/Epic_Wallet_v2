@@ -146,31 +146,11 @@ export const LABORALES = [
   { nombre: "Primer mes registrado", valor: "Mayo 2026" },
 ];
 
-export const ALERTAS = [
-  {
-    severidad: "crit",
-    titulo: "Gastaste más de lo que ingresaste",
-    texto:
-      "En lo que va del mes los egresos superan a los ingresos por $31.400.",
-  },
-  {
-    severidad: "warn",
-    titulo: "Supermercado va camino a duplicarse",
-    texto: "Lleva $193.200 contra $104.900 del mes pasado a esta altura.",
-  },
-  {
-    severidad: "pend",
-    titulo: "Falta cargar el alquiler",
-    texto: "Se carga todos los meses alrededor del día 1 y todavía no está.",
-  },
-  {
-    severidad: "ok",
-    titulo: "Vas mejor que el mes pasado",
-    texto: "La tasa de ahorro subió 8,4 puntos respecto de septiembre.",
-  },
-  {
-    severidad: "info",
-    titulo: "Octubre todavía está abierto",
-    texto: "Los totales van a cambiar hasta que termine el mes.",
-  },
-];
+/* Vacía a propósito (Gustavo, 2026-10-17): las alertas son un tema de
+   "Después del MVP" (roadmap) — no hay ninguna regla real todavía que
+   las genere. Con datos de ejemplo acá, la campanita mostraba "4" sin
+   que hubiera una sola alerta de verdad. `conectarAlertas()` ya
+   esconde el globo solo cuando la lista está vacía (`contador.hidden
+   = D.ALERTAS.length === 0`); no hace falta tocar nada más para que
+   quede sin número hasta que exista la fase de alertas. */
+export const ALERTAS = [];

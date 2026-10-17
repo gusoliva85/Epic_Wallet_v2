@@ -387,7 +387,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Tipo:** Frontend · **Ref:** General §30 · *fusiona F09-T05, F09-T06 y F09-T07*
   **Hacer:** saldo inicial editable en configuración; vista de patrimonio con la composición y el gráfico de la Fase 6 enchufado; y en el dashboard, distinción clara entre ahorros, inversiones y patrimonio, que es donde más se confunde.
   **Aceptación:** · cambiar el saldo inicial recalcula todo el acumulado · el gráfico patrimonial usa el dato real · se entiende sin leer un manual que el patrimonio no es la suma de los otros dos indicadores.
-  *Saldo inicial editable desde Ajustes → Datos laborales ("Editar", hoja de un solo campo). `PATCH /api/me` ahora llama a `recalcular_saldos_acumulados` cuando cambia (antes sólo lo hacían los endpoints de histórico). La vista Patrimonio (ecuación + composición) ya usa `GET /api/patrimony`, sin datos de ejemplo. En el dashboard: la ficha "Total de ahorros" dice "Sin inversiones — ver Patrimonio" y hay un `ghost-note` nuevo explicando las tres cifras.*
+  *Saldo inicial editable desde Ajustes → Datos laborales ("Editar", hoja de un solo campo). `PATCH /api/me` ahora llama a `recalcular_saldos_acumulados` cuando cambia (antes sólo lo hacían los endpoints de histórico). La vista Patrimonio (ecuación + composición) ya usa `GET /api/patrimony`, sin datos de ejemplo. En el dashboard, la ficha "Total de ahorros" dice "Total acumulado mensual" —texto fijo, a pedido de Gustavo tras probarlo (el primer intento, un `ghost-note` explicando las tres cifras, no sumó y se sacó).*
 
 - [ ] **F09-T08 · Verificación contra el Excel**
   **Tipo:** QA

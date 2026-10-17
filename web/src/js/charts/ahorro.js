@@ -3,10 +3,13 @@
 
    Línea con área de relleno del saldo acumulado real, un punto por
    mes — mismo estilo que la línea de ahorro del gráfico diario
-   (F06-T02): degradé bajo la línea, único punto brillante con su
-   etiqueta en el mes más reciente. El saldo puede cruzar a negativo
-   (se gastó más de lo que había acumulado); `ejeConCero` es lo que
-   permite dibujarlo así en vez de clavarlo en cero.
+   (F06-T02): degradé bajo la línea. CADA mes lleva su punto brillante
+   y su valor exacto (pedido de Gustavo, 2026-10-17: "que cada uno de
+   los meses cargados tenga el mismo puntito, y que diga el valor
+   exacto, no que solamente sea una línea") — antes sólo el mes más
+   reciente lo tenía. El saldo puede cruzar a negativo (se gastó más
+   de lo que había acumulado); `ejeConCero` es lo que permite
+   dibujarlo así en vez de clavarlo en cero.
 
    Pura: recibe la serie ya armada por el backend
    (`GET /api/months/savings-evolution`, del mes más viejo al más
@@ -77,13 +80,20 @@ export function dibujar(serie) {
     }
     salida += `<path class="lineseries" d="${trazo}" stroke="var(--color-sav)" stroke-width="2.7"/>`;
 
-    // El punto y la etiqueta quedan en el mes más reciente, igual que
-    // "hoy" en el gráfico diario: es el saldo que importa de un
-    // vistazo, los anteriores ya están en la línea.
-    const ultimo = valores[n - 1];
-    salida +=
-      `<circle class="areafill punto-brillante" cx="${x(n - 1).toFixed(1)}" cy="${y(ultimo).toFixed(1)}" r="4.6" fill="var(--color-sav)" stroke="var(--color-bg-1)" stroke-width="2"/>` +
-      `<text class="axis-v" x="${(x(n - 1) - 7).toFixed(1)}" y="${(y(ultimo) - 13).toFixed(1)}" text-anchor="end" font-weight="700" fill="var(--color-sav)">${fmtK(ultimo)}</text>`;
+    // Un punto y su etiqueta en cada mes. El último ancla el texto a
+    // la izquierda (termina justo en el punto) para no salirse del
+    // borde derecho del gráfico, que es donde siempre cae (alineado a
+    // la derecha, más arriba); los demás quedan centrados arriba de
+    // su propio punto.
+    valores.forEach((v, i) => {
+      const esElUltimo = i === n - 1;
+      const cx = x(i).toFixed(1);
+      const cy = y(v).toFixed(1);
+      const textoX = esElUltimo ? (x(i) - 7).toFixed(1) : cx;
+      salida +=
+        `<circle class="areafill punto-brillante" cx="${cx}" cy="${cy}" r="4.6" fill="var(--color-sav)" stroke="var(--color-bg-1)" stroke-width="2"/>` +
+        `<text class="axis-v" x="${textoX}" y="${(y(v) - 13).toFixed(1)}" text-anchor="${esElUltimo ? "end" : "middle"}" font-weight="700" fill="var(--color-sav)">${fmtK(v)}</text>`;
+    });
   }
 
   salida += ejeDeCategorias(serie.map(etiquetaDeMes), {

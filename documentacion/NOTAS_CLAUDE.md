@@ -215,8 +215,34 @@ por costumbre.
     composición con `GET /api/patrimony`, sin "datos de ejemplo" en
     ningún lado; sin ahorro ni inversiones (cuenta nueva) muestra el
     estado vacío, nunca un porcentaje inventado. En el dashboard, la
-    ficha "Total de ahorros" ahora dice "Sin inversiones — ver
-    Patrimonio" y hay un `ghost-note` nuevo al pie de Inicio.
+    ficha "Total de ahorros" dice "Total acumulado mensual" (texto
+    fijo): el primer intento —"Sin inversiones — ver Patrimonio" más
+    un `ghost-note` al pie de Inicio— no le sirvió a Gustavo ("no
+    suma"), y lo sacó. Dos lecciones de la misma ronda de feedback,
+    las dos ya aplicadas y conviene no repetir el error: (1) un botón
+    `.btn` liso (sin `--principal`) sobre el vidrio translúcido de una
+    tarjeta no se distingue de texto — la solución no es "achicarlo",
+    es `--principal` (fondo sólido) además de compacto; y (2) `.card`
+    no tiene padding propio — `.card-head`/`.kv-grid`/`.rows` traen el
+    suyo (14 px), así que cualquier contenido puesto directo en una
+    tarjeta (un formulario, un botón suelto) necesita su propio
+    envoltorio con ese mismo margen (`.card-body`, agregado para
+    Cuenta) o queda pegado al borde.
+  - **Tres retoques más de la misma ronda de feedback (2026-10-17):**
+    `datos-muestra.js::ALERTAS` quedó vacía a propósito —la campanita
+    mostraba "4" sin que hubiera una sola alerta real; el ícono se
+    esconde solo con la lista en cero (`conectarAlertas` en
+    `views/vistas.js`), no hacía falta tocar nada más—. "Cerrar
+    sesión" se mudó de la tarjeta Cuenta a una tarjeta "Sesión" propia,
+    al final de Ajustes (después de Copia de seguridad); sigue
+    conectado por `config-cuenta.js`, el id no cambió, sólo el lugar
+    en el documento —`tests/js/config-cuenta.test.mjs` ahora arma el
+    DOM con dos recortes de `index.html`, Cuenta y Sesión, por
+    separado—. Y `charts/ahorro.js` (evolución del ahorro) pasó de
+    marcar sólo el mes más reciente a marcar **todos**: un punto y su
+    valor exacto por mes cargado, no sólo una línea — el último sigue
+    con la etiqueta a la izquierda del punto para no salirse del borde
+    derecho, los demás centrados arriba del suyo.
 
 ## Cosas que NO están hechas y conviene no asumir que sí
 

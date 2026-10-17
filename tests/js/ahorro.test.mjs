@@ -5,8 +5,10 @@
    usa el acumulado real" — ya lo prueba el backend
    (`tests/api/test_months_endpoints.py`). Acá lo que puede fallar en
    silencio es la parte de dibujo: un saldo que cruza a negativo tiene
-   que verse cruzando el cero, no clavado ahí, y un solo mes no tiene
-   que romper el gráfico. */
+   que verse cruzando el cero, no clavado ahí; un solo mes no tiene
+   que romper el gráfico; y, desde el pedido de Gustavo (2026-10-17),
+   CADA mes tiene que traer su punto y su valor exacto, no sólo el más
+   reciente. */
 
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
@@ -44,13 +46,19 @@ describe("con varios meses, todos con saldo positivo", () => {
     assert.doesNotMatch(svg, /stroke-dasharray/);
   });
 
-  test("el punto brillante y su etiqueta quedan en el mes más reciente, no en el primero", () => {
-    const serie = [punto({ month: 8, balance: "100000.00" }), punto({ month: 10, balance: "900000.00" })];
+  test("cada mes tiene su propio punto y su propia etiqueta, no sólo el más reciente", () => {
+    // Pedido de Gustavo (2026-10-17): "que cada uno de los meses
+    // cargados tenga el mismo puntito, y que diga el valor exacto".
+    const serie = [
+      punto({ month: 8, balance: "100000.00" }),
+      punto({ month: 9, balance: "450000.00" }),
+      punto({ month: 10, balance: "900000.00" }),
+    ];
     const svg = dibujar(serie);
-    // El valor del último punto ($900.000 → "$900k") tiene que
-    // aparecer como etiqueta; el del primero, no.
+    assert.equal((svg.match(/punto-brillante/g) || []).length, 3);
+    assert.match(svg, />\$100k</);
+    assert.match(svg, />\$450k</);
     assert.match(svg, />\$900k</);
-    assert.doesNotMatch(svg, />\$100k</);
   });
 });
 
@@ -64,11 +72,13 @@ describe("el saldo puede cruzar a negativo", () => {
   test("el punto negativo queda más abajo en pantalla que uno positivo (Y crece hacia abajo)", () => {
     const serie = [punto({ month: 9, balance: "200000.00" }), punto({ month: 10, balance: "-50000.00" })];
     const svg = dibujar(serie);
-    const cys = [...svg.matchAll(/cy="([\d.]+)"/g)].map((m) => Number(m[1]));
-    // El único `cy` dibujado es el del último mes (negativo): tiene
-    // que estar por debajo de donde cae la línea de cero.
+    // Un punto por mes ahora: el primero (positivo) y el segundo
+    // (negativo), en ese orden.
+    const cys = [...svg.matchAll(/punto-brillante[^>]*cy="([\d.]+)"/g)].map((m) => Number(m[1]));
+    assert.equal(cys.length, 2);
     const [yCero] = [...svg.matchAll(/y1="([\d.]+)"[^>]*stroke-dasharray/g)].map((m) => Number(m[1]));
-    assert.ok(cys[0] > yCero, "el punto negativo tiene que quedar debajo de la línea de cero");
+    assert.ok(cys[0] < yCero, "el punto positivo tiene que quedar arriba de la línea de cero");
+    assert.ok(cys[1] > yCero, "el punto negativo tiene que quedar debajo de la línea de cero");
   });
 });
 
@@ -81,7 +91,10 @@ describe("las etiquetas del eje", () => {
 
 describe("alineación a la derecha (pedido de Gustavo, 2026-10-17)", () => {
   function cxDelUltimoPunto(svg) {
-    return Number(svg.match(/punto-brillante[^>]*cx="([\d.]+)"/)[1]);
+    // Un punto por mes ahora (antes sólo el último lo tenía): el
+    // último `punto-brillante` del documento es el mes más reciente.
+    const coincidencias = [...svg.matchAll(/punto-brillante[^>]*cx="([\d.]+)"/g)];
+    return Number(coincidencias.at(-1)[1]);
   }
   function posicionesDeLaLinea(svg) {
     const trazo = svg.match(/class="lineseries" d="([^"]+)"/)[1];
