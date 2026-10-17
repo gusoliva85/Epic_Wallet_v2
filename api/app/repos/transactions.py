@@ -29,6 +29,7 @@ def crear(
     transaction_type: str,
     amount: decimal.Decimal,
     description: str | None = None,
+    source: str = "manual",
 ) -> Transaction:
     movimiento = Transaction(
         user_id=user_id,
@@ -38,6 +39,7 @@ def crear(
         transaction_type=transaction_type,
         amount=amount,
         description=description,
+        source=source,
     )
     sesion.add(movimiento)
     sesion.flush()

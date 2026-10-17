@@ -137,14 +137,18 @@ def cuentas(motor) -> Iterator[tuple[Cuenta, Cuenta]]:
 @pytest.fixture
 def limpiar_meses(motor, cuentas):
     """Antes y después de cada prueba: sin meses (y por cascada, sin
-    movimientos ni totales por categoría) de ninguna de las dos
-    cuentas."""
+    movimientos ni totales por categoría) ni posiciones de cartera de
+    ninguna de las dos cuentas."""
     a, b = cuentas
 
     def _limpiar() -> None:
         with escritura(motor) as con:
             con.execute(
                 text(f'delete from "{ESQUEMA}".months where user_id = any(:ids)'),
+                {"ids": [a.uid, b.uid]},
+            )
+            con.execute(
+                text(f'delete from "{ESQUEMA}".investments where user_id = any(:ids)'),
                 {"ids": [a.uid, b.uid]},
             )
 
@@ -253,6 +257,38 @@ def test_con_movimientos_cargados_los_indicadores_reflejan_la_realidad(
     assert categorias["Alquiler"]["share"] == "88.2"  # 150000 / 170000 * 100
     assert categorias["Alquiler"]["transaction_count"] == 1
     assert categorias["Sueldo"]["total"] == "500000.00"
+
+
+@sin_entorno
+def test_una_posicion_de_cartera_entra_en_el_patrimonio_neto(
+    cliente, motor, cuentas: tuple[Cuenta, Cuenta], limpiar_meses
+) -> None:
+    # F10-T04: `investments_value` ya sale de la cartera real. Sin
+    # endpoint propio todavía, se inserta directo (mismo criterio que
+    # `test_un_mes_historico_no_tiene_diario`, más abajo).
+    a, _ = cuentas
+    sueldo = _categoria_id(cliente, a, "Sueldo", "income")
+    hoy = cliente.get("/api/dashboard", headers=a.cabeceras).json()["month"]
+    _cargar(
+        cliente, a, category_id=sueldo, tipo="income", importe="200000.00",
+        fecha=f"{hoy['year']:04d}-{hoy['month']:02d}-01", desc="Sueldo",
+    )
+
+    with escritura(motor) as con:
+        con.execute(
+            text(
+                f'insert into "{ESQUEMA}".investments '
+                "(user_id, symbol, name, investment_type, nominal_quantity, initial_value, "
+                "current_value, valuation_mode) "
+                "values (:uid, 'CEDEAR-TEST', 'Cedear de prueba', 'cedear', 0, :valor, :valor, 'manual')"
+            ),
+            {"uid": a.uid, "valor": decimal.Decimal("80000.00")},
+        )
+
+    cuerpo = cliente.get("/api/dashboard", headers=a.cabeceras).json()
+    assert cuerpo["indicators"]["savings_balance"] == "200000.00"
+    assert cuerpo["indicators"]["investments_value"] == "80000.00"
+    assert cuerpo["indicators"]["net_worth"] == "280000.00"  # 200000 + 80000
 
 
 @sin_entorno

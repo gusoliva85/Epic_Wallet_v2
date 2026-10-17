@@ -150,6 +150,10 @@ def limpiar(motor, cuentas):
                 text(f'delete from "{ESQUEMA}".liabilities where user_id = any(:ids)'),
                 {"ids": [a.uid, b.uid]},
             )
+            con.execute(
+                text(f'delete from "{ESQUEMA}".investments where user_id = any(:ids)'),
+                {"ids": [a.uid, b.uid]},
+            )
 
     _limpiar()
     yield
@@ -256,6 +260,39 @@ def test_un_pasivo_cargado_se_resta_del_total_pero_no_de_la_composicion(
     # La barra de composición sigue siendo 100% ahorro: el pasivo no es
     # una porción que se dibuje, ya se restó del total (Técnico §14.2).
     assert cuerpo["composition"] == {"savings_share": "100.0", "investments_share": "0.0"}
+
+
+@sin_entorno
+def test_una_posicion_de_cartera_entra_en_inversiones_y_en_la_composicion(
+    cliente, motor, cuentas: tuple[Cuenta, Cuenta], limpiar
+) -> None:
+    # F10-T04: sin endpoint propio todavía, se inserta directo —mismo
+    # criterio que los pasivos, arriba.
+    a, _ = cuentas
+    sueldo = _categoria_id(cliente, a, "Sueldo", "income")
+    hoy = cliente.get("/api/dashboard", headers=a.cabeceras).json()["month"]
+    _cargar(
+        cliente, a, category_id=sueldo, tipo="income", importe="300000.00",
+        fecha=f"{hoy['year']:04d}-{hoy['month']:02d}-01",
+    )
+
+    with escritura(motor) as con:
+        con.execute(
+            text(
+                f'insert into "{ESQUEMA}".investments '
+                "(user_id, symbol, name, investment_type, nominal_quantity, initial_value, "
+                "current_value, valuation_mode) "
+                "values (:uid, 'CEDEAR-TEST', 'Cedear de prueba', 'cedear', 0, :valor, :valor, 'manual')"
+            ),
+            {"uid": a.uid, "valor": decimal.Decimal("100000.00")},
+        )
+
+    cuerpo = cliente.get("/api/patrimony", headers=a.cabeceras).json()
+    assert cuerpo["savings_balance"] == "300000.00"
+    assert cuerpo["investments_value"] == "100000.00"
+    assert cuerpo["net_worth"] == "400000.00"  # 300000 + 100000
+    # 300000/(300000+100000) = 75%, 100000/(300000+100000) = 25%.
+    assert cuerpo["composition"] == {"savings_share": "75.0", "investments_share": "25.0"}
 
 
 @sin_entorno

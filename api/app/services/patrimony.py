@@ -5,10 +5,10 @@ Referencia: 02_Documento_Tecnico.md §9.1, §14.2 · General §5.3
 `GET /api/patrimony` es una foto de ahora, sin navegación de mes —a
 diferencia de `GET /api/dashboard`, que mira el mes que esté en la
 barra—: el ahorro acumulado de TODOS los meses hasta hoy, el valor de
-inversiones (F10, todavía en cero) y los pasivos activos (la tabla de
-F09-T03 existe pero nadie carga nada ahí en el MVP). El patrimonio
-neto es la misma `calc.patrimonio_neto` que ya usa el dashboard, con
-los pasivos reales en vez de un cero fijo.
+inversiones (F10-T04, la cartera real) y los pasivos activos (la
+tabla de F09-T03 existe pero nadie carga nada ahí en el MVP). El
+patrimonio neto es la misma `calc.patrimonio_neto` que ya usa el
+dashboard.
 
 La composición (ahorro líquido vs. inversiones, Técnico §14.2) usa el
 mismo método del mayor resto que el desglose por categoría
@@ -25,6 +25,7 @@ from typing import NamedTuple
 
 from sqlalchemy.orm import Session
 
+from ..repos import investments as repos_inversiones
 from ..repos import liabilities as repos_pasivos
 from ..repos import months as repos_meses
 from ..repos import profiles as repos_perfiles
@@ -53,9 +54,9 @@ def armar(sesion: Session, user_id: str, *, ahora: dt.datetime | None = None) ->
     meses = repos_meses.listar(sesion)
     ahorro = calc.ahorro_acumulado(saldo_inicial, [m.saving_total for m in meses])
 
-    # F10 (inversiones) todavía no existe: en cero hasta esa fase,
-    # mismo criterio que ya usa `services.dashboard.armar`.
-    inversiones = decimal.Decimal("0.00")
+    inversiones = calc.total_de_inversiones(
+        [p.current_value for p in repos_inversiones.listar(sesion)]
+    )
     pasivos = calc.total_de_pasivos([p.amount for p in repos_pasivos.listar_activos(sesion)])
 
     total = calc.patrimonio_neto(ahorro, inversiones, pasivos=pasivos)

@@ -531,8 +531,9 @@ Comprar $500.000:   ahorro líquido −500.000   ·   cartera +500.000   ·   pa
 Vender  $1.200.000: cartera −1.200.000        ·   ahorro +1.200.000  ·   patrimonio igual
 ```
 
-Implementación: la operación genera un movimiento con `source = 'system'` y una categoría de tipo transferencia marcada como **excluida del gasto de consumo**, de modo que no aparezca en el desglose de egresos ni infle el gráfico de gastos. El endpoint es uno solo y hace las dos puntas en una transacción, para que el usuario no tenga que cargar nada dos veces y no se descuente el importe por duplicado (sección 23 del general).
----
+Implementación: la operación genera un movimiento con `source = 'system'` y la categoría **"Inversiones"** (una de tipo `expense` para comprar, una de tipo `income` para vender — mismo patrón que "Otros", que existe en los dos tipos; F10-T06 la crea sola la primera vez que hace falta, no hay que darla de alta a mano). El endpoint es uno solo y hace las dos puntas en una transacción, para que el usuario no tenga que cargar nada dos veces y no se descuente el importe por duplicado (sección 23 del general).
+
+**Decisión de Gustavo (2026-10-17), pisa lo que decía antes este párrafo:** la compra y la venta de una inversión **sí entran** en "Total gastado"/"Total ingresado este mes" y **sí aparecen** en el desglose por categoría y en el gráfico de gastos, bajo el ítem genérico "Inversiones" — "sino no se entiende por qué tenés plata de menos, no queda claro por qué se gastó". El detalle de QUÉ se compró (símbolo, nominales) se ve en la pantalla de Cartera, no en el desglose del dashboard. Esto es independiente del rendimiento de una inversión (Regla 9): la ganancia o pérdida de una posición nunca se informa como ingreso, sólo el movimiento de capital (el importe de compra o de venta) pasa por `transactions`.
 
 ## 8. Cuentas de usuario, autenticación y sesión
 

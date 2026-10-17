@@ -411,10 +411,11 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Aceptación:** · `downgrade` probado · una venta a medias no deja la cartera descuadrada · eliminar una inversión pide confirmación (R10).
   *Tabla `investments` aplicada contra producción, `downgrade` probado (bajada y vuelta a subir sin error). `services/investments.py`: `comprar_posicion`, `vender_posicion` (borra de verdad, sin bitácora, General §21) e `indicadores_de_cartera`. A propósito, esto NO crea todavía el movimiento `source='system'` que mueve la plata del ahorro (Regla 7, Técnico §7.3: "el endpoint es uno solo y hace las dos puntas") — eso, la categoría de transferencia y "eliminar pide confirmación" (R10, es de la interfaz) quedan para F10-T06, que es quien arma el endpoint. Probado con `tests/api/test_investments_servicio.py` contra la base real, llamando al servicio directo sin pasar por HTTP (el endpoint todavía no existe) — mismo patrón que F04-T05.*
 
-- [ ] **F10-T06 · Endpoints de inversiones**
+- [~] **F10-T06 · Endpoints de inversiones**
   **Tipo:** Backend · *fusiona F10-T06 y F10-T07*
-  **Hacer:** alta, listado, detalle, actualización manual de valor, venta y baja; y la categoría de transferencia excluida del gasto del mes.
-  **Aceptación:** · comprar una inversión **no aparece como gasto** en el desglose del mes · actualizar el valor a mano cambia el patrimonio y no el ahorro del mes.
+  **Hacer:** alta, listado, detalle, actualización manual de valor, venta y baja; y la categoría "Inversiones" (`expense` para comprar, `income` para vender), creada sola la primera vez que hace falta.
+  **Aceptación:** · comprar una inversión **sí aparece** como gasto, bajo "Inversiones", en el total del mes y en el desglose por categoría (decisión de Gustavo 2026-10-17, pisa la redacción original de esta tarea y del técnico §7.3: sin esto "no se entiende por qué tenés plata de menos") · vender devuelve el importe como ingreso, misma categoría, tipo `income` · alta y baja de una posición son **opcionales** respecto del ahorro —un flag para cargar una cartera preexistente sin inventar un movimiento que nunca pasó— · actualizar el valor a mano cambia el patrimonio y no el ahorro del mes (eso nunca pasa por `transactions`, es sólo `current_value`).
+  *`GET`/`POST`/`PUT`/`DELETE /api/investments`. Sin endpoint de "detalle" por id aparte: `PUT` ya devuelve la posición completa, no hacía falta otro. `GET /api/dashboard` y `GET /api/patrimony` ya leen la cartera real (antes era un cero fijo). Sin nada que probar en el celular todavía —no hay pantalla (F10-T08)—, validado con `tests/api/test_investments_endpoints.py` (14 casos) contra la base real.*
 
 - [ ] **F10-T08 · Vista de cartera**
   **Tipo:** Frontend · **Ref:** General §20, §21 · *fusiona F10-T08, F10-T09, F10-T10 y F10-T11*

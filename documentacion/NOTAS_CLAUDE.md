@@ -8,11 +8,12 @@ pero sabe que está. Si algo de acá contradice los tres documentos
 oficiales o el roadmap, **ganan ellos**, esto está desactualizado y hay
 que corregirlo o borrarlo.
 
-Última actualización: sesión del 2026-10-17 (Fase 9 cerrada entera —
-F09-T01, F09-T03, F09-T05— salvo F09-T08 que espera datos reales;
-F10-T01 en `[~]`, arrancó la Fase 10), rama `main`. Si el repo ya
-avanzó más, esto es historia vieja —leer el roadmap primero, y si
-alcanza con eso, no hace falta leer el resto de este archivo.
+Última actualización: sesión del 2026-10-17 (Fase 9 cerrada entera
+salvo F09-T08, que espera datos reales; Fase 10: F10-T01 y F10-T04
+aprobadas, F10-T06 en `[~]` —endpoints de inversiones y la
+transferencia con el ahorro—), rama `main`. Si el repo ya avanzó más,
+esto es historia vieja —leer el roadmap primero, y si alcanza con
+eso, no hace falta leer el resto de este archivo.
 
 ## Leer esto primero, en este orden
 
@@ -44,36 +45,56 @@ que Gustavo tenga su histórico real cargado primero. Mismo criterio
 que con F08-T11: no es un bloqueante, no preguntar de nuevo por su
 estado, seguir con el código mientras tanto.
 
-**Fase 10 (Inversiones) arrancó la misma sesión: F10-T01 aprobada,
-F10-T04 en `[~]`.** F10-T01 (Cálculo, `services/calc.py`):
+**Fase 10 (Inversiones), misma sesión: F10-T01 y F10-T04 aprobadas,
+F10-T06 en `[~]`.** F10-T01 (Cálculo, `services/calc.py`):
 `valor_de_inversion`, `rendimiento_de_inversion`,
 `rendimiento_porcentual`, `total_invertido`. F10-T04 (Backend): tabla
-`investments` (migración `6216f0b3e56e`, aplicada y con `downgrade`
+`investments` (migración `6216f0b3e56e`, aplicada, `downgrade`
 probado) y `services/investments.py` con `comprar_posicion`/
-`vender_posicion`/`indicadores_de_cartera`. Ninguna de las dos tiene
-nada que se vea en el celular todavía (sin endpoint, F10-T06 es quien
-lo trae) — se validan con tests contra la base real
-(`tests/api/test_investments_servicio.py`, llamando al servicio
-directo, sin HTTP).
+`vender_posicion`/`indicadores_de_cartera` —a propósito, en esta
+tarea todavía NO tocaban el ahorro, sólo la cartera—.
 
-**Decisión de diseño para F10-T06, para no reabrir esto cuando
-llegue:** el técnico (§7.3) dice "el endpoint es uno solo y hace las
-dos puntas en una transacción" —no "el servicio"—, así que
-`comprar_posicion`/`vender_posicion` (F10-T04) sólo tocan la tabla
-`investments`; crear el movimiento `source='system'` con la categoría
-de transferencia (Regla 7, para que comprar realmente reste del
-ahorro) es trabajo del endpoint en F10-T06. Falta decidir recién ahí
-**cómo se marca una categoría como "de transferencia"** —no hay nada
-ya definido en el esquema de `categories` (sólo `type` en
-`'income'/'expense'`)—: lo más simple es una columna nueva
-(`is_transfer boolean`, otra migración chica) y crear esas dos
-categorías (una de ingreso, una de egreso) a demanda la primera vez
-que se compra o se vende, igual que `asegurar_perfil_y_categorias`
-asegura lo que falte. Repasar también si "Total gastado este mes" va
-a incluir el importe de una compra (el técnico sólo dice que se
-excluye del *desglose* y del *gráfico de gastos*, no del total del
-mes) — conviene decírselo a Gustavo antes de decidirlo solo, es un
-cambio de qué significa esa cifra.
+**F10-T06 (Backend) trae los endpoints y la transferencia con el
+ahorro, y acá hubo una decisión importante de Gustavo que pisa lo que
+decía el técnico §7.3.** Le pregunté con `AskUserQuestion` si comprar
+una inversión tenía que contar en "Total gastado este mes" y en el
+desglose, o quedar afuera (que es lo que decía el técnico original).
+Gustavo: **sí tiene que contar en los dos**, bajo un ítem genérico
+"Inversiones" —"sino no se entiende por qué tenés plata de menos, no
+queda claro por qué se gastó"—. El detalle de QUÉ se compró (símbolo,
+nominales) va a vivir en la pantalla de Cartera (F10-T08), no en el
+desglose del dashboard. Actualicé el técnico §7.3 y la redacción de la
+tarea en el roadmap para que esto no se pierda y alguien no vuelva a
+implementar la versión vieja (excluida del desglose) sin saber que se
+descartó.
+
+Implementación final:
+- `categories.buscar_por_nombre_y_tipo` (nuevo repo) + una categoría
+  **"Inversiones"** por tipo (`expense` para comprar, `income` para
+  vender, mismo patrón que "Otros" en los dos tipos) — se crea sola la
+  primera vez que hace falta, no hay pantalla para darla de alta a
+  mano.
+- `comprar_posicion`/`vender_posicion` ahora además crean un
+  movimiento `source='system'` con esa categoría y llaman a
+  `services.transactions.crear_movimiento` (que aprendió un parámetro
+  `source`, antes sólo `"manual"`) — mismo camino que un movimiento
+  cargado a mano, mismo recálculo del mes.
+- `affect_savings: bool = True` en alta y en baja: en `False` no se
+  genera ningún movimiento — es para cargar una cartera que ya existía
+  antes de usar la aplicación, sin inventar un gasto que nunca pasó.
+  `PUT` (actualización manual de valor) nunca toca el ahorro bajo
+  ningún flag: no pasa por `transactions`, sólo cambia `current_value`.
+- `GET`/`POST`/`PUT`/`DELETE /api/investments` (`routers/investments.py`,
+  `schemas/investments.py`). Sin endpoint de detalle por id aparte:
+  `PUT` ya devuelve la posición completa.
+- `services/dashboard.py` y `services/patrimony.py` ya leen
+  `investments.current_value` real en vez de un cero fijo.
+
+Todo esto sin pantalla propia todavía (F10-T08): se prueba contra la
+base real, `tests/api/test_investments_endpoints.py` (14 casos,
+HTTP) y `tests/api/test_investments_servicio.py` (11 casos, servicio
+directo, los que son anteriores al endpoint). Nada que ver en el
+celular en esta tarea.
 
 **F08-T11 no es una tarea de código: depende de que Gustavo termine de
 cargar sus datos reales a mano.** Si se retoma esto, lo que corresponde

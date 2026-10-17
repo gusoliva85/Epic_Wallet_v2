@@ -157,8 +157,14 @@ def crear_movimiento(
     transaction_type: str,
     amount: decimal.Decimal,
     description: str | None = None,
+    source: str = "manual",
 ) -> Transaction:
-    """Inserta el movimiento y recalcula `mes` en la misma transacción."""
+    """Inserta el movimiento y recalcula `mes` en la misma transacción.
+
+    `source` por defecto es `"manual"` (lo que carga la persona desde
+    el formulario de alta, F04-T09); `"system"` es para un movimiento
+    que genera la propia aplicación —hoy, comprar o vender una
+    inversión (F10-T06)— y no un formulario que alguien llenó."""
     movimiento = repos_movimientos.crear(
         sesion,
         user_id=user_id,
@@ -168,6 +174,7 @@ def crear_movimiento(
         transaction_type=transaction_type,
         amount=amount,
         description=description,
+        source=source,
     )
     recalcular_y_guardar_mes(sesion, mes)
     return movimiento
