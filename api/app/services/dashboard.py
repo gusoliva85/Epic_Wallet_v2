@@ -9,11 +9,12 @@ la tarea). Por eso toda la función pide los meses UNA vez
 (`repos.months.listar`) y resuelve de ahí la navegación, el acumulado
 y los últimos seis, en vez de una consulta por cada pieza.
 
-Lo que todavía no existe en la base —inversiones (F10) y pasivos
-(F09-T03)— entra en cero: el contrato ya tiene el lugar
-(`investments_value`, y `patrimonio_neto` ya acepta pasivos), así que
-cuando esas fases agreguen datos de verdad no hay que tocar esta
-función, sólo dejar de pasarle ceros.
+Lo que todavía no existe en la base —inversiones, F10— entra en cero:
+el contrato ya tiene el lugar (`investments_value`), así que cuando
+esa fase agregue datos de verdad no hay que tocar esta función, sólo
+dejar de pasarle el cero fijo. Los pasivos (F09-T03) ya salen de la
+tabla real —aunque hoy, en la práctica, siempre da cero: nadie carga
+un pasivo desde la interfaz todavía.
 """
 
 from __future__ import annotations
@@ -26,6 +27,7 @@ from sqlalchemy.orm import Session
 
 from ..models import Category, Month, MonthlyCategoryTotal, Transaction
 from ..repos import categories as repos_categorias
+from ..repos import liabilities as repos_pasivos
 from ..repos import monthly_category_totals as repos_totales
 from ..repos import months as repos_meses
 from ..repos import profiles as repos_perfiles
@@ -264,11 +266,12 @@ def armar(
     hasta_aqui = [m for m in meses if (m.year, m.month) <= periodo_pedido]
     acumulado = calc.ahorro_acumulado(saldo_inicial, [m.saving_total for m in hasta_aqui])
 
-    # F10 (inversiones) y F09-T03 (pasivos) todavía no existen: el
-    # patrimonio da exactamente el ahorro acumulado hasta que los
-    # haya, sin que nadie tenga que acordarse de sumarlos a mano.
+    # F10 (inversiones) todavía no existe: en cero hasta esa fase. Los
+    # pasivos (F09-T03) ya son reales —la tabla existe—, aunque en la
+    # práctica da cero porque nadie carga uno desde la interfaz todavía.
     valor_inversiones = decimal.Decimal("0.00")
-    patrimonio = calc.patrimonio_neto(acumulado, valor_inversiones)
+    pasivos = calc.total_de_pasivos([p.amount for p in repos_pasivos.listar_activos(sesion)])
+    patrimonio = calc.patrimonio_neto(acumulado, valor_inversiones, pasivos=pasivos)
 
     variaciones = VariacionesMensuales(
         income=calc.variacion_porcentual(mes.income_total, anterior_mes.income_total)

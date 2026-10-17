@@ -371,15 +371,17 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 
 # FASE 9 — Ahorro acumulado y patrimonio
 
-- [ ] **F09-T01 · Lógica del saldo inicial, el acumulado y el patrimonio neto**
+- [x] **F09-T01 · Lógica del saldo inicial, el acumulado y el patrimonio neto**
   **Tipo:** Cálculo · **Ref:** General §5.2, §5.3, §19, §30 · *fusiona F09-T01 y F09-T02*
   **Hacer:** acumulado desde el saldo inicial y patrimonio neto = ahorros + valor actual de inversiones − pasivos.
   **Aceptación:** · **comprar una inversión no cambia el patrimonio neto**, sólo mueve su composición · sin pasivos el patrimonio es ahorros más inversiones · el saldo inicial se refleja en el primer mes.
+  *Ya estaba hecha: `services/calc.py` (`ahorro_acumulado`, `serie_de_ahorro_acumulado`, `patrimonio_neto`) se construyó junto con el resto de los indicadores en F05-T01, con los tres criterios de esta tarea ya cubiertos por `tests/unit/test_calc.py`. Detectado y cerrado el 2026-10-17 al retomar la Fase 9, sin código nuevo.*
 
-- [ ] **F09-T03 · Tabla `liabilities` y `GET /api/patrimony`**
+- [~] **F09-T03 · Tabla `liabilities` y `GET /api/patrimony`**
   **Tipo:** Backend · *fusiona F09-T03 y F09-T04*
   **Hacer:** modelo, migración y RLS de `liabilities`; endpoint con la composición patrimonial y su evolución.
   **Aceptación:** · `downgrade` probado · el endpoint devuelve la composición y el total · sin pasivos cargados no falla.
+  *"Su evolución" no se construyó como serie histórica: el técnico (§14.2) deja la evolución patrimonial completa para una fase posterior, así que el endpoint devuelve una foto de ahora (ahorro, inversiones, pasivos, total y composición), sin navegación de mes. `services/dashboard.py` también pasó a restar pasivos reales (antes era un cero fijo). Migración aplicada contra producción, downgrade probado (bajada y vuelta a subir sin error) y los 5 tests de `tests/api/test_patrimony_endpoint.py` corren contra la base real.*
 
 - [ ] **F09-T05 · Saldo inicial y vista de patrimonio**
   **Tipo:** Frontend · **Ref:** General §30 · *fusiona F09-T05, F09-T06 y F09-T07*

@@ -164,6 +164,17 @@ def total_de_inversiones(valores_actuales: list[decimal.Decimal]) -> decimal.Dec
     return money(sum(valores_actuales, decimal.Decimal("0")))
 
 
+def total_de_pasivos(montos: list[decimal.Decimal]) -> decimal.Decimal:
+    """General §5.3: la suma de los pasivos activos. La tabla
+    `liabilities` se crea vacía (F09-T03, Técnico §6.2) y no hay
+    pantalla para cargar un pasivo en el MVP, así que en la práctica
+    esta lista siempre llega vacía y el total da cero — pero
+    `patrimonio_neto` ya resta un total de verdad, no un cero fijo,
+    así que el día que exista un alta no hace falta tocar ningún
+    cálculo."""
+    return money(sum(montos, decimal.Decimal("0")))
+
+
 def patrimonio_neto(
     ahorros: decimal.Decimal,
     inversiones: decimal.Decimal,

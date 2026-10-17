@@ -269,6 +269,23 @@ def test_total_de_inversiones_sin_posiciones_da_cero() -> None:
 
 
 # ===================================================================
+#  total_de_pasivos
+# ===================================================================
+
+
+@pytest.mark.unit
+def test_total_de_pasivos_suma_los_montos_activos() -> None:
+    assert calc.total_de_pasivos([D("500000.00"), D("120000.00")]) == D("620000.00")
+
+
+@pytest.mark.unit
+def test_total_de_pasivos_sin_pasivos_da_cero() -> None:
+    # Caso real del MVP: la tabla `liabilities` existe pero no se
+    # carga nada ahí todavía (F09-T03).
+    assert calc.total_de_pasivos([]) == D("0.00")
+
+
+# ===================================================================
 #  patrimonio_neto
 # ===================================================================
 

@@ -8,10 +8,10 @@ pero sabe que está. Si algo de acá contradice los tres documentos
 oficiales o el roadmap, **ganan ellos**, esto está desactualizado y hay
 que corregirlo o borrarlo.
 
-Última actualización: commit `83f3b1f` (cierre de F08-T07, aprobada),
-rama `main`, HEAD de ese momento. Si el repo ya avanzó más, esto es
-historia vieja —leer el roadmap primero, y si alcanza con eso, no hace
-falta leer el resto de este archivo.
+Última actualización: sesión del 2026-10-17 (ajuste de los gráficos de
+Historial + F09-T01 cerrada + F09-T03 en `[~]`), rama `main`. Si el
+repo ya avanzó más, esto es historia vieja —leer el roadmap primero, y
+si alcanza con eso, no hace falta leer el resto de este archivo.
 
 ## Leer esto primero, en este orden
 
@@ -28,13 +28,22 @@ falta leer el resto de este archivo.
 
 **Fases 0 a 7 completas y aprobadas.** Fase 8 (Histórico y carga del
 Excel) tiene **F08-T01, F08-T03, F08-T06 y F08-T07 aprobadas**. Queda
-**F08-T11 · Carga real del histórico del Excel** (QA) — y ahí la
-Fase 8 cierra.
+**F08-T11 · Carga real del histórico del Excel** (QA), pero Gustavo
+dijo explícitamente (2026-10-17) que **no es un bloqueante** y que
+sigamos con lo que viene mientras él la termina a su ritmo. No
+preguntar de nuevo por su estado salvo que él lo traiga; no se adelanta
+sola a `[x]`, eso lo dice él cuando termine y el acumulado coincida con
+el Excel.
+
+**Fase 9 (Ahorro acumulado y patrimonio) arrancó la misma sesión:**
+**F09-T01 aprobada** (ya estaba hecha, ver más abajo) y **F09-T03 en
+`[~]`**, esperando que Gustavo la pruebe. Siguen **F09-T05** (frontend:
+saldo inicial editable + vista de patrimonio real) y **F09-T08** (QA).
 
 **F08-T11 no es una tarea de código: depende de que Gustavo termine de
-cargar sus datos reales a mano.** No hay nada para implementar; si se
-retoma esto, lo que corresponde es preguntar en qué quedó la carga, no
-escribir nada nuevo sin que él lo pida. El contexto completo:
+cargar sus datos reales a mano.** Si se retoma esto, lo que corresponde
+es preguntar en qué quedó la carga, no escribir nada nuevo sin que él
+lo pida. El contexto completo:
 
 - Gustavo tiene su historial real de enero a septiembre 2026 en
   `documentacion/Backup_2026.csv` (nunca se versiona, ver
@@ -155,6 +164,38 @@ por costumbre.
   - La vista Historial completa (F08-T07): tabla real, gráfico de
     evolución del ahorro (ya desde F06-T07) y la hoja de carga
     rediseñada (ver la sección de arriba).
+- **Ahorro acumulado y patrimonio (Fase 9, 2026-10-17):**
+  - **F09-T01 ya estaba hecha.** `services/calc.py` (`ahorro_acumulado`,
+    `serie_de_ahorro_acumulado`, `total_de_inversiones`,
+    `patrimonio_neto`) se construyó de punta a punta en F05-T01, junto
+    con el resto de los indicadores — nadie lo había marcado en el
+    roadmap. `tests/unit/test_calc.py` ya cubría los tres criterios de
+    aceptación. Se detectó al retomar la Fase 9 y se cerró sin escribir
+    código nuevo, sólo agregando `calc.total_de_pasivos` (simétrica a
+    `total_de_inversiones`) para F09-T03.
+  - **`GET /api/patrimony`** (F09-T03): una foto de ahora (sin
+    navegación de mes, a diferencia del dashboard) con
+    `savings_balance`, `investments_value`, `liabilities_total`,
+    `net_worth` y `composition` (`savings_share`/`investments_share`,
+    método del mayor resto, suman 100 — o `null` los dos si no hay nada
+    que repartir). "Su evolución" del enunciado de la tarea **no** se
+    construyó como serie histórica: el técnico (§14.2) deja la
+    evolución patrimonial completa para después del MVP.
+  - **Tabla `liabilities`** (modelo `Liability`, repo
+    `repos/liabilities.py`, migración `52214f48b025`): se crea vacía y
+    con RLS, tal cual pide el técnico §6.2 ("preparado, no se usa en
+    el MVP") — no tiene endpoint propio de alta/baja, y no lo va a
+    tener hasta que haya una pantalla real. `services/dashboard.py`
+    pasó a restar pasivos reales de `patrimonio_neto` (antes era un
+    cero fijo).
+  - El `autogenerate` de esta migración trajo de regalo un montón de
+    "foreign key removida/agregada" en `categories`, `months`,
+    `transactions`, etc. — **falso positivo conocido** de Alembic
+    comparando nombres de esquema calificados contra sin calificar, no
+    un cambio real. Se descartó esa parte a mano antes de aplicar. Si
+    vuelve a aparecer en la próxima migración, es lo mismo: revisar que
+    el `create_table`/`drop_table` de la tabla nueva sea lo único que
+    quede.
 
 ## Cosas que NO están hechas y conviene no asumir que sí
 
@@ -164,7 +205,9 @@ por costumbre.
 - **`profiles.opening_balance` sigue sin un campo en la interfaz**
   (F09-T05). El endpoint ya funciona.
 - **La composición patrimonial** (Patrimonio → Composición) sigue con
-  datos de ejemplo, a propósito, hasta F10.
+  datos de ejemplo, a propósito, hasta **F09-T05** —no F10, esa nota
+  vieja estaba mal—: el backend (`GET /api/patrimony`, F09-T03) ya está
+  listo desde esta sesión, falta sólo enchufar el frontend.
 - **El acumulado del mes en curso puede quedar un paso atrás en
   `GET /api/months`** si se carga un movimiento nuevo sin que se toque
   ningún mes histórico después: `recalcular_saldos_acumulados` sólo
@@ -274,6 +317,17 @@ forzar una herramienta de navegador que no está disponible.
   decidir algo sobre él, va al backend.
 - **Porcentajes que tienen que sumar 100 exacto:** método del mayor
   resto (`calc.porcentajes_de_categorias`), no redondeo independiente.
+- **Un gráfico de barras/puntos por mes con `preserveAspectRatio="none"`
+  nunca reparte `slot = ancho / cantidadDeMeses`.** Con pocos meses
+  cargados eso estira el espacio entre uno y el siguiente en vez de
+  achicarlo —Gustavo lo reportó dos veces en `charts/seis.js` y
+  `charts/ahorro.js` (2026-10-17) antes de que quedara bien—. El
+  arreglo: `slot` fijo en el que tendría un semestre completo (`iw / 6`,
+  nunca más chico) y el grupo alineado a la derecha (`inicioX = PL + iw
+  - slot * n`), así el mes más nuevo no cambia de lugar al cargar uno
+  más viejo y lo que sobra con pocos meses es margen vacío, no
+  distancia. Mismo criterio para cualquier gráfico nuevo con pocos
+  puntos posibles.
 - **Dos hojas no andan bien a la vez.** `components/sheet.js` comparte
   `#fondo-hoja`: cerrar la de arriba le saca el velo a la de abajo
   aunque siga abierta. Patrón para "necesito otra acción sin perder
