@@ -377,7 +377,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Aceptación:** · **comprar una inversión no cambia el patrimonio neto**, sólo mueve su composición · sin pasivos el patrimonio es ahorros más inversiones · el saldo inicial se refleja en el primer mes.
   *Ya estaba hecha: `services/calc.py` (`ahorro_acumulado`, `serie_de_ahorro_acumulado`, `patrimonio_neto`) se construyó junto con el resto de los indicadores en F05-T01, con los tres criterios de esta tarea ya cubiertos por `tests/unit/test_calc.py`. Detectado y cerrado el 2026-10-17 al retomar la Fase 9, sin código nuevo.*
 
-- [~] **F09-T03 · Tabla `liabilities` y `GET /api/patrimony`**
+- [x] **F09-T03 · Tabla `liabilities` y `GET /api/patrimony`**
   **Tipo:** Backend · *fusiona F09-T03 y F09-T04*
   **Hacer:** modelo, migración y RLS de `liabilities`; endpoint con la composición patrimonial y su evolución.
   **Aceptación:** · `downgrade` probado · el endpoint devuelve la composición y el total · sin pasivos cargados no falla.
