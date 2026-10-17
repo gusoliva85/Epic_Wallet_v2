@@ -26,6 +26,7 @@ from ..core.errors import NOT_FOUND, ErrorDeApi
 from ..core.security import Usuario, UsuarioDelToken
 from ..models import Category, Profile
 from ..schemas.me import CambioDePerfil, Perfil, ResultadoDeBootstrap
+from ..services.months import recalcular_saldos_acumulados
 
 # Sin `/api`: lo pone el enrutador privado de `main.py`, que es el que
 # además exige la sesión. Un router que se registre por su cuenta se
@@ -69,6 +70,16 @@ def cambiar_perfil(cambios: CambioDePerfil, sesion: SesionDeUsuario) -> Profile:
         setattr(perfil, campo, valor)
 
     sesion.flush()
+
+    # F09-T05, criterio de aceptación: cambiar el saldo inicial
+    # recalcula TODO el acumulado, no sólo el dato suelto en `profiles`.
+    # `GET /api/dashboard` y `GET /api/patrimony` ya lo calculan al
+    # vuelo y no lo necesitan, pero `GET /api/months` (la tabla de
+    # Historial) guarda `opening_balance`/`closing_balance` por mes, y
+    # sin este recálculo quedarían encadenados desde el saldo viejo.
+    if "opening_balance" in pedidos:
+        recalcular_saldos_acumulados(sesion, perfil.id)
+
     sesion.refresh(perfil)
     return perfil
 

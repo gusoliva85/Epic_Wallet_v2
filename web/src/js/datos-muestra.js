@@ -100,15 +100,6 @@ export const CARTERA = {
   posiciones: "4",
 };
 
-export const PATRIMONIO = {
-  ahorro: "$8.562.500",
-  inversiones: "$6.340.000",
-  pasivos: "$0",
-  total: "$14.902.500",
-  liquido: "57,5%",
-  invertido: "42,5%",
-};
-
 export const SALARIOS = [
   { desde: "Enero 2026", importe: "$1.420.000", variacion: "—" },
   { desde: "Abril 2026", importe: "$1.650.000", variacion: "+16,2%" },

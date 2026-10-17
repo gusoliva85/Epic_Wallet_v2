@@ -307,6 +307,12 @@
               <div class="rows" id="categorias-inicio"></div>
             </article>
           </div>
+
+          <p class="ghost-note">
+            <b>Tres cifras, no una.</b> «Total de ahorros» es sólo el ahorro
+            acumulado. El patrimonio neto —ahorro más inversiones, menos
+            pasivos— se ve completo en Patrimonio.
+          </p>
         </section>
 
         <!-- ----------------------------------------------- MOVIMIENTOS -->
@@ -754,6 +760,9 @@
                     <h2>Datos laborales</h2>
                     <p>Sueldo vigente y punto de partida del sistema.</p>
                   </div>
+                  <button class="link-btn" type="button" id="btn-editar-saldo-inicial">
+                    Editar
+                  </button>
                 </div>
                 <div class="kv-grid" id="config-laborales"></div>
               </article>
@@ -968,6 +977,67 @@
           ></p>
 
           <button class="btn btn--principal" id="categoria-guardar" type="submit">
+            <span class="btn-texto">Guardar</span>
+            <span class="btn-girador" aria-hidden="true"></span>
+          </button>
+        </form>
+      </div>
+    </aside>
+
+    <!-- Saldo inicial · F09-T05. Modal, no cajón: es un formulario de
+         un solo campo, pide atención completa igual que la hoja de
+         categoría. Cambiarlo recalcula el acumulado de todos los
+         meses del lado del servidor (services.months.
+         recalcular_saldos_acumulados); acá sólo se manda el número. -->
+    <aside
+      class="hoja hoja--modal"
+      id="hoja-saldo-inicial"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="hoja-saldo-inicial-titulo"
+      aria-hidden="true"
+      tabindex="-1"
+    >
+      <div class="hoja-asa" aria-hidden="true"></div>
+      <div class="hoja-cabeza">
+        <div>
+          <h2 id="hoja-saldo-inicial-titulo">Saldo inicial</h2>
+          <p>El punto de partida del acumulado, antes del primer mes.</p>
+        </div>
+        <button
+          class="hoja-cerrar"
+          type="button"
+          data-cerrar
+          aria-label="Cerrar"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
+      <div class="hoja-cuerpo">
+        <form id="form-saldo-inicial" novalidate>
+          <div class="campo">
+            <label for="saldo-inicial-importe">Importe</label>
+            <input
+              class="inp num"
+              id="saldo-inicial-importe"
+              type="text"
+              inputmode="numeric"
+              placeholder="0"
+              autocomplete="off"
+            />
+          </div>
+
+          <p
+            class="acceso-error"
+            id="saldo-inicial-error"
+            role="alert"
+            aria-live="assertive"
+            hidden
+          ></p>
+
+          <button class="btn btn--principal" id="saldo-inicial-guardar" type="submit">
             <span class="btn-texto">Guardar</span>
             <span class="btn-girador" aria-hidden="true"></span>
           </button>
@@ -1558,11 +1628,13 @@
     <script type="module" src="/src/js/registro.js"></script>
     <script type="module" src="/src/js/config-cuenta.js"></script>
     <script type="module" src="/src/js/config-categorias.js"></script>
+    <script type="module" src="/src/js/saldo-inicial.js"></script>
     <script type="module" src="/src/js/alta-movimiento.js"></script>
     <script type="module" src="/src/js/movimientos.js"></script>
     <script type="module" src="/src/js/dashboard.js"></script>
     <script type="module" src="/src/js/categoria-detalle.js"></script>
     <script type="module" src="/src/js/historial.js"></script>
+    <script type="module" src="/src/js/patrimonio.js"></script>
     <script type="module" src="/src/js/app.js"></script>
     <script type="module" src="/src/js/registrar-sw.js"></script>
   </body>

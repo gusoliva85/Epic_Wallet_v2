@@ -231,6 +231,32 @@ def test_el_saldo_inicial_se_guarda_y_se_lee(cliente, cuenta: Cuenta) -> None:
 
 
 @sin_entorno
+def test_cambiar_el_saldo_inicial_recalcula_el_acumulado_de_los_meses(
+    cliente, motor, cuenta: Cuenta
+) -> None:
+    """Criterio de aceptación de F09-T05: no alcanza con guardar el
+    número suelto en `profiles`. `months.closing_balance` —lo que
+    muestra la tabla de Historial— tiene que quedar encadenado desde
+    el saldo nuevo, no desde el viejo."""
+    with escritura(motor) as con:
+        con.execute(
+            text(
+                f'insert into "{ESQUEMA}".months '
+                "(user_id, year, month, status, income_total, expense_total, saving_total) "
+                "values (:uid, 2025, 6, 'historical', 300000, 100000, 200000)"
+            ),
+            {"uid": cuenta.uid},
+        )
+
+    r = cliente.patch("/api/me", json={"opening_balance": "1000.00"}, headers=cuenta.cabeceras)
+    assert r.status_code == 200, r.text
+
+    meses = cliente.get("/api/months", headers=cuenta.cabeceras).json()
+    mes = next(m for m in meses if m["year"] == 2025 and m["month"] == 6)
+    assert mes["closing_balance"] == "201000.00"  # 1.000 + 200.000
+
+
+@sin_entorno
 def test_el_nombre_visible_se_cambia(cliente, cuenta: Cuenta) -> None:
     r = cliente.patch("/api/me", json={"display_name": "Gustavo"}, headers=cuenta.cabeceras)
     assert r.status_code == 200

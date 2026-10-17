@@ -11,7 +11,7 @@
    gráfico funcionan todavía. Están maquetados y en su lugar; la lógica
    es de las fases que les corresponden. */
 
-import { esc, toNum } from "../format.js";
+import { esc } from "../format.js";
 import {
   tarjetaHeroe,
   tarjetaMetrica,
@@ -86,53 +86,16 @@ function cartera() {
   );
 }
 
-/* -------------------------------------------------------- patrimonio */
+/* La vista Patrimonio (ecuación, composición y su pie) tiene datos
+   reales desde F09-T05 (`patrimonio.js`, `GET /api/patrimony`). Ya no
+   hay nada de muestra que escribir acá — mismo caso que Inicio,
+   Movimientos e Historial, más arriba. `ficha()` se queda, la sigue
+   usando `analisis()` más abajo. */
 
 function ficha(nombre, valor, total = false) {
   return (
     `<div class="kv cg${total ? " kv--total" : ""}">` +
     `<span>${esc(nombre)}</span><b class="num">${esc(valor)}</b></div>`
-  );
-}
-
-/* La barra de composición (líquido vs. invertido) es un dato de
-   ejemplo a propósito, hasta F10 (General §54, Gráfico 5; roadmap
-   F06-T07): sin inversiones todavía en la base, no hay una segunda
-   parte real que mostrar. El aviso de abajo lo deja explícito en
-   vez de dejar que se confunda con una cifra real. Los porcentajes
-   ya llegan calculados en `D.PATRIMONIO` —acá sólo deciden el ancho
-   de su propio segmento, no se suma ni se divide nada. */
-function barraDeComposicion() {
-  const liquido = toNum(D.PATRIMONIO.liquido);
-  const invertido = toNum(D.PATRIMONIO.invertido);
-  return (
-    '<div class="comp-track">' +
-    `<div style="width: ${liquido}%; background: var(--color-sav)"></div>` +
-    `<div style="width: ${invertido}%; background: var(--color-accent-2)"></div>` +
-    "</div>" +
-    '<div class="legend" style="padding-top: 10px">' +
-    `<span><i class="dot" style="background: var(--color-sav)"></i>Ahorro líquido <b class="num">${esc(D.PATRIMONIO.ahorro)}</b></span>` +
-    `<span><i class="dot" style="background: var(--color-accent-2)"></i>Inversiones <b class="num">${esc(D.PATRIMONIO.inversiones)}</b></span>` +
-    "</div>" +
-    '<p class="comp-aviso">Datos de ejemplo — se conecta con las inversiones reales en la Fase 9.</p>'
-  );
-}
-
-function patrimonio() {
-  escribir(
-    "patrimonio-ecuacion",
-    ficha("Ahorro disponible", D.PATRIMONIO.ahorro) +
-      ficha("Inversiones", D.PATRIMONIO.inversiones) +
-      ficha("Pasivos", D.PATRIMONIO.pasivos) +
-      ficha("Patrimonio neto", D.PATRIMONIO.total, true),
-  );
-
-  escribir("grafico-composicion", barraDeComposicion());
-
-  escribir(
-    "patrimonio-pie",
-    `<div class="mini cg"><span>Líquido</span><b class="num">${esc(D.PATRIMONIO.liquido)}</b></div>` +
-      `<div class="mini cg"><span>Invertido</span><b class="num">${esc(D.PATRIMONIO.invertido)}</b></div>`,
   );
 }
 
@@ -175,17 +138,16 @@ function config() {
     ).join(""),
   );
 
-  escribir(
-    "config-laborales",
-    D.LABORALES.map((l) => ficha(l.nombre, l.valor)).join(""),
-  );
+  // "Datos laborales" (#config-laborales): desde F09-T05 lo pinta
+  // `saldo-inicial.js` — tres fichas siguen siendo de muestra
+  // (historial salarial, después del MVP) y una es real (el saldo
+  // inicial). Ya no hay nada que escribir acá.
 }
 
 /* ------------------------------------------------------------ armado */
 
 export function pintarVistas() {
   cartera();
-  patrimonio();
   analisis();
   config();
 }

@@ -9,9 +9,10 @@ oficiales o el roadmap, **ganan ellos**, esto está desactualizado y hay
 que corregirlo o borrarlo.
 
 Última actualización: sesión del 2026-10-17 (ajuste de los gráficos de
-Historial + F09-T01 cerrada + F09-T03 en `[~]`), rama `main`. Si el
-repo ya avanzó más, esto es historia vieja —leer el roadmap primero, y
-si alcanza con eso, no hace falta leer el resto de este archivo.
+Historial + F09-T01 y F09-T03 cerradas + F09-T05 en `[~]`), rama
+`main`. Si el repo ya avanzó más, esto es historia vieja —leer el
+roadmap primero, y si alcanza con eso, no hace falta leer el resto de
+este archivo.
 
 ## Leer esto primero, en este orden
 
@@ -35,10 +36,13 @@ preguntar de nuevo por su estado salvo que él lo traiga; no se adelanta
 sola a `[x]`, eso lo dice él cuando termine y el acumulado coincida con
 el Excel.
 
-**Fase 9 (Ahorro acumulado y patrimonio) arrancó la misma sesión:**
-**F09-T01 aprobada** (ya estaba hecha, ver más abajo) y **F09-T03 en
-`[~]`**, esperando que Gustavo la pruebe. Siguen **F09-T05** (frontend:
-saldo inicial editable + vista de patrimonio real) y **F09-T08** (QA).
+**Fase 9 (Ahorro acumulado y patrimonio), toda en la misma sesión
+(2026-10-17):** **F09-T01 y F09-T03 aprobadas.** **F09-T05 en `[~]`**,
+esperando que Gustavo la pruebe desde el celular: saldo inicial
+editable (Ajustes → Datos laborales → "Editar"), la vista Patrimonio
+con datos reales, y la aclaración en el dashboard de que "Total de
+ahorros" no es el patrimonio. Queda **F09-T08** (QA, verificar contra
+el Excel) para cerrar la fase.
 
 **F08-T11 no es una tarea de código: depende de que Gustavo termine de
 cargar sus datos reales a mano.** Si se retoma esto, lo que corresponde
@@ -69,10 +73,11 @@ lo pida. El contexto completo:
   "Sube" queda separada de "Subte" (confirmado explícitamente por
   Gustavo, son cosas distintas para él).
 - **`profiles.opening_balance` ($4.140.505) todavía no está puesto.**
-  No hay campo en la interfaz para editarlo (llega con F09-T05); el
-  endpoint `PATCH /api/me` ya lo acepta, así que es técnicamente
-  posible cargarlo ahora mismo si Gustavo lo pide, pero por ahora
-  quedó explícitamente pendiente hasta que exista la pantalla.
+  Ya existe el campo en la interfaz (Ajustes → Datos laborales →
+  "Editar", F09-T05, 2026-10-17) — sigue pendiente sólo porque nadie
+  lo cargó todavía, no porque falte la pantalla. Cuando Gustavo
+  termine de cargar el histórico (F08-T11) es el momento natural de
+  poner este valor también.
 - Gustavo ya cargó **septiembre** (al menos la línea de Sueldo) antes
   de que arreglara el bug del ahorro negativo — revisar que ese mes
   haya quedado completo y no a medias.
@@ -196,29 +201,39 @@ por costumbre.
     vuelve a aparecer en la próxima migración, es lo mismo: revisar que
     el `create_table`/`drop_table` de la tabla nueva sea lo único que
     quede.
+  - **Saldo inicial y vista de Patrimonio real (F09-T05, misma sesión):**
+    `PATCH /api/me` llama a `recalcular_saldos_acumulados` cuando
+    `opening_balance` viene en el pedido (antes sólo lo llamaban los
+    endpoints de histórico) — es el criterio de aceptación "cambiar el
+    saldo inicial recalcula todo el acumulado", probado contra la base
+    real en `tests/api/test_me.py`. La hoja de edición vive en Ajustes
+    → Datos laborales (botón "Editar"), un solo campo —
+    `web/src/js/saldo-inicial.js`—; las otras tres fichas de esa
+    tarjeta (sueldo, vigencia, primer mes) siguen siendo de muestra,
+    es historial salarial y queda después del MVP. La vista Patrimonio
+    (`web/src/js/patrimonio.js`) ya pinta la ecuación y la barra de
+    composición con `GET /api/patrimony`, sin "datos de ejemplo" en
+    ningún lado; sin ahorro ni inversiones (cuenta nueva) muestra el
+    estado vacío, nunca un porcentaje inventado. En el dashboard, la
+    ficha "Total de ahorros" ahora dice "Sin inversiones — ver
+    Patrimonio" y hay un `ghost-note` nuevo al pie de Inicio.
 
 ## Cosas que NO están hechas y conviene no asumir que sí
 
 - **El histórico real de Gustavo (enero–septiembre 2026) está a medio
   cargar.** Ver la sección de arriba, es lo más importante de esta
   nota.
-- **`profiles.opening_balance` sigue sin un campo en la interfaz**
-  (F09-T05). El endpoint ya funciona.
-- **La composición patrimonial** (Patrimonio → Composición) sigue con
-  datos de ejemplo, a propósito, hasta **F09-T05** —no F10, esa nota
-  vieja estaba mal—: el backend (`GET /api/patrimony`, F09-T03) ya está
-  listo desde esta sesión, falta sólo enchufar el frontend.
 - **El acumulado del mes en curso puede quedar un paso atrás en
   `GET /api/months`** si se carga un movimiento nuevo sin que se toque
-  ningún mes histórico después: `recalcular_saldos_acumulados` sólo
-  la llaman los endpoints de histórico, no
+  ningún mes histórico ni el saldo inicial después: `recalcular_saldos_acumulados`
+  la llaman los endpoints de histórico y `PATCH /api/me` (F09-T05), pero no
   `services.transactions.recalcular_y_guardar_mes` (F04-T05, ya
   aprobada, decidí no tocarla para no reabrir una tarea cerrada). El
-  tablero de Inicio y la evolución del ahorro no tienen este problema:
-  calculan el acumulado al vuelo, siempre en vivo. Si esto llega a
-  confundir a Gustavo viendo la tabla de Historial, la solución es
-  agregar la misma llamada al final de `recalcular_y_guardar_mes`, no
-  rediseñar nada.
+  tablero de Inicio, la evolución del ahorro y Patrimonio no tienen
+  este problema: calculan el acumulado al vuelo, siempre en vivo. Si
+  esto llega a confundir a Gustavo viendo la tabla de Historial, la
+  solución es agregar la misma llamada al final de
+  `recalcular_y_guardar_mes`, no rediseñar nada.
 
 ## Regla nueva del proyecto: no se eliminan datos reales sin avisar
 
