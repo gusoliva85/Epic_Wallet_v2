@@ -1,14 +1,19 @@
 /* El tablero de Inicio: indicadores (F05-T07), gráfico diario
-   (F06-T02), últimos seis meses + gastos por categoría (F06-T05) y
-   el orden por variación del desglose (F07-T03)
-   Referencia: 01_Documento_General.md §12.2, §13, §14, §15 ·
-   02_Documento_Tecnico.md §9.2, §12.4-§12.6, §14.1, §14.2
+   (F06-T02), gastos por categoría (F06-T05) y el orden por variación
+   del desglose (F07-T03).
+   Referencia: 01_Documento_General.md §12.2, §13, §15 ·
+   02_Documento_Tecnico.md §9.2, §12.4-§12.6, §14.1
+
+   El gráfico de "últimos seis meses" vivió acá (F06-T05) y se mudó a
+   Historial (2026-10-17, pedido de Gustavo): no tenía que estar en el
+   tablero de Inicio, y de paso se le sacaron los modos "ahorro" y
+   "tasa" — queda siempre en barras. Ver `historial.js`.
 
    Pide `GET /api/dashboard?year&month` del mes que esté mostrando la
    barra de mes — mismo patrón que `movimientos.js` (F04-T12): un solo
    oyente de `barra-mes.EVENTO_CAMBIO` cubre arrancar, moverse de mes,
    y cualquier alta/edición/baja que invalide el caché de meses. Esa
-   ÚNICA llamada alimenta las tarjetas, los dos gráficos y el desglose
+   ÚNICA llamada alimenta las tarjetas, el gráfico diario y el desglose
    por categoría: por eso viven todos en este mismo archivo y
    comparten `cargando`/`fallo`/`dashboard` — una segunda llamada a
    `/api/dashboard` sólo para uno de ellos duplicaría exactamente lo
@@ -28,10 +33,10 @@
 
    El gráfico diario (`daily`) es `null` en un mes histórico (Regla 4):
    ahí se muestra el estado de `consolidado()`, nunca una serie
-   inventada. Los últimos seis meses y las categorías NO tienen ese
-   problema: salen de totales por mes/categoría que existen tanto para
-   un mes abierto como uno histórico, así que se muestran siempre —
-   sólo cambia el texto de cada fila de categoría (F06-T05, más abajo).
+   inventada. Las categorías no tienen ese problema: salen de totales
+   por categoría que existen tanto para un mes abierto como uno
+   histórico, así que se muestran siempre — sólo cambia el texto de
+   cada fila (F06-T05, más abajo).
 
    "Gastos por categoría" filtra a `type === "expense"`: es un
    desglose de GASTO (General §15), no de todos los movimientos. */
@@ -47,7 +52,6 @@ import {
   MODOS as MODOS_DIARIO,
   conectarLectura,
 } from "./charts/diario.js";
-import { dibujar as dibujarGraficoSeis, MODOS as MODOS_SEIS, etiquetaDeMes } from "./charts/seis.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -130,7 +134,6 @@ let cargando = true;
 let fallo = false;
 let ultimoPeriodo = null;
 let modoDiario = "ambos";
-let modoSeis = "barras";
 let ordenCategorias = "mayor";
 
 // ===================================================================
@@ -173,58 +176,6 @@ function conectarModoDiario() {
     if (!MODOS_DIARIO.includes(modo) || modo === modoDiario) return;
     modoDiario = modo;
     pintarGrafico();
-  });
-}
-
-// ===================================================================
-//  Últimos seis meses (F06-T05)
-// ===================================================================
-
-/** Sólo los últimos dos meses — no los seis del gráfico de arriba.
- * Gustavo (F06-T05, corrección): seis tarjetitas repetían en texto lo
- * que las barras ya muestran de un vistazo, y se acumulaba demasiada
- * información para lo que un pie tiene que ser. */
-function pintarPieSeis(contenedor, meses) {
-  contenedor.innerHTML = meses
-    .slice(-2)
-    .map(
-      (m) =>
-        `<div class="mini cg"><span>${esc(etiquetaDeMes(m))}</span>` +
-        `<b class="num">${esc(fmtK(m.saving))}</b>` +
-        `<span style="text-transform: none; letter-spacing: 0">${esc(fmtK(m.income))} / ${esc(fmtK(m.expense))}</span></div>`,
-    )
-    .join("");
-}
-
-function pintarGraficoSeis() {
-  const caja = $("grafico-seis");
-  const pie = $("pie-seis");
-  if (!caja) return;
-
-  if (cargando) {
-    caja.innerHTML = bloqueCargando("grafico", 1);
-    if (pie) pie.innerHTML = "";
-    return;
-  }
-  if (fallo || !dashboard) {
-    caja.innerHTML = estadoError("No se pudo cargar el gráfico de los últimos seis meses.");
-    if (pie) pie.innerHTML = "";
-    return;
-  }
-
-  caja.innerHTML = dibujarGraficoSeis(dashboard.last_six_months, modoSeis);
-  if (pie) pintarPieSeis(pie, dashboard.last_six_months);
-}
-
-function conectarModoSeis() {
-  const grupo = $("seis-modo");
-  grupo?.addEventListener("click", (ev) => {
-    const boton = /** @type {HTMLElement} */ (ev.target).closest("button[data-modo]");
-    if (!boton || !grupo.contains(boton)) return;
-    const modo = boton.dataset.modo;
-    if (!MODOS_SEIS.includes(modo) || modo === modoSeis) return;
-    modoSeis = modo;
-    pintarGraficoSeis();
   });
 }
 
@@ -332,7 +283,6 @@ function pintar() {
   }
 
   pintarGrafico();
-  pintarGraficoSeis();
   pintarCategorias();
 }
 
@@ -359,7 +309,7 @@ async function cargar(periodo) {
   pintar();
 }
 
-/** Un mismo "reintentar" para las tarjetas y los tres paneles: todos
+/** Un mismo "reintentar" para las tarjetas y los dos paneles: todos
  * fallan y se recuperan juntos, porque todos salen de la misma
  * llamada. */
 function conectarReintentar() {
@@ -369,7 +319,6 @@ function conectarReintentar() {
   };
   $("kpis-inicio")?.addEventListener("click", alReintentar);
   $("grafico-diario")?.addEventListener("click", alReintentar);
-  $("grafico-seis")?.addEventListener("click", alReintentar);
   $("categorias-inicio")?.addEventListener("click", alReintentar);
 }
 
@@ -383,7 +332,6 @@ export async function arrancar() {
 
   conectarReintentar();
   conectarModoDiario();
-  conectarModoSeis();
   conectarOrdenCategorias();
 
   document.addEventListener(EVENTO_CAMBIO, (ev) => {

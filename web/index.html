@@ -286,27 +286,6 @@
             <div class="chart-wrap" id="grafico-diario"></div>
           </article>
 
-          <article class="card shell">
-            <div class="card-head">
-              <div>
-                <h2>Últimos seis meses</h2>
-                <p>Ingresos, egresos y ahorro en contexto.</p>
-              </div>
-              <div
-                class="view-switch"
-                role="group"
-                aria-label="Modo del gráfico de seis meses"
-                id="seis-modo"
-              >
-                <button type="button" class="activa" data-modo="barras">Barras</button>
-                <button type="button" data-modo="ahorro">Ahorro</button>
-                <button type="button" data-modo="tasa">Tasa de ahorro</button>
-              </div>
-            </div>
-            <div class="chart-wrap" id="grafico-seis"></div>
-            <div class="chart-foot" id="pie-seis"></div>
-          </article>
-
           <div class="grid-2">
             <article class="card shell" aria-labelledby="t-categorias">
               <div class="card-head">
@@ -407,6 +386,31 @@
                 <tbody id="historial-tabla"></tbody>
               </table>
             </div>
+          </article>
+
+          <article class="card shell">
+            <div class="card-head">
+              <div>
+                <h2>Últimos seis meses</h2>
+                <p>Ingresos, egresos y ahorro en contexto.</p>
+              </div>
+            </div>
+            <div class="legend">
+              <span
+                ><i class="dot" style="background: var(--color-inc)"></i
+                >Ingresos</span
+              >
+              <span
+                ><i class="dot" style="background: var(--color-egr)"></i
+                >Egresos</span
+              >
+              <span
+                ><i class="dot" style="background: var(--color-sav)"></i
+                >Ahorro</span
+              >
+            </div>
+            <div class="chart-wrap" id="grafico-seis"></div>
+            <div class="chart-foot" id="pie-seis"></div>
           </article>
 
           <article class="card shell">

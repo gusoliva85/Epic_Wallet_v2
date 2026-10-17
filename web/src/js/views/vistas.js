@@ -28,20 +28,20 @@ function escribir(id, html) {
   if (caja) caja.innerHTML = html;
 }
 
-// La vista Inicio (#kpis-inicio/#grafico-diario/#grafico-seis/
-// #categorias-inicio) y la lista de `#movimientos-lista` con su
-// filtro `#mov-categoria`: todo eso son datos reales desde F05-T07,
-// F06-T02/F06-T05 (dashboard.js) y F04-T12 (movimientos.js). Ya no
-// hay nada de muestra que escribir para ninguno de los dos — mismo
-// caso que las categorías de `config()`, más abajo. "Últimos
-// movimientos" (la sección que faltaba acá) se sacó del dashboard
-// después de F06-T07: duplicaba esta misma lista sin aportar nada
-// (General §55).
+// La vista Inicio (#kpis-inicio/#grafico-diario/#categorias-inicio) y
+// la lista de `#movimientos-lista` con su filtro `#mov-categoria`:
+// todo eso son datos reales desde F05-T07, F06-T02 (dashboard.js) y
+// F04-T12 (movimientos.js). Ya no hay nada de muestra que escribir
+// para ninguno de los dos — mismo caso que las categorías de
+// `config()`, más abajo. "Últimos movimientos" (la sección que
+// faltaba acá) se sacó del dashboard después de F06-T07: duplicaba
+// esta misma lista sin aportar nada (General §55).
 
-/* La vista Historial (tabla #historial-tabla y la carga de un mes
-   histórico) tiene datos reales desde F08-T07 (historial.js). Ya no
-   hay nada de muestra que escribir acá — mismo caso que Inicio y
-   Movimientos, más arriba. */
+/* La vista Historial (tabla #historial-tabla, #grafico-seis y la
+   carga de un mes histórico) tiene datos reales desde F08-T07
+   (historial.js); el gráfico de últimos seis meses se mudó acá desde
+   Inicio el 2026-10-17. Ya no hay nada de muestra que escribir acá —
+   mismo caso que Inicio y Movimientos, más arriba. */
 
 /* ----------------------------------------------------------- cartera */
 

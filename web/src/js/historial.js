@@ -1,14 +1,16 @@
-/* Vista Historial: evolución del ahorro (F06-T07), lista de meses y
-   carga de mes histórico (F08-T07).
+/* Vista Historial: evolución del ahorro (F06-T07), últimos seis meses
+   (F06-T05, mudado acá el 2026-10-17 a pedido de Gustavo), lista de
+   meses y carga de mes histórico (F08-T07).
    Referencia: 01_Documento_General.md §17, §18, §6.3 ·
    02_Documento_Tecnico.md §9.1, §9.4 · skill §8 (hoja), §11.1 (tabla)
 
-   El gráfico pide `GET /api/months/savings-evolution` cada vez que se
-   entra a la vista (evento `epic:ruta` de `router.js`), sin cachear:
-   a diferencia del tablero de Inicio, esta serie no depende del mes
-   que esté mostrando la barra de mes, así que un movimiento cargado
-   en otra vista durante la misma sesión se refleja sin recargar la
-   página, al costo de un pedido liviano por visita.
+   El gráfico de evolución pide `GET /api/months/savings-evolution`
+   cada vez que se entra a la vista (evento `epic:ruta` de
+   `router.js`), sin cachear: a diferencia del tablero de Inicio, esta
+   serie no depende del mes que esté mostrando la barra de mes, así
+   que un movimiento cargado en otra vista durante la misma sesión se
+   refleja sin recargar la página, al costo de un pedido liviano por
+   visita.
 
    La tabla (`#historial-tabla`) usa la misma caché que la barra de
    mes (`cache-meses.js`, F03-T10): `GET /api/months` ya trae todos
@@ -16,6 +18,17 @@
    propio, y cargar un mes histórico invalida esa caché exactamente
    como ya hace un alta de movimiento — las dos pantallas quedan al
    día solas.
+
+   El gráfico de "últimos seis meses" reusa esa misma lista (sin
+   pedido propio): toma los seis primeros —`GET /api/months` ya viene
+   del más nuevo al más viejo— y los da vuelta para que el gráfico los
+   lea en el tiempo. Es el mismo criterio que usaba el tablero de
+   Inicio (`services/dashboard.py::_ultimos_seis`) pero anclado a
+   "ahora" en vez de al mes que esté mirando la barra de mes: Historial
+   no tiene esa barra, así que "los últimos seis" son, sin ambigüedad,
+   los seis más recientes de la cuenta. Siempre en barras —los modos
+   "ahorro" y "tasa" que tenía en el tablero se sacaron, no se
+   ocultaron (pedido de Gustavo).
 
    La carga de un mes histórico (F08-T07) ofrece todas las categorías
    de egreso activas, con un importe opcional cada una (General §18).
@@ -33,6 +46,7 @@ import { crearHoja } from "./components/sheet.js";
 import { toast } from "./components/toast.js";
 import { EVENTO as EVENTO_RUTA } from "./router.js";
 import { dibujar as dibujarGraficoAhorro } from "./charts/ahorro.js";
+import { dibujar as dibujarGraficoSeis, etiquetaDeMes } from "./charts/seis.js";
 import { meses as mesesCacheados, invalidarMeses } from "./cache-meses.js";
 import { activas as categoriasActivas, invalidarCategorias } from "./cache-categorias.js";
 
@@ -94,6 +108,92 @@ function conectarReintentarGrafico() {
   $("grafico-ahorro")?.addEventListener("click", (ev) => {
     if (!/** @type {HTMLElement} */ (ev.target).closest("[data-reintentar]")) return;
     cargar();
+  });
+}
+
+/* ===================================================================
+   Últimos seis meses · F06-T05, mudado acá el 2026-10-17
+   =================================================================== */
+
+let seisMeses = [];
+let cargandoSeis = true;
+let fallaSeis = false;
+
+/** `GET /api/months` viene del más nuevo al más viejo (mismo orden
+ * que la tabla); el gráfico necesita lo opuesto, de más viejo a más
+ * nuevo, y sólo los seis más recientes. */
+function ultimosSeisDesdeLista(lista) {
+  // `.slice(0, 6).reverse()` y no `.toReversed()`: ES2022 (CLAUDE.md),
+  // `toReversed` es ES2023.
+  return lista
+    .slice(0, 6)
+    .reverse()
+    .map((m) => ({
+      year: m.year,
+      month: m.month,
+      income: m.income_total,
+      expense: m.expense_total,
+      saving: m.saving_total,
+      saving_rate: m.saving_rate,
+    }));
+}
+
+/** Sólo los últimos dos meses — no los seis del gráfico. Gustavo
+ * (F06-T05, corrección, se mantiene en la mudanza): seis tarjetitas
+ * repetían en texto lo que las barras ya muestran de un vistazo. */
+function pintarPieSeis(contenedor, meses) {
+  contenedor.innerHTML = meses
+    .slice(-2)
+    .map(
+      (m) =>
+        `<div class="mini cg"><span>${esc(etiquetaDeMes(m))}</span>` +
+        `<b class="num">${esc(fmtK(m.saving))}</b>` +
+        `<span style="text-transform: none; letter-spacing: 0">${esc(fmtK(m.income))} / ${esc(fmtK(m.expense))}</span></div>`,
+    )
+    .join("");
+}
+
+function pintarGraficoSeis() {
+  const caja = $("grafico-seis");
+  const pie = $("pie-seis");
+  if (!caja) return;
+
+  if (cargandoSeis) {
+    caja.innerHTML = bloqueCargando("grafico", 1);
+    if (pie) pie.innerHTML = "";
+    return;
+  }
+  if (fallaSeis) {
+    caja.innerHTML = estadoError("No se pudo cargar el gráfico de los últimos seis meses.");
+    if (pie) pie.innerHTML = "";
+    return;
+  }
+
+  caja.innerHTML = dibujarGraficoSeis(seisMeses);
+  if (pie) pintarPieSeis(pie, seisMeses);
+}
+
+async function cargarGraficoSeis() {
+  cargandoSeis = true;
+  fallaSeis = false;
+  pintarGraficoSeis();
+
+  try {
+    seisMeses = ultimosSeisDesdeLista(await mesesCacheados());
+    cargandoSeis = false;
+  } catch (e) {
+    seisMeses = [];
+    cargandoSeis = false;
+    fallaSeis = true;
+    console.error("historial: no se pudieron pedir los últimos seis meses", e);
+  }
+  pintarGraficoSeis();
+}
+
+function conectarReintentarGraficoSeis() {
+  $("grafico-seis")?.addEventListener("click", (ev) => {
+    if (!/** @type {HTMLElement} */ (ev.target).closest("[data-reintentar]")) return;
+    cargarGraficoSeis();
   });
 }
 
@@ -632,12 +732,14 @@ export function arrancar() {
   caja.dataset.conectado = "si";
 
   conectarReintentarGrafico();
+  conectarReintentarGraficoSeis();
   conectarReintentarTabla();
   conectarFormulario();
 
   document.addEventListener(EVENTO_RUTA, (ev) => {
     if (/** @type {CustomEvent} */ (ev).detail.id === "historial") {
       cargar();
+      cargarGraficoSeis();
       cargarTabla();
     }
   });

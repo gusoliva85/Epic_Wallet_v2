@@ -114,6 +114,10 @@ async function cargarConDobles() {
       `import { dibujar as dibujarGraficoAhorro } from "${rutaAbsoluta("charts", "ahorro.js")}";`,
     )
     .replace(
+      'import { dibujar as dibujarGraficoSeis, etiquetaDeMes } from "./charts/seis.js";',
+      `import { dibujar as dibujarGraficoSeis, etiquetaDeMes } from "${rutaAbsoluta("charts", "seis.js")}";`,
+    )
+    .replace(
       'import { meses as mesesCacheados, invalidarMeses } from "./cache-meses.js";',
       'const mesesCacheados = () => globalThis.__espia.apiGet("/months");\n' +
         "const invalidarMeses = () => globalThis.__espia.invalidarMeses();",
@@ -350,6 +354,59 @@ describe("al entrar a Historial, el gráfico", () => {
     await esperar();
 
     const grafico = $(dom, "grafico-ahorro");
+    assert.match(grafico.innerHTML, /No se pudo cargar/);
+    assert.ok(grafico.querySelector("[data-reintentar]"));
+  });
+});
+
+// ===================================================================
+//  Últimos seis meses · F06-T05, mudado acá el 2026-10-17
+// ===================================================================
+
+describe("al entrar a Historial, los últimos seis meses", () => {
+  test("se dibujan a partir de la misma lista de /months, sin un endpoint propio", async () => {
+    const { dom, llamadas } = await montar();
+    entrarA(dom, "historial");
+    await esperar();
+
+    const grafico = $(dom, "grafico-seis");
+    assert.match(grafico.innerHTML, /<svg/);
+    // Los dos meses de prueba, tres barras cada uno.
+    assert.equal(grafico.querySelectorAll(".bar").length, 6);
+    assert.ok(llamadas.apiGet.some((a) => a[0] === "/months"));
+    assert.ok(!llamadas.apiGet.some((a) => a[0].startsWith("/dashboard")), "no depende de /api/dashboard");
+  });
+
+  test("ya no existe el conmutador de modos: siempre son barras", async () => {
+    const { dom } = await montar();
+    entrarA(dom, "historial");
+    await esperar();
+
+    assert.equal($(dom, "seis-modo"), null);
+  });
+
+  test("el pie muestra los meses que hay (acá, los dos de prueba)", async () => {
+    const { dom } = await montar();
+    entrarA(dom, "historial");
+    await esperar();
+
+    const pie = $(dom, "pie-seis");
+    assert.equal(pie.querySelectorAll(".mini").length, 2);
+    assert.match(pie.textContent, /Septiembre 26/);
+    assert.match(pie.textContent, /Octubre 26/);
+  });
+
+  test("si falla el pedido, muestra el estado de error con botón para reintentar", async () => {
+    const { dom } = await montar({
+      apiGet: async (path) => {
+        if (path === "/months") throw new Error("red caída");
+        return path.startsWith("/months/savings-evolution") ? serieBase() : [];
+      },
+    });
+    entrarA(dom, "historial");
+    await esperar();
+
+    const grafico = $(dom, "grafico-seis");
     assert.match(grafico.innerHTML, /No se pudo cargar/);
     assert.ok(grafico.querySelector("[data-reintentar]"));
   });
