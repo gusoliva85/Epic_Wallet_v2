@@ -7,13 +7,10 @@ Referencia: 02_Documento_Tecnico.md §9.1, §7.3 · General §20, §21, §22, §
     PUT    /api/investments/{id}  nombre y actualización manual de valor
     DELETE /api/investments/{id}  vender (baja, sin bitácora — General §21)
 
-`POST` y `DELETE` mueven plata entre el ahorro y la cartera por
-defecto (Regla 7, `affect_savings=True`): comprar resta del ahorro del
-mes actual, vender lo acredita, bajo la categoría "Inversiones" —que
-se crea sola la primera vez que hace falta—. `PUT` nunca toca el
-ahorro: sólo cambia `current_value`/`current_unit_price`, así que
-cambia el patrimonio y no el ahorro del mes (criterio de aceptación de
-la tarea).
+Ninguno de los cuatro toca el ahorro del mes (revisado 2026-10-17): la
+cartera es información, no bitácora de gastos, y lo que se deposita en
+la cuenta de inversión se carga aparte, a mano, en Movimientos — ver
+`services/investments.py`.
 """
 
 from __future__ import annotations
@@ -29,7 +26,6 @@ from ..schemas.investments import (
     EdicionDeInversion,
     RespuestaCartera,
     RespuestaInversion,
-    RespuestaVenta,
     respuesta_cartera_desde,
     respuesta_desde_posicion,
 )
@@ -61,10 +57,9 @@ def listar_cartera(sesion: SesionDeUsuario, usuario: UsuarioDelToken) -> Respues
 def comprar_inversion(
     datos: AltaDeInversion, sesion: SesionDeUsuario, usuario: UsuarioDelToken
 ) -> RespuestaInversion:
-    # La categoría "Inversiones" se crea sola la primera vez (Técnico
-    # §7.3): sin perfil, esa alta fallaría con una violación de clave
-    # foránea en vez de resolverse sola, mismo motivo que en
-    # routers/categories.py y routers/dashboard.py.
+    # `investments.user_id` referencia `profiles.id` (FK directa): sin
+    # perfil, esta alta fallaría con una violación de clave foránea,
+    # mismo motivo que en routers/categories.py y routers/dashboard.py.
     asegurar_perfil_y_categorias(sesion, usuario)
     posicion = servicio.comprar_posicion(
         sesion,
@@ -76,7 +71,6 @@ def comprar_inversion(
         nominal_quantity=datos.nominal_quantity,
         current_unit_price=datos.current_unit_price,
         valor_manual=datos.manual_value,
-        affect_savings=datos.affect_savings,
     )
     return respuesta_desde_posicion(posicion)
 
@@ -111,13 +105,12 @@ def editar_inversion(
     return respuesta_desde_posicion(posicion)
 
 
-@router.delete("/{investment_id}", response_model=RespuestaVenta, summary="Vender (baja de una posición)")
-def vender_inversion(
-    investment_id: int, sesion: SesionDeUsuario, affect_savings: bool = True
-) -> RespuestaVenta:
+@router.delete(
+    "/{investment_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Vender (baja de una posición)"
+)
+def vender_inversion(investment_id: int, sesion: SesionDeUsuario) -> None:
     posicion = repos.buscar_por_id(sesion, investment_id)
     if posicion is None:
         raise _sin_posicion()
 
-    valor = servicio.vender_posicion(sesion, posicion, affect_savings=affect_savings)
-    return RespuestaVenta(amount=f"{valor:.2f}", affected_savings=affect_savings and valor > 0)
+    servicio.vender_posicion(sesion, posicion)

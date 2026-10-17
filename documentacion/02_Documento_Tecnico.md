@@ -531,9 +531,16 @@ Comprar $500.000:   ahorro líquido −500.000   ·   cartera +500.000   ·   pa
 Vender  $1.200.000: cartera −1.200.000        ·   ahorro +1.200.000  ·   patrimonio igual
 ```
 
-Implementación: la operación genera un movimiento con `source = 'system'` y la categoría **"Inversiones"** (una de tipo `expense` para comprar, una de tipo `income` para vender — mismo patrón que "Otros", que existe en los dos tipos; F10-T06 la crea sola la primera vez que hace falta, no hay que darla de alta a mano). El endpoint es uno solo y hace las dos puntas en una transacción, para que el usuario no tenga que cargar nada dos veces y no se descuente el importe por duplicado (sección 23 del general).
+**Decisión final de Gustavo (2026-10-17, segunda revisión del día — pisa las dos versiones anteriores de este párrafo).** La cartera es información, no bitácora de gastos: **comprar y vender en la pantalla de Cartera no generan ningún movimiento** en `transactions`, bajo ningún caso. `POST`, `PUT` y `DELETE /api/investments` nunca escriben en `transactions` ni abren un mes.
 
-**Decisión de Gustavo (2026-10-17), pisa lo que decía antes este párrafo:** la compra y la venta de una inversión **sí entran** en "Total gastado"/"Total ingresado este mes" y **sí aparecen** en el desglose por categoría y en el gráfico de gastos, bajo el ítem genérico "Inversiones" — "sino no se entiende por qué tenés plata de menos, no queda claro por qué se gastó". El detalle de QUÉ se compró (símbolo, nominales) se ve en la pantalla de Cartera, no en el desglose del dashboard. Esto es independiente del rendimiento de una inversión (Regla 9): la ganancia o pérdida de una posición nunca se informa como ingreso, sólo el movimiento de capital (el importe de compra o de venta) pasa por `transactions`.
+Motivo: lo que Gustavo deposita en su cuenta de inversión (por ejemplo, $1.000.000 este mes) **no coincide** con lo que termina comprando — queda plata sin invertir, por cobrar, pendiente de liquidar. Una versión anterior de esta tarea (F10-T06) generaba un movimiento automático por el importe exacto de cada compra bajo una categoría "Inversiones"; esa versión asumía que el importe de la cartera y el importe que sale del bolsillo son el mismo número, y en la práctica no lo son.
+
+Diseño final, en dos partes independientes:
+
+1. **El depósito a la cuenta de inversión se carga a mano, como cualquier otro movimiento**, en `POST /api/transactions`, bajo la categoría "Inversiones" (una categoría normal, visible y elegible como cualquier otra — no hace falta que el backend la cree ni la mueva sola). El importe lo decide la persona; no tiene que coincidir con ninguna posición de la cartera.
+2. **La cartera (`investments`) es una tabla aparte, sin relación con `transactions`.** `GET/POST/PUT/DELETE /api/investments` sólo leen y escriben posiciones — nominales, valor inicial, valor actual. `investments.current_value` sigue sumando al patrimonio neto (§6.2, `services/patrimony.py`), que es lo que la hace útil más allá de ser una lista: la foto de cuánto hay invertido hoy, aparte de cuánto se depositó en total.
+
+Esto es independiente del rendimiento de una inversión (Regla 9): la ganancia o pérdida de una posición nunca se informó como ingreso ni en la versión anterior ni en ésta.
 
 ## 8. Cuentas de usuario, autenticación y sesión
 
@@ -791,9 +798,9 @@ Base: `/api`. JSON en todo. Fechas en ISO 8601 (`2026-10-03`). Importes como **s
 | `PATCH` | `/api/categories/reorder` | Reordenamiento por lote. |
 | `GET` | `/api/categories/{id}/detail?year&month` | Total del mes, última carga y movimientos de esa categoría (General §16, F07-T01). `transactions: null` si el mes es histórico. |
 | `GET` | `/api/investments` | Cartera con totales y rendimientos. |
-| `POST` | `/api/investments` | Alta de posición. Opcional: descuenta del ahorro. |
+| `POST` | `/api/investments` | Alta de posición. No toca el ahorro (§7.3). |
 | `PUT` | `/api/investments/{id}` | Edición y actualización manual de valor. |
-| `DELETE` | `/api/investments/{id}` | Venta. Opcional: devuelve el importe al ahorro. |
+| `DELETE` | `/api/investments/{id}` | Venta. No toca el ahorro (§7.3). |
 | `POST` | `/api/investments/refresh-prices` | Actualiza cotizaciones. Devuelve qué se actualizó y qué falló. |
 | `GET` | `/api/employment` | Historial salarial con variaciones calculadas. |
 | `POST` | `/api/employment` | Alta de registro laboral. |

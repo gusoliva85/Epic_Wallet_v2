@@ -957,6 +957,19 @@ Si el flujo inicial del usuario sigue utilizando una categoría
 "Inversiones", la implementación debe evitar que se descuente dos veces
 el mismo importe.
 
+> **Revisado 2026-10-17, pisa lo de arriba.** Cargar una posición en
+> Cartera **no genera ningún movimiento automático**. La cartera es
+> información —qué tenés, cuánto pagaste, cuánto vale hoy—, no
+> bitácora de gastos. Motivo: lo que se deposita en la cuenta de
+> inversión no coincide con lo que se termina comprando (queda plata
+> sin invertir, por cobrar, pendiente de liquidar), así que no hay un
+> importe de cartera del que derivar un movimiento sin inventar un
+> número. El depósito a la cuenta de inversión se carga aparte, a
+> mano, como cualquier otro movimiento, bajo la categoría "Inversiones"
+> (una más, visible en Movimientos). Lo único que sigue valiendo de
+> este párrafo es la Regla 7: comprar no cambia el patrimonio neto,
+> mueve su composición.
+
 ------------------------------------------------------------------------
 
 # 24. Venta de inversión
@@ -978,6 +991,11 @@ Ahorro
 ```
 
 La eliminación debe requerir confirmación.
+
+> **Revisado 2026-10-17, pisa lo de arriba.** Vender tampoco acredita
+> nada automáticamente al ahorro, mismo motivo que la sección 23. Si
+> entra plata de la venta a la cuenta, se carga aparte, a mano. La
+> eliminación sigue pidiendo confirmación (Regla 10).
 
 ------------------------------------------------------------------------
 

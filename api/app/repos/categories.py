@@ -31,18 +31,6 @@ def buscar_por_id(sesion: Session, category_id: int) -> Category | None:
     return sesion.get(Category, category_id)
 
 
-def buscar_por_nombre_y_tipo(sesion: Session, name: str, type_: str) -> Category | None:
-    """Para categorías que un servicio necesita encontrar por su
-    nombre exacto en vez de por id —hoy sólo "Inversiones"
-    (F10-T06)—. `categories_unique_name_per_type` garantiza que hay
-    como mucho una. No filtra por `active`: una "Inversiones"
-    archivada sigue siendo la misma categoría, no hay que crear otra
-    con el mismo nombre al lado."""
-    return sesion.scalars(
-        select(Category).where(Category.name == name, Category.type == type_)
-    ).one_or_none()
-
-
 def siguiente_orden(sesion: Session, type_: str) -> int:
     """Una categoría nueva se agrega al final de su tipo, nunca en
     medio: usar el máximo de `sort_order` de ese tipo y sumarle uno es

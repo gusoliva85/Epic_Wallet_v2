@@ -484,10 +484,10 @@
           </article>
 
           <p class="ghost-note">
-            <b>Cartera, no bitácora.</b> No hay historial de compras y ventas.
-            Comprar una inversión es una transferencia patrimonial —del ahorro a
-            la cartera—, no un gasto de consumo. Vender devuelve el importe al
-            ahorro.
+            <b>Cartera, no bitácora.</b> Acá registrás lo que tenés, no lo que
+            gastás: cargar o vender una posición no toca el ahorro del mes. Lo
+            que depositás o retirás de tu cuenta de inversión se carga aparte,
+            a mano, en Movimientos.
           </p>
         </section>
 
@@ -1055,10 +1055,10 @@
     </aside>
 
     <!-- Comprar (alta de posición) · F10-T08. Modal, no cajón: es un
-         formulario, pide atención completa. "Restar del ahorro" es el
-         flag affect_savings del servicio (F10-T06) — apagado, sirve
-         para cargar una cartera que ya existía antes de usar la
-         aplicación, sin inventar un gasto que nunca pasó. -->
+         formulario, pide atención completa. La cartera es información,
+         no bitácora de gastos: comprar acá no toca el ahorro del mes
+         (revisado 2026-10-17) — lo que se deposita en la cuenta de
+         inversión se carga aparte, a mano, en Movimientos. -->
     <aside
       class="hoja hoja--modal"
       id="hoja-inversion"
@@ -1172,21 +1172,6 @@
               placeholder="0"
               autocomplete="off"
             />
-          </div>
-
-          <div class="cfg-row cg">
-            <div>
-              <b>Restar del ahorro</b>
-              <span>Apagalo si ya tenías esta inversión antes de usar la aplicación.</span>
-            </div>
-            <button
-              class="toggle"
-              type="button"
-              role="switch"
-              id="inversion-afecta-ahorro"
-              aria-checked="true"
-              aria-label="Restar del ahorro"
-            ></button>
           </div>
 
           <p

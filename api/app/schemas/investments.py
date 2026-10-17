@@ -110,10 +110,9 @@ def respuesta_cartera_desde(
 class AltaDeInversion(BaseModel):
     """`POST /api/investments`: comprar (General §20.1, §23).
 
-    `affect_savings` por defecto `True` —el caso normal, comprás algo
-    nuevo con plata que tenías ahorrada—; en `False` es para cargar
-    una posición que ya tenías antes de usar la aplicación, sin que
-    eso reste del ahorro del mes actual."""
+    Sin efecto sobre el ahorro (revisado 2026-10-17): la cartera es
+    información, no bitácora de gastos. Lo que se deposita en la
+    cuenta de inversión se carga aparte, a mano, en Movimientos."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -124,7 +123,6 @@ class AltaDeInversion(BaseModel):
     nominal_quantity: decimal.Decimal = decimal.Decimal("0")
     current_unit_price: decimal.Decimal | None = Field(default=None, gt=0)
     manual_value: decimal.Decimal = decimal.Decimal("0")
-    affect_savings: bool = True
 
     @field_validator("investment_type")
     @classmethod
@@ -168,10 +166,3 @@ class EdicionDeInversion(BaseModel):
     current_unit_price: decimal.Decimal | None = Field(default=None, gt=0)
     active: bool | None = None
 
-
-class RespuestaVenta(BaseModel):
-    """`DELETE /api/investments/{id}`: cuánto se acreditó (o no) al
-    ahorro."""
-
-    amount: str
-    affected_savings: bool

@@ -54,46 +54,60 @@ probado) y `services/investments.py` con `comprar_posicion`/
 `vender_posicion`/`indicadores_de_cartera` —a propósito, en esta
 tarea todavía NO tocaban el ahorro, sólo la cartera—.
 
-**F10-T06 (Backend) trae los endpoints y la transferencia con el
-ahorro, y acá hubo una decisión importante de Gustavo que pisa lo que
-decía el técnico §7.3.** Le pregunté con `AskUserQuestion` si comprar
-una inversión tenía que contar en "Total gastado este mes" y en el
-desglose, o quedar afuera (que es lo que decía el técnico original).
-Gustavo: **sí tiene que contar en los dos**, bajo un ítem genérico
-"Inversiones" —"sino no se entiende por qué tenés plata de menos, no
-queda claro por qué se gastó"—. El detalle de QUÉ se compró (símbolo,
-nominales) va a vivir en la pantalla de Cartera (F10-T08), no en el
-desglose del dashboard. Actualicé el técnico §7.3 y la redacción de la
-tarea en el roadmap para que esto no se pierda y alguien no vuelva a
-implementar la versión vieja (excluida del desglose) sin saber que se
-descartó.
+**F10-T06 pasó por DOS decisiones de Gustavo el mismo día, y la
+segunda pisa la primera entera. Importante no mezclarlas si se vuelve
+a leer un commit viejo.**
 
-Implementación final:
-- `categories.buscar_por_nombre_y_tipo` (nuevo repo) + una categoría
-  **"Inversiones"** por tipo (`expense` para comprar, `income` para
-  vender, mismo patrón que "Otros" en los dos tipos) — se crea sola la
-  primera vez que hace falta, no hay pantalla para darla de alta a
-  mano.
-- `comprar_posicion`/`vender_posicion` ahora además crean un
-  movimiento `source='system'` con esa categoría y llaman a
-  `services.transactions.crear_movimiento` (que aprendió un parámetro
-  `source`, antes sólo `"manual"`) — mismo camino que un movimiento
-  cargado a mano, mismo recálculo del mes.
-- `affect_savings: bool = True` en alta y en baja: en `False` no se
-  genera ningún movimiento — es para cargar una cartera que ya existía
-  antes de usar la aplicación, sin inventar un gasto que nunca pasó.
-  `PUT` (actualización manual de valor) nunca toca el ahorro bajo
-  ningún flag: no pasa por `transactions`, sólo cambia `current_value`.
+*Primera vuelta (mañana del 2026-10-17):* le pregunté con
+`AskUserQuestion` si comprar una inversión tenía que contar en "Total
+gastado este mes" y en el desglose, o quedar afuera (lo que decía el
+técnico original). Gustavo dijo que sí, bajo un ítem genérico
+"Inversiones" —"sino no se entiende por qué tenés plata de menos"—, y
+construí la transferencia automática: `comprar_posicion`/
+`vender_posicion` creaban un movimiento `source='system'` bajo una
+categoría "Inversiones" (que se creaba sola), con un flag
+`affect_savings` para el caso de cargar una cartera preexistente.
+
+*Segunda vuelta (la misma sesión, después de probar F10-T08 sin
+cargar nada todavía):* Gustavo explicó cómo usa esto de verdad —
+deposita plata a su cuenta de inversión (p. ej. $1.000.000 este mes) y
+**ese importe no coincide** con lo que termina comprando: queda plata
+sin invertir, por cobrar, pendiente de liquidar. La transferencia
+automática asumía que los dos números eran el mismo, y no lo son.
+Decisión final, confirmada también con `AskUserQuestion` (vender
+simétrico a comprar, ninguno de los dos toca el ahorro):
+
+- **La cartera es información, no bitácora de gastos.** `comprar_posicion`/
+  `vender_posicion` (`services/investments.py`) ya NO escriben en
+  `transactions` bajo ningún caso — se sacó `affect_savings` entero (ya
+  no hay nada que optar). `DELETE /api/investments/{id}` ahora
+  devuelve `204` sin cuerpo (antes devolvía `amount`/`affected_savings`
+  — ese esquema, `RespuestaVenta`, se borró).
+- **El depósito a la cuenta de inversión se carga aparte, a mano, en
+  Movimientos** (`POST /api/transactions`), bajo la categoría
+  "Inversiones" como cualquier otra — ya no se crea sola desde
+  `services/investments.py` (`categories.buscar_por_nombre_y_tipo`
+  también se borró, quedó sin caller).
+- `investments.current_value` sigue sumando al patrimonio neto —eso no
+  cambió—, es lo que hace útil la cartera más allá de ser una lista.
+- Actualizado con nota de revisión (no se borró la historia): Técnico
+  §7.3, General §23 y §24, y la entrada de F10-T06 en el roadmap.
+  `services/transactions.py::crear_movimiento` conserva el parámetro
+  `source` (preparado para `import`/`mercado_pago`, Técnico §23) aunque
+  hoy ningún caller lo use con otro valor que `"manual"`.
+
+Implementación final (después de la segunda vuelta):
 - `GET`/`POST`/`PUT`/`DELETE /api/investments` (`routers/investments.py`,
   `schemas/investments.py`). Sin endpoint de detalle por id aparte:
   `PUT` ya devuelve la posición completa.
 - `services/dashboard.py` y `services/patrimony.py` ya leen
-  `investments.current_value` real en vez de un cero fijo.
+  `investments.current_value` real en vez de un cero fijo (esto no
+  cambió entre las dos vueltas).
 
-Todo esto se probó contra la base real antes de tener pantalla propia:
-`tests/api/test_investments_endpoints.py` (14 casos, HTTP) y
-`tests/api/test_investments_servicio.py` (11 casos, servicio directo,
-los anteriores al endpoint).
+Probado contra la base real: `tests/api/test_investments_endpoints.py`
+y `tests/api/test_investments_servicio.py`, reescritos en la segunda
+vuelta para confirmar lo contrario de antes —que comprar/vender NO
+tocan ningún mes ni aparecen en el desglose—.
 
 **F10-T08 (Frontend) es la pantalla de Cartera, `web/src/js/cartera.js`.**
 `GET /api/investments` trae indicadores y tabla en una sola llamada
@@ -115,15 +129,15 @@ los anteriores al endpoint).
   — el anillo de foco ya sale gratis del `:focus-visible` global
   porque esta tabla no redefine `box-shadow` en `:hover` (al revés que
   `.row`, ver la nota de abajo sobre foco vs. hover).
-- **`affect_savings` en la hoja de alta** ("Restar del ahorro",
-  default encendido) y la venta invalidan `cache-meses.js`; **`PUT`
-  (actualizar el valor a mano) no invalida nada**, porque nunca toca
-  `transactions` (mismo criterio que el técnico §7.3).
-- Probado en `tests/js/cartera.test.mjs` (29 casos): los tres
-  criterios de aceptación de la tarea están cada uno con su prueba
-  (cargar + actualizar valor en los dos modos de valuación, el color
-  según el signo en la fila y en la tarjeta, vender con
-  `window.confirm`).
+- **El toggle "Restar del ahorro" que tuvo la hoja de alta en la
+  primera vuelta se sacó entero** en la segunda, junto con la llamada a
+  `invalidarMeses()`: nada en esta pantalla invalida el caché de meses,
+  porque nada escribe en `transactions`.
+- Probado en `tests/js/cartera.test.mjs` (reescrito en la segunda
+  vuelta, mismo número de casos): los tres criterios de aceptación de
+  la tarea, cada uno con su prueba (cargar + actualizar valor en los
+  dos modos de valuación, el color según el signo en la fila y en la
+  tarjeta, vender con `window.confirm` sin tocar el ahorro).
 
 Pendiente: probarlo en el celular y que Gustavo apruebe.
 

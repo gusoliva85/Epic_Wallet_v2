@@ -162,9 +162,11 @@ def crear_movimiento(
     """Inserta el movimiento y recalcula `mes` en la misma transacción.
 
     `source` por defecto es `"manual"` (lo que carga la persona desde
-    el formulario de alta, F04-T09); `"system"` es para un movimiento
-    que genera la propia aplicación —hoy, comprar o vender una
-    inversión (F10-T06)— y no un formulario que alguien llenó."""
+    el formulario de alta, F04-T09); el resto de `ORIGENES`
+    (`"system"`, `"import"`, `"mercado_pago"`) queda preparado para
+    cuando haya un caller que no sea un formulario que alguien llenó
+    —hoy ninguno lo usa: comprar o vender una inversión ya no genera
+    movimiento (revisado 2026-10-17, ver `services/investments.py`)."""
     movimiento = repos_movimientos.crear(
         sesion,
         user_id=user_id,

@@ -8,13 +8,12 @@
    `GET /api/dashboard` (F05-T04): evita pedir la cartera dos veces
    para pintar dos paneles que ya vienen juntos en la respuesta.
 
-   Comprar y vender (F10-T06) además mueven plata del ahorro —bajo la
-   categoría "Inversiones"— salvo que se apague "Restar del ahorro"
-   (`affect_savings`, pensado para cargar una cartera que ya existía
-   antes de usar la aplicación). Eso invalida la caché de meses
-   (`cache-meses.js`) para que Historial y la barra de mes no queden
-   mostrando un acumulado viejo. Actualizar el valor a mano (la otra
-   hoja) nunca toca el ahorro, así que no hace falta invalidar nada. */
+   La cartera es información, no bitácora de gastos (decisión de
+   Gustavo, 2026-10-17, revisa F10-T06): comprar, actualizar el valor y
+   vender nunca tocan el ahorro del mes. Lo que se deposita en la
+   cuenta de inversión se carga aparte, a mano, en Movimientos —acá no
+   hay nada que invalidar en `cache-meses.js`, porque nada de esta
+   pantalla escribe en `transactions`. */
 
 import { api, ApiError } from "./api.js";
 import { esc, fmt, fmtS, pct } from "./format.js";
@@ -23,7 +22,6 @@ import { tarjetaHeroe, tarjetaMetrica, pintarTarjetas, animarCifras } from "./co
 import { crearHoja } from "./components/sheet.js";
 import { toast } from "./components/toast.js";
 import { EVENTO as EVENTO_RUTA } from "./router.js";
-import { invalidarMeses } from "./cache-meses.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -239,7 +237,6 @@ function alAbrirAlta() {
   /** @type {HTMLInputElement} */ ($("inversion-nominales")).value = "";
   /** @type {HTMLInputElement} */ ($("inversion-precio")).value = "";
   /** @type {HTMLInputElement} */ ($("inversion-valor-manual")).value = "";
-  $("inversion-afecta-ahorro")?.setAttribute("aria-checked", "true");
   elegirModoAlta("unit_price");
   $("inversion-simbolo")?.focus();
 }
@@ -262,7 +259,6 @@ async function alGuardarAlta(evento) {
     name: nombre,
     investment_type: /** @type {HTMLSelectElement} */ ($("inversion-tipo")).value,
     valuation_mode: modoAlta,
-    affect_savings: $("inversion-afecta-ahorro")?.getAttribute("aria-checked") === "true",
   };
   if (modoAlta === "unit_price") {
     datos.nominal_quantity = String(numeroDecimal($("inversion-nominales")));
@@ -276,7 +272,6 @@ async function alGuardarAlta(evento) {
   try {
     await api.post("/investments", datos);
     controlAlta.cerrar();
-    invalidarMeses();
     await cargar();
     toast(`${simbolo}: posición cargada.`);
   } catch (e) {
@@ -413,18 +408,17 @@ async function alGuardarValor(evento) {
 
 async function alVender() {
   if (!posicionActual) return;
-  // R10: la eliminación de una inversión pide confirmación.
-  const confirmado = window.confirm(
-    `¿Vender ${posicionActual.symbol}? Se acredita ${fmt(posicionActual.current_value)} al ahorro. No se puede deshacer.`,
-  );
+  // R10: la eliminación de una inversión pide confirmación. No
+  // acredita nada al ahorro —si entró plata de la venta a tu cuenta,
+  // se carga aparte, a mano, en Movimientos.
+  const confirmado = window.confirm(`¿Vender ${posicionActual.symbol}? No se puede deshacer.`);
   if (!confirmado) return;
 
   try {
-    const r = await api.del(`/investments/${posicionActual.id}`);
+    await api.del(`/investments/${posicionActual.id}`);
     controlDetalle.cerrar();
-    invalidarMeses();
     await cargar();
-    toast(`${posicionActual.symbol} vendida: ${fmt(r.amount)} al ahorro.`);
+    toast(`${posicionActual.symbol} vendida.`);
   } catch (e) {
     toast(e instanceof ApiError ? e.message : "No se pudo vender. Probá de nuevo.", { severidad: "crit" });
     if (!(e instanceof ApiError)) console.error("cartera: error al vender", e);

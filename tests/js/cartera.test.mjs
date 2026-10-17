@@ -5,13 +5,15 @@
    doblados) y `patrimonio.test.mjs`/`dashboard.test.mjs` (el HTML sale del
    `index.html` real, `kpi.js`/`format.js`/`estados.js`/`sheet.js` se
    importan de verdad). `GET /api/investments` trae los indicadores Y la
-   tabla en una sola llamada (F10-T06): se dobla una sola vez.
+   tabla en una sola llamada: se dobla una sola vez.
 
-   Los tres criterios de aceptación de la tarea, cada uno con su prueba:
-   cargar una posición y actualizar su valor (POST y PUT, los dos modos de
-   valuación), el rendimiento en color según el signo (tabla y tarjeta), y
-   vender pide confirmación y deja el ahorro actualizado (`window.confirm`,
-   `invalidarMeses`). */
+   La cartera es información, no bitácora de gastos (decisión de
+   Gustavo, 2026-10-17, revisa F10-T06): comprar, actualizar el valor y
+   vender nunca tocan el ahorro del mes. Los criterios de aceptación de
+   la tarea, cada uno con su prueba: cargar una posición y actualizar su
+   valor (POST y PUT, los dos modos de valuación), el rendimiento en
+   color según el signo (tabla y tarjeta), y vender pide confirmación
+   (`window.confirm`) sin acreditar nada al ahorro. */
 
 import { test, describe, after } from "node:test";
 import assert from "node:assert/strict";
@@ -104,10 +106,6 @@ async function cargarConDobles() {
     .replace(
       'import { EVENTO as EVENTO_RUTA } from "./router.js";',
       'const EVENTO_RUTA = "epic:ruta";',
-    )
-    .replace(
-      'import { invalidarMeses } from "./cache-meses.js";',
-      "const invalidarMeses = (...a) => globalThis.__espia.invalidarMeses(...a);",
     );
 
   const unico = `\n// ${Math.random()}\n`;
@@ -185,7 +183,7 @@ async function montar({ apiGet, apiPost, apiPut, apiDel } = {}) {
   // pruebas sólo necesitan el valor final (mismo truco que dashboard.test.mjs).
   dom.window.matchMedia = () => ({ matches: true });
 
-  const llamadas = { apiGet: [], apiPost: [], apiPut: [], apiDel: [], toasts: [], invalidaciones: 0 };
+  const llamadas = { apiGet: [], apiPost: [], apiPut: [], apiDel: [], toasts: [] };
   globalThis.__espia = {
     apiGet: async (...a) => {
       llamadas.apiGet.push(a);
@@ -201,12 +199,9 @@ async function montar({ apiGet, apiPost, apiPut, apiDel } = {}) {
     },
     apiDel: async (...a) => {
       llamadas.apiDel.push(a);
-      return (apiDel ?? (async () => ({ amount: "88000.00", affected_savings: true })))(...a);
+      return (apiDel ?? (async () => null))(...a); // 204 sin cuerpo
     },
     toast: (...a) => llamadas.toasts.push(a),
-    invalidarMeses: () => {
-      llamadas.invalidaciones++;
-    },
   };
 
   const mod = await cargarConDobles();
@@ -384,11 +379,11 @@ describe("la tabla de posiciones", () => {
 });
 
 // ===================================================================
-//  Alta (comprar) · F10-T06
+//  Alta (comprar)
 // ===================================================================
 
 describe("abrir la hoja de alta", () => {
-  test("arranca limpia, en modo 'por cotización' y con Restar del ahorro encendido", async () => {
+  test("arranca limpia y en modo 'por cotización'", async () => {
     const { dom } = await montar();
     await entrarYEsperar(dom);
 
@@ -403,7 +398,6 @@ describe("abrir la hoja de alta", () => {
     );
     assert.equal($(dom, "inversion-campos-cotizacion").hidden, false);
     assert.equal($(dom, "inversion-campo-manual").hidden, true);
-    assert.equal($(dom, "inversion-afecta-ahorro").getAttribute("aria-checked"), "true");
   });
 
   test("cambiar a 'valor manual' muestra el campo de valor y esconde nominales/precio", async () => {
@@ -475,7 +469,6 @@ describe("guardar el alta", () => {
     assert.equal(datos.nominal_quantity, "732");
     assert.equal(datos.current_unit_price, "1527.53");
     assert.equal(datos.manual_value, undefined);
-    assert.equal(datos.affect_savings, true);
   });
 
   test("modo manual: manda manual_value, no nominal_quantity ni current_unit_price", async () => {
@@ -495,21 +488,7 @@ describe("guardar el alta", () => {
     assert.equal(datos.current_unit_price, undefined);
   });
 
-  test("apagar 'Restar del ahorro' lo manda en false", async () => {
-    const { dom, llamadas } = await montar();
-    await entrarYEsperar(dom);
-    await completarComun(dom);
-
-    $(dom, "inversion-afecta-ahorro").setAttribute("aria-checked", "false");
-    $(dom, "inversion-nominales").value = "10";
-    $(dom, "inversion-precio").value = "100";
-    enviar(dom, "form-inversion");
-    await esperar();
-
-    assert.equal(llamadas.apiPost[0][1].affect_savings, false);
-  });
-
-  test("después de comprar: cierra la hoja, invalida el caché de meses, recarga la cartera y avisa", async () => {
+  test("después de comprar: cierra la hoja, recarga la cartera y avisa — sin tocar el ahorro", async () => {
     const { dom, llamadas } = await montar();
     await entrarYEsperar(dom);
     await completarComun(dom);
@@ -520,7 +499,6 @@ describe("guardar el alta", () => {
     await esperar();
 
     assert.equal($(dom, "hoja-inversion").classList.contains("abierta"), false);
-    assert.equal(llamadas.invalidaciones, 1);
     assert.equal(llamadas.apiGet.length, 2, "recarga /api/investments después de comprar");
     assert.match(llamadas.toasts[0][0], /AL30/);
   });
@@ -541,12 +519,12 @@ describe("guardar el alta", () => {
 
     assert.equal($(dom, "hoja-inversion").classList.contains("abierta"), true);
     assert.equal($(dom, "inversion-error").textContent, "Ya existe una posición con ese símbolo.");
-    assert.equal(llamadas.invalidaciones, 0);
+    assert.equal(llamadas.apiGet.length, 1, "no recarga la cartera si falló");
   });
 });
 
 // ===================================================================
-//  Detalle: actualizar valor y vender · F10-T06
+//  Detalle: actualizar valor y vender
 // ===================================================================
 
 async function abrirDetalle(dom, { conClick = true } = {}) {
@@ -604,7 +582,7 @@ describe("abrir el detalle de una posición", () => {
 });
 
 describe("actualizar el valor", () => {
-  test("modo por cotización: PUT con current_unit_price, y no invalida el caché de meses", async () => {
+  test("modo por cotización: PUT con current_unit_price, sin tocar el ahorro", async () => {
     const { dom, llamadas } = await montar();
     await entrarYEsperar(dom);
     await abrirDetalle(dom);
@@ -616,7 +594,6 @@ describe("actualizar el valor", () => {
     assert.equal(llamadas.apiPut.length, 1);
     assert.equal(llamadas.apiPut[0][0], "/investments/1");
     assert.deepEqual(llamadas.apiPut[0][1], { current_unit_price: "1600" });
-    assert.equal(llamadas.invalidaciones, 0, "actualizar el valor a mano no toca el ahorro");
     assert.equal($(dom, "hoja-inversion-detalle").classList.contains("abierta"), false);
   });
 
@@ -648,7 +625,6 @@ describe("actualizar el valor", () => {
 
     assert.equal($(dom, "hoja-inversion-detalle").classList.contains("abierta"), true);
     assert.equal($(dom, "inversion-detalle-error").textContent, "No se encontró la posición.");
-    assert.equal(llamadas.invalidaciones, 0);
   });
 });
 
@@ -666,10 +642,8 @@ describe("vender (Regla 10: pide confirmación)", () => {
     assert.equal($(dom, "hoja-inversion-detalle").classList.contains("abierta"), true);
   });
 
-  test("confirmado: vende, cierra la hoja, invalida el caché de meses y avisa cuánto se acreditó", async () => {
-    const { dom, llamadas } = await montar({
-      apiDel: async () => ({ amount: "1118151.96", affected_savings: true }),
-    });
+  test("confirmado: vende, cierra la hoja, recarga la cartera y avisa — sin acreditar nada al ahorro", async () => {
+    const { dom, llamadas } = await montar();
     await entrarYEsperar(dom);
     await abrirDetalle(dom);
     dom.window.confirm = () => true;
@@ -679,10 +653,25 @@ describe("vender (Regla 10: pide confirmación)", () => {
 
     assert.deepEqual(llamadas.apiDel[0], ["/investments/1"]);
     assert.equal($(dom, "hoja-inversion-detalle").classList.contains("abierta"), false);
-    assert.equal(llamadas.invalidaciones, 1, "vender deja el ahorro actualizado");
     assert.equal(llamadas.apiGet.length, 2, "recarga la cartera después de vender");
     assert.match(llamadas.toasts[0][0], /AL30/);
-    assert.match(llamadas.toasts[0][0], /1\.118\.152/);
+    assert.match(llamadas.toasts[0][0], /vendida/i);
+  });
+
+  test("el mensaje de confirmación no promete acreditar nada al ahorro", async () => {
+    const { dom } = await montar();
+    await entrarYEsperar(dom);
+    await abrirDetalle(dom);
+
+    let mensaje = null;
+    dom.window.confirm = (m) => {
+      mensaje = m;
+      return false;
+    };
+    $(dom, "inversion-detalle-vender").click();
+    await esperar();
+
+    assert.doesNotMatch(mensaje, /ahorro/i);
   });
 
   test("si la API rechaza, avisa con un toast de error y no cierra la hoja", async () => {
@@ -699,7 +688,6 @@ describe("vender (Regla 10: pide confirmación)", () => {
     await esperar();
 
     assert.equal($(dom, "hoja-inversion-detalle").classList.contains("abierta"), true);
-    assert.equal(llamadas.invalidaciones, 0);
     assert.deepEqual(llamadas.toasts[0][1], { severidad: "crit" });
   });
 });
