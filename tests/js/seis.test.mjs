@@ -65,6 +65,35 @@ describe("un mes con ahorro negativo (se gastó más de lo que entró)", () => {
   });
 });
 
+describe("alineación a la derecha (pedido de Gustavo, 2026-10-17)", () => {
+  // Ingreso y egreso en cero para que cada mes dibuje una sola barra
+  // (la de ahorro) y sea fácil ubicarla en el SVG por su coordenada.
+  function mesAislado(month, saving) {
+    return mes({ month, income: "0.00", expense: "0.00", saving });
+  }
+  function posicionesDe(svg) {
+    return [...svg.matchAll(/class="bar" d="M([\d.]+)/g)].map((m) => Number(m[1]));
+  }
+
+  test("el mes más nuevo cae en el mismo lugar, con seis meses o con menos", () => {
+    const conSeis = dibujar([5, 6, 7, 8, 9, 10].map((m) => mesAislado(m, "100000.00")));
+    const conDos = dibujar([mesAislado(9, "100000.00"), mesAislado(10, "100000.00")]);
+
+    assert.equal(posicionesDe(conDos).at(-1), posicionesDe(conSeis).at(-1));
+  });
+
+  test("con menos meses, el hueco entre uno y el siguiente no se agranda", () => {
+    const conSeis = posicionesDe(dibujar([5, 6, 7, 8, 9, 10].map((m) => mesAislado(m, "100000.00"))));
+    const conDos = posicionesDe(dibujar([mesAislado(9, "100000.00"), mesAislado(10, "100000.00")]));
+
+    const huecoConSeis = conSeis[1] - conSeis[0];
+    const huecoConDos = conDos[1] - conDos[0];
+    // Antes el hueco crecía a medida que había menos meses (se repartía
+    // todo el ancho entre menos barras); ahora tiene que ser el mismo.
+    assert.ok(Math.abs(huecoConDos - huecoConSeis) < 1, `${huecoConDos} tendría que ser igual a ${huecoConSeis}`);
+  });
+});
+
 describe("las etiquetas del eje", () => {
   test("mes completo y año, todas visibles (hasta seis, nunca se amontonan)", () => {
     // "Octubre 26", no "Oct '26": Gustavo lo pidió completo, F06-T05

@@ -78,3 +78,35 @@ describe("las etiquetas del eje", () => {
     assert.match(svg, />Octubre 26</);
   });
 });
+
+describe("alineación a la derecha (pedido de Gustavo, 2026-10-17)", () => {
+  function cxDelUltimoPunto(svg) {
+    return Number(svg.match(/punto-brillante[^>]*cx="([\d.]+)"/)[1]);
+  }
+  function posicionesDeLaLinea(svg) {
+    const trazo = svg.match(/class="lineseries" d="([^"]+)"/)[1];
+    return [...trazo.matchAll(/[ML](-?[\d.]+)/g)].map((m) => Number(m[1]));
+  }
+
+  test("el mes más reciente cae en el mismo lugar, haya pocos meses cargados o muchos", () => {
+    const conSeis = dibujar([5, 6, 7, 8, 9, 10].map((month) => punto({ month, balance: "100000.00" })));
+    const conDos = dibujar([punto({ month: 9, balance: "100000.00" }), punto({ month: 10, balance: "100000.00" })]);
+
+    assert.equal(cxDelUltimoPunto(conDos), cxDelUltimoPunto(conSeis));
+  });
+
+  test("con pocos meses, el hueco entre un punto y el siguiente no se agranda", () => {
+    const conSeis = posicionesDeLaLinea(
+      dibujar([5, 6, 7, 8, 9, 10].map((month) => punto({ month, balance: "100000.00" }))),
+    );
+    const conDos = posicionesDeLaLinea(
+      dibujar([punto({ month: 9, balance: "100000.00" }), punto({ month: 10, balance: "100000.00" })]),
+    );
+
+    const huecoConSeis = conSeis[1] - conSeis[0];
+    const huecoConDos = conDos[1] - conDos[0];
+    // Antes el hueco crecía cuanto menos meses había (la línea se
+    // repartía en todo el ancho entre menos puntos); ahora es el mismo.
+    assert.ok(Math.abs(huecoConDos - huecoConSeis) < 1, `${huecoConDos} tendría que ser igual a ${huecoConSeis}`);
+  });
+});

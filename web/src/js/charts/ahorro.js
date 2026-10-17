@@ -11,7 +11,15 @@
    Pura: recibe la serie ya armada por el backend
    (`GET /api/months/savings-evolution`, del mes más viejo al más
    nuevo) y devuelve el string del `<svg>`. No suma nada —el backend ya
-   entrega el saldo de cada mes— y no sabe dónde se va a escribir. */
+   entrega el saldo de cada mes— y no sabe dónde se va a escribir.
+
+   El espacio entre un punto y el siguiente nunca se estira más allá
+   del que tendría con un semestre (seis meses) cargado —pedido de
+   Gustavo, 2026-10-17: con pocos meses la línea quedaba "muy
+   separada"—, y la serie se alinea a la derecha: el mes más reciente
+   siempre cae en el mismo lugar, y lo que falta cuando hay menos de
+   seis es margen vacío a la izquierda, no distancia entre puntos. Con
+   seis meses o más vuelve a repartirse en todo el ancho, como antes. */
 
 import { toNum, fmtK } from "../format.js";
 import { ejeConCero, etiquetaSvg, grilla, ejeDeCategorias, idUnico } from "./svg.js";
@@ -24,6 +32,8 @@ const PR = 16;
 const PT = 18;
 const PB = 28;
 
+const MESES_DE_REFERENCIA = 6;
+
 /**
  * @param {{year:number, month:number, balance:string}[]} serie del `GET /api/months/savings-evolution`
  */
@@ -34,8 +44,9 @@ export function dibujar(serie) {
   const valores = serie.map((p) => toNum(p.balance));
   const eje = ejeConCero(valores, { y: PT, alto: ih });
   const y = eje.yDe;
-  const slot = iw / Math.max(1, n);
-  const x = (i) => PL + slot * i + slot / 2;
+  const slot = Math.min(iw / Math.max(1, n), iw / MESES_DE_REFERENCIA);
+  const inicioX = PL + iw - slot * n;
+  const x = (i) => inicioX + slot * i + slot / 2;
 
   let salida =
     etiquetaSvg(ANCHO, ALTO) +
@@ -75,7 +86,12 @@ export function dibujar(serie) {
       `<text class="axis-v" x="${(x(n - 1) - 7).toFixed(1)}" y="${(y(ultimo) - 13).toFixed(1)}" text-anchor="end" font-weight="700" fill="var(--color-sav)">${fmtK(ultimo)}</text>`;
   }
 
-  salida += ejeDeCategorias(serie.map(etiquetaDeMes), { x: PL, ancho: iw, y: PT + ih + 18, centradoEnSlot: true });
+  salida += ejeDeCategorias(serie.map(etiquetaDeMes), {
+    x: inicioX,
+    ancho: slot * n,
+    y: PT + ih + 18,
+    centradoEnSlot: true,
+  });
   salida += "</svg>";
   return salida;
 }

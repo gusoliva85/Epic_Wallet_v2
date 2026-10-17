@@ -18,7 +18,15 @@
    Recibe los mismos seis meses que antes (del más viejo al más
    nuevo, entre 1 y 6) — "con menos de seis meses cargados muestra los
    que hay, sin huecos falsos" sigue cumpliéndose solo: nunca se
-   completa con meses que no existen. */
+   completa con meses que no existen.
+
+   El ancho de cada mes (`slot`) es siempre el de un semestre completo
+   —`iw / 6`, nunca `iw / n`— y el grupo queda alineado a la derecha
+   (pedido de Gustavo, 2026-10-17: con pocos meses cargados, las
+   barras quedaban "muy separadas"; lo que sobra ahora es margen vacío
+   a la izquierda, no distancia entre un mes y el siguiente). El mes
+   más nuevo cae siempre en el mismo lugar, así la posición no salta
+   cada vez que se carga un mes más. */
 
 import { toNum, fmtK } from "../format.js";
 import {
@@ -54,15 +62,17 @@ export function etiquetaDeMes({ year, month }) {
   return `${letra} ${String(year).slice(2)}`;
 }
 
+const MESES_EN_COMPARATIVA = 6;
+
 /** Ingreso, egreso y ahorro de cada mes, tres barras angostas una al
- * lado de la otra. El ancho sube hasta 21 px (antes 16) y queda sólo
- * la separación mínima entre barras de un mismo mes — pedido de
- * Gustavo: con seis meses cargados, el hueco entre un mes y el
- * siguiente se veía más grande que las barras mismas. */
+ * lado de la otra. El ancho de la barra llega hasta 21 px (antes 16),
+ * el `slot` de cada mes es siempre el de un semestre completo (nunca
+ * se agranda con menos meses) y el grupo se alinea a la derecha. */
 function barras(meses, iw, ih) {
   const n = meses.length;
-  const slot = iw / n;
+  const slot = iw / MESES_EN_COMPARATIVA;
   const ancho = Math.max(4, Math.min(21, slot * 0.3));
+  const inicioX = PL + iw - slot * n;
 
   const valores = meses.flatMap((m) => [toNum(m.income), toNum(m.expense), toNum(m.saving)]);
   const eje = ejeConCero(valores, { y: PT, alto: ih });
@@ -87,13 +97,13 @@ function barras(meses, iw, ih) {
     "<defs>" + degrade(idInc, "var(--color-inc)") + degrade(idEgr, "var(--color-egr)") + degrade(idSav, "var(--color-sav)") + "</defs>";
 
   meses.forEach((m, i) => {
-    const cx = PL + slot * i + slot / 2;
+    const cx = inicioX + slot * i + slot / 2;
     salida += barra(cx, toNum(m.income), `url(#${idInc})`, -ancho - 1);
     salida += barra(cx, toNum(m.expense), `url(#${idEgr})`, 0);
     salida += barra(cx, toNum(m.saving), `url(#${idSav})`, ancho + 1);
   });
 
-  return { svg: salida, maximo: eje.ymax, minimo: eje.ymin };
+  return { svg: salida, maximo: eje.ymax, minimo: eje.ymin, inicioX, slot };
 }
 
 /**
@@ -120,7 +130,13 @@ export function dibujar(ultimosSeisMeses) {
       formatear: fmtK,
     }) +
     cuerpo.svg +
-    ejeDeCategorias(etiquetas, { x: PL, ancho: iw, y: PT + ih + 18, centradoEnSlot: true, todas: true }) +
+    ejeDeCategorias(etiquetas, {
+      x: cuerpo.inicioX,
+      ancho: cuerpo.slot * ultimosSeisMeses.length,
+      y: PT + ih + 18,
+      centradoEnSlot: true,
+      todas: true,
+    }) +
     "</svg>"
   );
 }
