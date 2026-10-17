@@ -383,7 +383,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Aceptación:** · `downgrade` probado · el endpoint devuelve la composición y el total · sin pasivos cargados no falla.
   *"Su evolución" no se construyó como serie histórica: el técnico (§14.2) deja la evolución patrimonial completa para una fase posterior, así que el endpoint devuelve una foto de ahora (ahorro, inversiones, pasivos, total y composición), sin navegación de mes. `services/dashboard.py` también pasó a restar pasivos reales (antes era un cero fijo). Migración aplicada contra producción, downgrade probado (bajada y vuelta a subir sin error) y los 5 tests de `tests/api/test_patrimony_endpoint.py` corren contra la base real.*
 
-- [~] **F09-T05 · Saldo inicial y vista de patrimonio**
+- [x] **F09-T05 · Saldo inicial y vista de patrimonio**
   **Tipo:** Frontend · **Ref:** General §30 · *fusiona F09-T05, F09-T06 y F09-T07*
   **Hacer:** saldo inicial editable en configuración; vista de patrimonio con la composición y el gráfico de la Fase 6 enchufado; y en el dashboard, distinción clara entre ahorros, inversiones y patrimonio, que es donde más se confunde.
   **Aceptación:** · cambiar el saldo inicial recalcula todo el acumulado · el gráfico patrimonial usa el dato real · se entiende sin leer un manual que el patrimonio no es la suma de los otros dos indicadores.
