@@ -10,10 +10,16 @@ que corregirlo o borrarlo.
 
 Última actualización: sesión del 2026-10-17 (Fase 9 cerrada entera
 salvo F09-T08, que espera datos reales; Fase 10: F10-T01, F10-T04 y
-F10-T06 aprobadas, F10-T08 en `[~]` —la pantalla de Cartera—), rama
-`main`. Si el repo ya avanzó más, esto es historia vieja —leer el
-roadmap primero, y si alcanza con eso, no hace falta leer el resto de
-este archivo.
+F10-T06 aprobadas, F10-T08 en `[~]` —la pantalla de Cartera, recién
+pusheada, Gustavo todavía no cargó ninguna posición real—), rama
+`main`, último commit `39cb679`. Si el repo ya avanzó más, esto es
+historia vieja —leer el roadmap primero, y si alcanza con eso, no hace
+falta leer el resto de este archivo.
+
+**Lo primero que hay que hacer al retomar, antes que cualquier otra
+cosa de código:** agregar al roadmap la tarea de apronte de escritorio
+que quedó prometida y sin escribir. Ver la sección "Pendiente sin
+resolver" más abajo — es la número 1, no una nota al margen.
 
 ## Leer esto primero, en este orden
 
@@ -139,7 +145,75 @@ tocan ningún mes ni aparecen en el desglose—.
   dos modos de valuación, el color según el signo en la fila y en la
   tarjeta, vender con `window.confirm` sin tocar el ahorro).
 
-Pendiente: probarlo en el celular y que Gustavo apruebe.
+Pendiente: probarlo en el celular y que Gustavo apruebe. Dijo "lo voy
+a hacer en breve" (2026-10-17) — no es un bloqueante, no hace falta
+preguntar de nuevo, pero tampoco se marca `[x]` sola: eso lo dice él
+cuando pruebe de verdad en el celular.
+
+**Commits de la Fase 10, en orden** (por si hace falta volver a
+alguno): `e3bea7c` F10-T01 (cálculo) → `1d1a2e2` cierra F10-T01 →
+`fccf39f` F10-T04 (tabla y servicio, sin tocar el ahorro) → `7ac4063`
+F10-T06 primera vuelta (la transferencia automática, con
+`affect_savings`) → `015c4b3` cierra F10-T06 (aprobada, primera
+vuelta) → `eb64fd0` F10-T08 (la pantalla de Cartera, con el
+interruptor "Restar del ahorro" todavía puesto) → `39cb679` **F10-T06
+segunda vuelta**, la que pisa la primera: saca `affect_savings`
+entero, la cartera deja de generar movimientos. Si algo no cierra
+leyendo el diff de un commit viejo (`7ac4063`, `eb64fd0`), es porque
+`39cb679` lo revirtió horas después, misma sesión.
+
+## Pendiente sin resolver (lo que prometí y todavía no hice)
+
+### 1 · Apronte de escritorio — prometido, sin tarea en el roadmap todavía
+
+Gustavo mandó tres capturas (Inicio, Cartera, Ajustes) en resolución
+de escritorio y preguntó si el diseño de escritorio se había tenido en
+cuenta alguna vez, o si hacía falta rediseñar todo. Mi respuesta, con
+el código ya revisado, no de memoria:
+
+- **Sí se planificó.** `epic-wallet-ui/SKILL.md` §5 define puntos de
+  corte hasta 1024px+ (`lg`: navegación superior en vez de barra
+  inferior; `xl`: KPI en 6 columnas), y ese código ya existe en
+  `components.css` (la navegación de escritorio, el grid de 6
+  columnas, las barras "vidrio al mínimo" de §3.1).
+- **Pero el ajuste fino en esos anchos no se probó lo suficiente.** Bug
+  concreto que encontré mirando la captura de Inicio: a 1024px+ el
+  grid de KPI pasa a 6 columnas, la tarjeta héroe ocupa 3 y las tres
+  tarjetas de color (Ingresos/Egresos/Gasto de hoy) las otras 3 —ahí
+  cierra parejo—, pero "Total de ahorros" es una **cuarta** tarjeta de
+  color que queda sola en la fila siguiente, angosta, sin estirarse:
+  cuatro tarjetas no dividen parejo en un grid de 6 columnas. Es un
+  desajuste real de layout (el grid no fue pensado para este número
+  exacto de tarjetas en ese corte), no una percepción de Gustavo.
+- **Se puede corregir sin tocar el celular**, porque el CSS está hecho
+  mobile-first a propósito: se escribe para 390px y se agrega lo demás
+  con `@media (min-width: ...)`, que por definición no existe por
+  debajo de esos anchos. No hace falta rediseñar nada, es un apronte
+  específico de escritorio dentro de esas reglas.
+- **El cambio de tema claro/oscuro "no funciona bien" en escritorio**
+  (dicho por Gustavo, sin más detalle) **no lo llegué a mirar en un
+  navegador** — sólo leí `tema.js` (usa `document.startViewTransition`
+  con fallback si hay movimiento reducido o el navegador no lo
+  soporta) sin encontrar nada sospechoso a simple vista. Hace falta
+  reproducirlo de verdad antes de poder decir qué pasa.
+
+**Gustavo aceptó la propuesta y pidió explícitamente que esto se
+agregue al roadmap como una tarea nueva, para implementar después** —
+"no tiene sentido hacerlo ahora". **Todavía no escribí esa entrada en
+`03_Roadmap.md`.** Es lo primero que hay que hacer al retomar: sumar
+una tarea nueva (Frontend, probablemente después de F10-T12 o en su
+propia sección, tipo "F10-T15" o la que corresponda según cómo haya
+seguido la numeración) con esta descripción y sin marcarla `[~]` hasta
+que se trabaje de verdad. **No preguntarle a Gustavo si todavía la
+quiere** —ya lo dijo una vez, esto es nada más la parte administrativa
+que quedó a medio hacer—, directamente agregarla y seguir.
+
+### 2 · El resto de lo que queda abierto, ya documentado abajo
+
+F08-T11 (carga del histórico real) y F09-T08 (QA de patrimonio) siguen
+abiertas, las dos esperando a Gustavo, no son un bloqueante — ver el
+detalle completo en las secciones siguientes. F10-T08 espera que
+Gustavo cargue su cartera real y pruebe en el celular (ver arriba).
 
 **F08-T11 no es una tarea de código: depende de que Gustavo termine de
 cargar sus datos reales a mano.** Si se retoma esto, lo que corresponde
