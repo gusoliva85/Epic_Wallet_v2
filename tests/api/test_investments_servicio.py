@@ -143,7 +143,7 @@ def limpiar(motor, cuentas):
 
 
 @sin_entorno
-def test_comprar_por_precio_unitario_valua_nominales_por_precio(db, cuentas: tuple[str, str], limpiar) -> None:
+def test_comprar_guarda_nominales_como_dato_informativo(db, cuentas: tuple[str, str], limpiar) -> None:
     from api.app.services import investments as servicio
 
     a, _ = cuentas
@@ -154,12 +154,12 @@ def test_comprar_por_precio_unitario_valua_nominales_por_precio(db, cuentas: tup
             symbol="CP410",
             name="Letra CP410",
             investment_type="bono",
-            valuation_mode="unit_price",
+            initial_value=D("1118151.96"),
             nominal_quantity=D("732"),
-            current_unit_price=D("1527.53"),
         )
         assert posicion.initial_value == D("1118151.96")
         assert posicion.current_value == D("1118151.96")
+        assert posicion.nominal_quantity == D("732.0000")
 
     # Sesión nueva: lo de arriba no era sólo el objeto en memoria.
     with db.sesion_de_usuario(a) as sesion:
@@ -171,7 +171,7 @@ def test_comprar_por_precio_unitario_valua_nominales_por_precio(db, cuentas: tup
 
 
 @sin_entorno
-def test_comprar_manual_usa_el_valor_cargado_a_mano(db, cuentas: tuple[str, str], limpiar) -> None:
+def test_comprar_sin_nominales_los_deja_en_cero(db, cuentas: tuple[str, str], limpiar) -> None:
     from api.app.services import investments as servicio
 
     a, _ = cuentas
@@ -182,8 +182,7 @@ def test_comprar_manual_usa_el_valor_cargado_a_mano(db, cuentas: tuple[str, str]
             symbol="FCI-X",
             name="Fondo X",
             investment_type="fci",
-            valuation_mode="manual",
-            valor_manual=D("500000.00"),
+            initial_value=D("500000.00"),
         )
         assert posicion.initial_value == D("500000.00")
         assert posicion.current_value == D("500000.00")
@@ -201,7 +200,7 @@ def test_comprar_no_abre_ni_toca_ningun_mes(db, cuentas: tuple[str, str], limpia
     with db.sesion_de_usuario(a) as sesion:
         servicio.comprar_posicion(
             sesion, a, symbol="CEDEAR-Z", name="Cedear Z", investment_type="cedear",
-            valuation_mode="manual", valor_manual=D("500000.00"),
+            initial_value=D("500000.00"),
         )
 
     with db.sesion_de_usuario(a) as sesion:
@@ -226,8 +225,7 @@ def test_vender_borra_la_posicion_de_verdad_no_solo_en_memoria(db, cuentas: tupl
             symbol="CEDEAR-Y",
             name="Cedear Y",
             investment_type="cedear",
-            valuation_mode="manual",
-            valor_manual=D("1200000.00"),
+            initial_value=D("1200000.00"),
         )
         posicion_id = posicion.id
         servicio.vender_posicion(sesion, posicion)
@@ -250,7 +248,7 @@ def test_vender_no_abre_ni_toca_ningun_mes(db, cuentas: tuple[str, str], limpiar
     with db.sesion_de_usuario(a) as sesion:
         posicion = servicio.comprar_posicion(
             sesion, a, symbol="CORRIGE", name="Se cargó mal", investment_type="accion",
-            valuation_mode="manual", valor_manual=D("300000.00"),
+            initial_value=D("300000.00"),
         )
         servicio.vender_posicion(sesion, posicion)
 
@@ -271,11 +269,11 @@ def test_indicadores_de_cartera_con_varias_posiciones(db, cuentas: tuple[str, st
     with db.sesion_de_usuario(a) as sesion:
         servicio.comprar_posicion(
             sesion, a, symbol="A", name="A", investment_type="accion",
-            valuation_mode="manual", valor_manual=D("1000000.00"),
+            initial_value=D("1000000.00"),
         )
         servicio.comprar_posicion(
             sesion, a, symbol="B", name="B", investment_type="accion",
-            valuation_mode="manual", valor_manual=D("500000.00"),
+            initial_value=D("500000.00"),
         )
         cartera = servicio.listar_cartera(sesion)
         # Ganancia simulada: se actualiza el valor actual a mano, sin
@@ -318,7 +316,7 @@ def test_una_cuenta_no_ve_la_cartera_de_otra(db, cuentas: tuple[str, str], limpi
     with db.sesion_de_usuario(a) as sesion:
         posicion_de_a = servicio.comprar_posicion(
             sesion, a, symbol="SOLO-A", name="Sólo de A", investment_type="accion",
-            valuation_mode="manual", valor_manual=D("100000.00"),
+            initial_value=D("100000.00"),
         )
         id_de_a = posicion_de_a.id
 

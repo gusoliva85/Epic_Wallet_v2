@@ -284,30 +284,6 @@ def test_total_invertido_sin_posiciones_da_cero() -> None:
 
 
 # ===================================================================
-#  valor_de_inversion · F10-T01
-# ===================================================================
-
-
-@pytest.mark.unit
-def test_valor_de_inversion_por_precio_unitario_multiplica_nominales() -> None:
-    assert calc.valor_de_inversion("unit_price", D("732"), D("1527.53"), D("0.00")) == D("1118151.96")
-
-
-@pytest.mark.unit
-def test_valor_de_inversion_por_precio_unitario_sin_cotizacion_cargada_usa_el_manual() -> None:
-    # Recién creada, antes de la primera actualización de precio:
-    # `current_unit_price` todavía es null en la base (Técnico §6.2).
-    valor = calc.valor_de_inversion("unit_price", D("732"), None, D("1117852.00"))
-    assert valor == D("1117852.00")
-
-
-@pytest.mark.unit
-def test_valor_de_inversion_manual_usa_el_valor_cargado_a_mano() -> None:
-    valor = calc.valor_de_inversion("manual", D("0"), None, D("1117852.00"))
-    assert valor == D("1117852.00")
-
-
-# ===================================================================
 #  rendimiento_de_inversion y rendimiento_porcentual · F10-T01
 # ===================================================================
 

@@ -161,7 +161,7 @@ def test_sin_token_devuelve_401(cliente) -> None:
 
 
 @sin_entorno
-def test_comprar_por_precio_unitario(cliente, cuentas: tuple[Cuenta, Cuenta], limpiar) -> None:
+def test_comprar_guarda_nominales_como_dato_informativo(cliente, cuentas: tuple[Cuenta, Cuenta], limpiar) -> None:
     a, _ = cuentas
     r = cliente.post(
         "/api/investments",
@@ -169,9 +169,8 @@ def test_comprar_por_precio_unitario(cliente, cuentas: tuple[Cuenta, Cuenta], li
             "symbol": "CP410",
             "name": "Letra CP410",
             "investment_type": "bono",
-            "valuation_mode": "unit_price",
+            "initial_value": "1118151.96",
             "nominal_quantity": "732",
-            "current_unit_price": "1527.53",
         },
         headers=a.cabeceras,
     )
@@ -179,25 +178,24 @@ def test_comprar_por_precio_unitario(cliente, cuentas: tuple[Cuenta, Cuenta], li
     cuerpo = r.json()
     assert cuerpo["initial_value"] == "1118151.96"
     assert cuerpo["current_value"] == "1118151.96"
+    assert cuerpo["nominal_quantity"] == "732.0000"
     assert cuerpo["return_amount"] == "0.00"
     assert cuerpo["return_percentage"] == "0.0"
 
 
 @sin_entorno
-def test_comprar_sin_los_datos_que_pide_el_modo_da_422(cliente, cuentas: tuple[Cuenta, Cuenta], limpiar) -> None:
+def test_comprar_sin_precio_de_compra_da_422(cliente, cuentas: tuple[Cuenta, Cuenta], limpiar) -> None:
     a, _ = cuentas
-    # unit_price sin nominales ni precio.
     r = cliente.post(
         "/api/investments",
-        json={"symbol": "X", "name": "X", "investment_type": "accion", "valuation_mode": "unit_price"},
+        json={"symbol": "X", "name": "X", "investment_type": "accion"},
         headers=a.cabeceras,
     )
     assert r.status_code == 422, r.text
 
-    # manual sin valor.
     r = cliente.post(
         "/api/investments",
-        json={"symbol": "Y", "name": "Y", "investment_type": "accion", "valuation_mode": "manual"},
+        json={"symbol": "Y", "name": "Y", "investment_type": "accion", "initial_value": "0"},
         headers=a.cabeceras,
     )
     assert r.status_code == 422, r.text
@@ -212,8 +210,7 @@ def test_comprar_no_toca_el_ahorro_ni_el_desglose(cliente, cuentas: tuple[Cuenta
             "symbol": "CEDEAR-Z",
             "name": "Cedear Z",
             "investment_type": "cedear",
-            "valuation_mode": "manual",
-            "manual_value": "500000.00",
+            "initial_value": "500000.00",
         },
         headers=a.cabeceras,
     )
@@ -249,18 +246,12 @@ def test_listar_cartera_con_posiciones(cliente, cuentas: tuple[Cuenta, Cuenta], 
     a, _ = cuentas
     cliente.post(
         "/api/investments",
-        json={
-            "symbol": "A", "name": "A", "investment_type": "accion", "valuation_mode": "manual",
-            "manual_value": "1000000.00",
-        },
+        json={"symbol": "A", "name": "A", "investment_type": "accion", "initial_value": "1000000.00"},
         headers=a.cabeceras,
     )
     cliente.post(
         "/api/investments",
-        json={
-            "symbol": "B", "name": "B", "investment_type": "accion", "valuation_mode": "manual",
-            "manual_value": "500000.00",
-        },
+        json={"symbol": "B", "name": "B", "investment_type": "accion", "initial_value": "500000.00"},
         headers=a.cabeceras,
     )
 
@@ -279,14 +270,11 @@ def test_listar_cartera_con_posiciones(cliente, cuentas: tuple[Cuenta, Cuenta], 
 
 
 @sin_entorno
-def test_actualizar_valor_manual_no_toca_el_ahorro_del_mes(cliente, cuentas: tuple[Cuenta, Cuenta], limpiar) -> None:
+def test_actualizar_el_precio_actual_no_toca_el_ahorro_del_mes(cliente, cuentas: tuple[Cuenta, Cuenta], limpiar) -> None:
     a, _ = cuentas
     alta = cliente.post(
         "/api/investments",
-        json={
-            "symbol": "SUBE", "name": "Sube", "investment_type": "fci", "valuation_mode": "manual",
-            "manual_value": "1000000.00",
-        },
+        json={"symbol": "SUBE", "name": "Sube", "investment_type": "fci", "initial_value": "1000000.00"},
         headers=a.cabeceras,
     ).json()
 
@@ -307,38 +295,11 @@ def test_actualizar_valor_manual_no_toca_el_ahorro_del_mes(cliente, cuentas: tup
 
 
 @sin_entorno
-def test_actualizar_precio_unitario_recalcula_el_valor_con_los_nominales(
-    cliente, cuentas: tuple[Cuenta, Cuenta], limpiar
-) -> None:
-    a, _ = cuentas
-    alta = cliente.post(
-        "/api/investments",
-        json={
-            "symbol": "CP410", "name": "Letra CP410", "investment_type": "bono",
-            "valuation_mode": "unit_price", "nominal_quantity": "100", "current_unit_price": "1000.00",
-        },
-        headers=a.cabeceras,
-    ).json()
-    assert alta["current_value"] == "100000.00"
-
-    r = cliente.put(
-        f"/api/investments/{alta['id']}", json={"current_unit_price": "1200.00"}, headers=a.cabeceras
-    )
-    assert r.status_code == 200, r.text
-    cuerpo = r.json()
-    assert cuerpo["current_unit_price"] == "1200.000000"
-    assert cuerpo["current_value"] == "120000.00"  # 100 nominales por 1200
-
-
-@sin_entorno
 def test_editar_una_posicion_de_otra_cuenta_da_404(cliente, cuentas: tuple[Cuenta, Cuenta], limpiar) -> None:
     a, b = cuentas
     alta = cliente.post(
         "/api/investments",
-        json={
-            "symbol": "SOLO-A", "name": "Sólo de A", "investment_type": "accion",
-            "valuation_mode": "manual", "manual_value": "100000.00",
-        },
+        json={"symbol": "SOLO-A", "name": "Sólo de A", "investment_type": "accion", "initial_value": "100000.00"},
         headers=a.cabeceras,
     ).json()
 
@@ -357,10 +318,7 @@ def test_vender_borra_la_posicion_y_no_toca_el_ahorro(cliente, cuentas: tuple[Cu
     a, _ = cuentas
     alta = cliente.post(
         "/api/investments",
-        json={
-            "symbol": "CEDEAR-W", "name": "Cedear W", "investment_type": "cedear",
-            "valuation_mode": "manual", "manual_value": "1000000.00",
-        },
+        json={"symbol": "CEDEAR-W", "name": "Cedear W", "investment_type": "cedear", "initial_value": "1000000.00"},
         headers=a.cabeceras,
     ).json()
     cliente.put(f"/api/investments/{alta['id']}", json={"current_value": "1200000.00"}, headers=a.cabeceras)
@@ -397,10 +355,7 @@ def test_una_cuenta_no_ve_la_cartera_de_otra(cliente, cuentas: tuple[Cuenta, Cue
     a, b = cuentas
     cliente.post(
         "/api/investments",
-        json={
-            "symbol": "SOLO-A", "name": "Sólo de A", "investment_type": "accion",
-            "valuation_mode": "manual", "manual_value": "100000.00",
-        },
+        json={"symbol": "SOLO-A", "name": "Sólo de A", "investment_type": "accion", "initial_value": "100000.00"},
         headers=a.cabeceras,
     )
 

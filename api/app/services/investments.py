@@ -2,6 +2,13 @@
 
 Referencia: 02_Documento_Tecnico.md §6.2, §7.3 · General §20, §21, §22
 
+**Revisado 2026-10-20:** una posición no se valúa por nominales por
+precio unitario. `initial_value` y `current_value` son siempre el
+importe total que Gustavo carga a mano —"precio de compra" y "precio
+actual"—; `nominal_quantity` es sólo informativo. Se sacó
+`calc.valor_de_inversion` entero, no hace falta ninguna cuenta para
+armar el valor de una posición nueva.
+
 La cartera es información, no bitácora de gastos (decisión de Gustavo,
 2026-10-17, revisa lo que decía antes el técnico §7.3 — incluida una
 primera versión de este mismo servicio que sí transfería plata con el
@@ -67,15 +74,13 @@ def comprar_posicion(
     symbol: str,
     name: str,
     investment_type: str,
-    valuation_mode: str,
+    initial_value: decimal.Decimal,
     nominal_quantity: decimal.Decimal = decimal.Decimal("0"),
-    current_unit_price: decimal.Decimal | None = None,
-    valor_manual: decimal.Decimal = decimal.Decimal("0"),
 ) -> Investment:
-    """Alta de una posición nueva (General §20.1). El valor con el que
-    se compra es, a la vez, el valor inicial y el valor actual del día
-    cero —todavía no pasó tiempo para que rinda ni pierda nada."""
-    valor = calc.valor_de_inversion(valuation_mode, nominal_quantity, current_unit_price, valor_manual)
+    """Alta de una posición nueva (General §20.1). El precio de compra
+    con el que se carga es, a la vez, el valor inicial y el valor
+    actual del día cero —todavía no pasó tiempo para que rinda ni
+    pierda nada."""
     return repos.crear(
         sesion,
         user_id=user_id,
@@ -83,10 +88,8 @@ def comprar_posicion(
         name=name,
         investment_type=investment_type,
         nominal_quantity=nominal_quantity,
-        initial_value=valor,
-        valuation_mode=valuation_mode,
-        current_unit_price=current_unit_price,
-        current_value=valor,
+        initial_value=initial_value,
+        current_value=initial_value,
     )
 
 

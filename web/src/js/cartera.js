@@ -105,15 +105,15 @@ function pintarTabla() {
   if (!cuerpo) return;
 
   if (cargando) {
-    cuerpo.innerHTML = `<tr><td colspan="6">${bloqueCargando("fila", 3)}</td></tr>`;
+    cuerpo.innerHTML = `<tr><td colspan="5">${bloqueCargando("fila", 3)}</td></tr>`;
     return;
   }
   if (fallo || !cartera) {
-    cuerpo.innerHTML = `<tr><td colspan="6">${estadoError("No se pudo cargar la cartera.")}</td></tr>`;
+    cuerpo.innerHTML = `<tr><td colspan="5">${estadoError("No se pudo cargar la cartera.")}</td></tr>`;
     return;
   }
   if (cartera.positions.length === 0) {
-    cuerpo.innerHTML = `<tr><td colspan="6">${vacio("Sin posiciones todavía", 'Cargá la primera con "+ Inversión", arriba.')}</td></tr>`;
+    cuerpo.innerHTML = `<tr><td colspan="5">${vacio("Sin posiciones todavía", 'Cargá la primera con "+ Inversión", arriba.')}</td></tr>`;
     return;
   }
 
@@ -128,7 +128,6 @@ function pintarTabla() {
         `<td class="num">${esc(fmt(p.current_value))}</td>` +
         `<td class="num ${colorDeSigno(p.return_amount)}">${esc(fmtS(p.return_amount))}` +
         `<br><span style="font-size: var(--text-pill)">${esc(pct(p.return_percentage))}</span></td>` +
-        `<td>${p.valuation_mode === "unit_price" ? "Cotización" : "Manual"}</td>` +
         "</tr>"
       );
     })
@@ -172,11 +171,11 @@ function conectarReintentar() {
 
 /* ===================================================================
    Campos numéricos — dos estilos en la misma pantalla:
-   - importe en pesos: mismo enmascarado de miles que el resto de la
-     aplicación (alta-movimiento.js, historial.js, saldo-inicial.js).
-   - nominales y precio unitario: decimales de verdad (hasta 4 y 6
-     cifras, Técnico §6.2), así que no llevan el enmascarado de miles,
-     sólo se leen con `Number()` al guardar.
+   - importe en pesos (precio de compra, precio actual): mismo
+     enmascarado de miles que el resto de la aplicación
+     (alta-movimiento.js, historial.js, saldo-inicial.js).
+   - nominales: decimal de verdad, informativo (hasta 4 cifras,
+     Técnico §6.2), sin enmascarado de miles, se lee con `Number()`.
    =================================================================== */
 
 function soloDigitos(texto) {
@@ -202,17 +201,7 @@ function numeroDecimal(campo) {
    =================================================================== */
 
 let controlAlta = null;
-let modoAlta = "unit_price";
 let guardandoAlta = false;
-
-function elegirModoAlta(modo) {
-  modoAlta = modo;
-  for (const b of $("inversion-modo").querySelectorAll("button[data-modo]")) {
-    b.classList.toggle("activa", b.dataset.modo === modo);
-  }
-  $("inversion-campos-cotizacion").hidden = modo !== "unit_price";
-  $("inversion-campo-manual").hidden = modo !== "manual";
-}
 
 function mostrarErrorAlta(mensaje) {
   const caja = $("inversion-error");
@@ -235,9 +224,7 @@ function alAbrirAlta() {
   /** @type {HTMLInputElement} */ ($("inversion-nombre")).value = "";
   /** @type {HTMLSelectElement} */ ($("inversion-tipo")).value = "otro";
   /** @type {HTMLInputElement} */ ($("inversion-nominales")).value = "";
-  /** @type {HTMLInputElement} */ ($("inversion-precio")).value = "";
-  /** @type {HTMLInputElement} */ ($("inversion-valor-manual")).value = "";
-  elegirModoAlta("unit_price");
+  /** @type {HTMLInputElement} */ ($("inversion-precio-compra")).value = "";
   $("inversion-simbolo")?.focus();
 }
 
@@ -258,14 +245,9 @@ async function alGuardarAlta(evento) {
     symbol: simbolo,
     name: nombre,
     investment_type: /** @type {HTMLSelectElement} */ ($("inversion-tipo")).value,
-    valuation_mode: modoAlta,
+    initial_value: `${numeroImporte($("inversion-precio-compra"))}.00`,
+    nominal_quantity: String(numeroDecimal($("inversion-nominales"))),
   };
-  if (modoAlta === "unit_price") {
-    datos.nominal_quantity = String(numeroDecimal($("inversion-nominales")));
-    datos.current_unit_price = String(numeroDecimal($("inversion-precio")));
-  } else {
-    datos.manual_value = `${numeroImporte($("inversion-valor-manual"))}.00`;
-  }
 
   guardandoAlta = true;
   marcarCargandoAlta(true);
@@ -294,10 +276,7 @@ function conectarAlta() {
   controlAlta = crearHoja(hoja, { disparador, alAbrir: alAbrirAlta });
   if (!controlAlta) return;
 
-  for (const b of $("inversion-modo").querySelectorAll("button[data-modo]")) {
-    b.addEventListener("click", () => elegirModoAlta(b.dataset.modo));
-  }
-  $("inversion-valor-manual")?.addEventListener("input", (ev) => {
+  $("inversion-precio-compra")?.addEventListener("input", (ev) => {
     enmascarar(/** @type {HTMLInputElement} */ (ev.target));
   });
 
@@ -316,20 +295,20 @@ let guardandoValor = false;
 function pintarKvDetalle(p) {
   const filas = [
     ["Tipo", ETIQUETA_TIPO[p.investment_type] ?? p.investment_type],
-    ["Valor inicial", fmt(p.initial_value)],
-    ["Valor actual", fmt(p.current_value)],
+    [
+      "Nominales",
+      Number(p.nominal_quantity) === 0
+        ? "—"
+        : Number(p.nominal_quantity).toLocaleString("es-AR", { maximumFractionDigits: 4 }),
+    ],
+    ["Precio de compra", fmt(p.initial_value)],
+    ["Precio actual", fmt(p.current_value)],
     [
       "Rendimiento",
       `${fmtS(p.return_amount)} · ${pct(p.return_percentage)}`,
       colorDeSigno(p.return_amount),
     ],
   ];
-  if (p.valuation_mode === "unit_price") {
-    filas.splice(1, 0, [
-      "Nominales",
-      Number(p.nominal_quantity).toLocaleString("es-AR", { maximumFractionDigits: 4 }),
-    ]);
-  }
   return filas
     .map(
       ([etiqueta, valor, clase]) =>
@@ -344,21 +323,9 @@ function alAbrirDetalle(p) {
   $("inversion-detalle-titulo").textContent = p.symbol;
   $("inversion-detalle-sub").textContent = p.name;
   $("inversion-detalle-kv").innerHTML = pintarKvDetalle(p);
-
-  const esPorCotizacion = p.valuation_mode === "unit_price";
-  $("inversion-detalle-campo-precio").hidden = !esPorCotizacion;
-  $("inversion-detalle-campo-valor").hidden = esPorCotizacion;
-  if (esPorCotizacion) {
-    // `current_unit_price` llega con seis decimales fijos ("1527.530000");
-    // de ahí sale un número de verdad para editar, sin ceros de más.
-    /** @type {HTMLInputElement} */ ($("inversion-detalle-precio")).value = p.current_unit_price
-      ? String(Number(p.current_unit_price))
-      : "";
-  } else {
-    /** @type {HTMLInputElement} */ ($("inversion-detalle-valor")).value = formatearImporte(
-      String(Math.round(Number(p.current_value))),
-    );
-  }
+  /** @type {HTMLInputElement} */ ($("inversion-detalle-valor")).value = formatearImporte(
+    String(Math.round(Number(p.current_value))),
+  );
 
   controlDetalle.abrir();
 }
@@ -383,10 +350,7 @@ async function alGuardarValor(evento) {
   if (guardandoValor || !posicionActual) return;
   mostrarErrorDetalle(null);
 
-  const cambios =
-    posicionActual.valuation_mode === "unit_price"
-      ? { current_unit_price: String(numeroDecimal($("inversion-detalle-precio"))) }
-      : { current_value: `${numeroImporte($("inversion-detalle-valor"))}.00` };
+  const cambios = { current_value: `${numeroImporte($("inversion-detalle-valor"))}.00` };
 
   guardandoValor = true;
   marcarCargandoDetalle(true);
@@ -449,7 +413,6 @@ function conectarDetalle() {
     abrirDesdeFila(fila);
   });
 
-  $("inversion-detalle-precio")?.addEventListener("input", () => mostrarErrorDetalle(null));
   $("inversion-detalle-valor")?.addEventListener("input", (ev) => {
     enmascarar(/** @type {HTMLInputElement} */ (ev.target));
     mostrarErrorDetalle(null);

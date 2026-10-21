@@ -9,13 +9,15 @@ false`. La columna `active` que sí existe acá es para el día de F10
 en que una posición pueda quedar pausada sin venderse (p. ej., un
 instrumento sin cotización por un tiempo), no para guardar historial.
 
-Dos formas de valuación (`valuation_mode`): por precio unitario
-(`current_unit_price` por `nominal_quantity`, el caso con cotización) o
-por un valor cargado a mano. `current_unit_price` admite `NULL`: una
-posición recién creada en modo "unit_price" todavía no tiene cotización
-hasta la primera actualización (automática, después del MVP, o
-manual, F10-T06) — `services.calc.valor_de_inversion` (F10-T01) ya
-resuelve ese caso cayendo al valor manual.
+**Revisado 2026-10-20, pisa la versión original de esta tabla**
+(que tenía `valuation_mode`, `current_unit_price`, `price_source` y
+`price_updated_at` — sacados en la migración `7a3f9c2e1d84`):
+no hay dos formas de valuación. `initial_value` y `current_value`
+son siempre el importe total de la posición, cargado directo por
+Gustavo —nunca una multiplicación de nominales por un precio
+unitario—. `nominal_quantity` queda como dato puramente informativo
+(cuántas unidades tenés, para tu propia referencia); ninguna cuenta
+de la aplicación lo usa.
 """
 
 from __future__ import annotations
@@ -39,7 +41,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 from .base import Base, esquema_actual
 
 TIPOS = ("obligacion_negociable", "bono", "cedear", "accion", "fci", "otro")
-MODOS_DE_VALUACION = ("unit_price", "manual")
 
 
 def _esquema_punto() -> str:
@@ -69,18 +70,15 @@ class Investment(Base):
     nominal_quantity: Mapped[decimal.Decimal] = mapped_column(
         Numeric(18, 4), nullable=False, server_default="0"
     )
-    # numeric(14,2): plata, igual que el resto de la aplicación.
+    # numeric(14,2): plata, igual que el resto de la aplicación. Los
+    # dos son importes totales de la posición, nunca por unidad —
+    # "precio de compra" y "precio actual" en la interfaz.
     initial_value: Mapped[decimal.Decimal] = mapped_column(
         Numeric(14, 2), nullable=False, server_default="0"
     )
-    current_unit_price: Mapped[decimal.Decimal | None] = mapped_column(Numeric(18, 6))
     current_value: Mapped[decimal.Decimal] = mapped_column(
         Numeric(14, 2), nullable=False, server_default="0"
     )
-    valuation_mode: Mapped[str] = mapped_column(Text, nullable=False, server_default="unit_price")
-
-    price_source: Mapped[str | None] = mapped_column(Text)
-    price_updated_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
 
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
 
@@ -98,9 +96,6 @@ class Investment(Base):
         ),
         CheckConstraint("nominal_quantity >= 0", name="ck_investments_nominal_quantity"),
         CheckConstraint("initial_value >= 0", name="ck_investments_initial_value"),
-        CheckConstraint(
-            "valuation_mode in ('unit_price','manual')", name="ck_investments_valuation_mode"
-        ),
     )
 
     def __repr__(self) -> str:

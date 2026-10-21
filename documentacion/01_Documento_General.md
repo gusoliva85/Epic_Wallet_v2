@@ -829,9 +829,14 @@ Cada posición tendrá:
 -   valor inicial;
 -   valor actual;
 -   rendimiento;
--   última actualización;
--   fuente del precio;
 -   estado.
+
+> **Revisado 2026-10-20, pisa lo de arriba.** Se sacan "última
+> actualización" y "fuente del precio": estaban preparados para la
+> cotización automática de después del MVP y nadie los llegó a usar.
+> **Nominales es un dato puramente informativo** (cuántas unidades
+> tenés, para tu propia referencia) — ninguna cuenta de la aplicación
+> lo usa. Ver también la nota de revisión en la sección 22.
 
 ## 20.2 Tipos iniciales
 
@@ -876,25 +881,18 @@ pero no se presentará como historial financiero.
 
 # 22. Cálculo de inversiones
 
-Si se dispone de precio unitario:
-
-``` text
-Valor actual
-=
-Nominales × Precio actual
-```
-
-Si el instrumento se gestiona por un valor actual introducido
-directamente:
-
-``` text
-Valor actual
-=
-Valor ingresado manualmente
-```
-
-La aplicación debe permitir ambas posibilidades para cubrir instrumentos
-con distintas formas de valoración.
+> **Revisado 2026-10-20, pisa lo de abajo.** No hay dos formas de
+> valuación. "Valor inicial" (precio de compra) y "valor actual"
+> (precio actual) son siempre el **importe total** de la posición,
+> que la persona carga directo — nunca nominales por un precio
+> unitario. Nominales queda como dato informativo (sección 20.1), no
+> entra en esta cuenta.
+>
+> ``` text
+> Valor actual
+> =
+> Precio actual (importe total, cargado a mano cada mes)
+> ```
 
 ## Rendimiento
 
@@ -1466,25 +1464,20 @@ name
 investment_type
 nominal_quantity
 initial_value
-current_unit_price
 current_value
 return_value
 return_percent
-price_source
-price_updated_at
 active
 created_at
 updated_at
 ```
 
-`current_value` puede calcularse automáticamente:
-
-``` text
-nominal_quantity × current_unit_price
-```
-
-pero debe existir la posibilidad de utilizar un valor actual manual
-cuando el instrumento lo requiera.
+**Revisado 2026-10-20**, pisa lo de arriba: se sacaron
+`current_unit_price`, `price_source` y `price_updated_at`.
+`initial_value` (precio de compra) y `current_value` (precio actual)
+son siempre el importe total de la posición, cargado a mano — no hay
+cálculo automático a partir de `nominal_quantity`, que queda como
+dato informativo (sección 20.1).
 
 ------------------------------------------------------------------------
 

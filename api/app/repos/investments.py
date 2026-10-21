@@ -11,7 +11,6 @@ actuando como `auth.uid()` del token, RLS hace el resto.
 
 from __future__ import annotations
 
-import datetime as dt
 import decimal
 
 from sqlalchemy import select
@@ -43,11 +42,7 @@ def crear(
     investment_type: str,
     nominal_quantity: decimal.Decimal,
     initial_value: decimal.Decimal,
-    valuation_mode: str,
-    current_unit_price: decimal.Decimal | None,
     current_value: decimal.Decimal,
-    price_source: str | None = None,
-    price_updated_at: dt.datetime | None = None,
 ) -> Investment:
     posicion = Investment(
         user_id=user_id,
@@ -56,11 +51,7 @@ def crear(
         investment_type=investment_type,
         nominal_quantity=nominal_quantity,
         initial_value=initial_value,
-        valuation_mode=valuation_mode,
-        current_unit_price=current_unit_price,
         current_value=current_value,
-        price_source=price_source,
-        price_updated_at=price_updated_at,
     )
     sesion.add(posicion)
     sesion.flush()

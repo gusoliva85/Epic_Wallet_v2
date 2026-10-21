@@ -281,8 +281,8 @@ def test_una_posicion_de_cartera_entra_en_inversiones_y_en_la_composicion(
             text(
                 f'insert into "{ESQUEMA}".investments '
                 "(user_id, symbol, name, investment_type, nominal_quantity, initial_value, "
-                "current_value, valuation_mode) "
-                "values (:uid, 'CEDEAR-TEST', 'Cedear de prueba', 'cedear', 0, :valor, :valor, 'manual')"
+                "current_value) "
+                "values (:uid, 'CEDEAR-TEST', 'Cedear de prueba', 'cedear', 0, :valor, :valor)"
             ),
             {"uid": a.uid, "valor": decimal.Decimal("100000.00")},
         )

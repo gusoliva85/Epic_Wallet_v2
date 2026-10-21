@@ -8,18 +8,22 @@ pero sabe que está. Si algo de acá contradice los tres documentos
 oficiales o el roadmap, **ganan ellos**, esto está desactualizado y hay
 que corregirlo o borrarlo.
 
-Última actualización: sesión del 2026-10-17 (Fase 9 cerrada entera
-salvo F09-T08, que espera datos reales; Fase 10: F10-T01, F10-T04 y
-F10-T06 aprobadas, F10-T08 en `[~]` —la pantalla de Cartera, recién
-pusheada, Gustavo todavía no cargó ninguna posición real—), rama
-`main`, último commit `39cb679`. Si el repo ya avanzó más, esto es
-historia vieja —leer el roadmap primero, y si alcanza con eso, no hace
-falta leer el resto de este archivo.
+Última actualización: sesión del 2026-10-20 (segundo rediseño del
+valor de una posición en Cartera, ver la sección de esa fecha más
+abajo; **falta aplicar la migración `7a3f9c2e1d84` contra
+producción**, bloqueada por el modo automático — pedírsela a Gustavo
+explícitamente). Fase 9 sigue cerrada salvo F09-T08 (espera datos
+reales). Fase 10: F10-T01 y F10-T06 aprobadas (con revisiones), F10-T04
+y F10-T08 en `[~]`. Si el repo ya avanzó más, esto es historia vieja
+—leer el roadmap primero, y si alcanza con eso, no hace falta leer el
+resto de este archivo.
 
 **Lo primero que hay que hacer al retomar, antes que cualquier otra
-cosa de código:** agregar al roadmap la tarea de apronte de escritorio
-que quedó prometida y sin escribir. Ver la sección "Pendiente sin
-resolver" más abajo — es la número 1, no una nota al margen.
+cosa de código:** pedirle a Gustavo que aplique (o autorice aplicar)
+la migración `7a3f9c2e1d84` contra producción —ver la sección de la
+sesión 2026-10-20—. Después de eso, sigue pendiente agregar al roadmap
+la tarea de apronte de escritorio prometida (sección "Pendiente sin
+resolver" más abajo, punto 1).
 
 ## Leer esto primero, en este orden
 
@@ -161,6 +165,35 @@ segunda vuelta**, la que pisa la primera: saca `affect_savings`
 entero, la cartera deja de generar movimientos. Si algo no cierra
 leyendo el diff de un commit viejo (`7ac4063`, `eb64fd0`), es porque
 `39cb679` lo revirtió horas después, misma sesión.
+
+## Sesión 2026-10-20: Cartera, segundo rediseño del valor de una posición
+
+Gustavo revisó la hoja de alta de Cartera (F10-T04/T06/T08) y pidió
+sacar el selector "Cómo se valúa" entero: no hay dos modos. Nominales
+es sólo informativo (nunca entra en ninguna cuenta); "precio de
+compra" y "precio actual" son siempre el **importe total** de la
+posición, cargado a mano —nunca nominales por un precio unitario—.
+También pidió sacar la columna "Fuente" de la tabla (mostraba el modo
+de valuación, mal etiquetada, y ya no hay nada que mostrar ahí).
+
+Hecho de punta a punta en la misma sesión: `services/calc.py` (se
+sacó `valor_de_inversion` entera), modelo/esquema/servicio/router de
+`investments`, la hoja de alta y de detalle de `cartera.js`, y los
+tests en los tres niveles (`test_calc.py`, `test_investments_*.py`,
+`cartera.test.mjs`) — toda la suite de Python y de JS corre verde.
+Roadmap actualizado con notas de revisión en F10-T01, F10-T04, F10-T06
+(tercera vuelta) y F10-T08; General §20.1/§22/§39 y Técnico §6.2/§9.4
+también.
+
+**Falta aplicar la migración `7a3f9c2e1d84`** (sacar `valuation_mode`,
+`current_unit_price`, `price_source`, `price_updated_at` de
+`investments`) **contra producción** — el modo automático bloqueó el
+`alembic upgrade head` como "Production Deploy" y hay que pedírselo a
+Gustavo explícitamente. Confirmé antes con una consulta de sólo
+lectura que la tabla tiene 0 filas, así que no hay nada que migrar;
+el código ya funciona sin la migración aplicada (SQLAlchemy no
+escribe esas columnas, Postgres usa sus defaults) — pero hay que
+aplicarla igual para que el esquema real coincida con el modelo.
 
 ## Pendiente sin resolver (lo que prometí y todavía no hice)
 

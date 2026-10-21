@@ -172,24 +172,6 @@ def total_invertido(valores_iniciales: list[decimal.Decimal]) -> decimal.Decimal
     return money(sum(valores_iniciales, decimal.Decimal("0")))
 
 
-def valor_de_inversion(
-    modo: str,
-    nominales: decimal.Decimal,
-    precio_unitario: decimal.Decimal | None,
-    valor_manual: decimal.Decimal,
-) -> decimal.Decimal:
-    """General §22: el valor actual de una posición, de dos formas
-    según cómo se valúe (Técnico §6.2, columna `valuation_mode`):
-    - `"unit_price"`: nominales por precio unitario, cuando hay
-      cotización cargada;
-    - `"manual"`, o `"unit_price"` sin `precio_unitario` todavía
-      (recién creada, antes de la primera actualización): el valor
-      que cargó la persona a mano. Nunca se multiplica por `None`."""
-    if modo == "unit_price" and precio_unitario is not None:
-        return money(nominales * precio_unitario)
-    return money(valor_manual)
-
-
 def rendimiento_de_inversion(
     valor_actual: decimal.Decimal, valor_inicial: decimal.Decimal
 ) -> decimal.Decimal:

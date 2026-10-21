@@ -472,10 +472,9 @@
                   <tr>
                     <th scope="col">Posición</th>
                     <th scope="col">Nominales</th>
-                    <th scope="col">Valor inicial</th>
-                    <th scope="col">Valor actual</th>
+                    <th scope="col">Precio de compra</th>
+                    <th scope="col">Precio actual</th>
                     <th scope="col">Rendimiento</th>
-                    <th scope="col">Fuente</th>
                   </tr>
                 </thead>
                 <tbody id="cartera-tabla"></tbody>
@@ -1123,50 +1122,22 @@
           </div>
 
           <div class="campo">
-            <label id="inversion-modo-etiqueta">Cómo se valúa</label>
-            <div
-              class="view-switch"
-              role="group"
-              aria-labelledby="inversion-modo-etiqueta"
-              id="inversion-modo"
-            >
-              <button type="button" data-modo="unit_price" class="activa">
-                Por cotización
-              </button>
-              <button type="button" data-modo="manual">Valor manual</button>
-            </div>
+            <label for="inversion-nominales">Nominales</label>
+            <input
+              class="inp"
+              id="inversion-nominales"
+              type="text"
+              inputmode="decimal"
+              placeholder="0"
+              autocomplete="off"
+            />
           </div>
 
-          <div id="inversion-campos-cotizacion">
-            <div class="campo">
-              <label for="inversion-nominales">Nominales</label>
-              <input
-                class="inp"
-                id="inversion-nominales"
-                type="text"
-                inputmode="decimal"
-                placeholder="0"
-                autocomplete="off"
-              />
-            </div>
-            <div class="campo">
-              <label for="inversion-precio">Precio unitario</label>
-              <input
-                class="inp"
-                id="inversion-precio"
-                type="text"
-                inputmode="decimal"
-                placeholder="0"
-                autocomplete="off"
-              />
-            </div>
-          </div>
-
-          <div class="campo" id="inversion-campo-manual" hidden>
-            <label for="inversion-valor-manual">Valor</label>
+          <div class="campo">
+            <label for="inversion-precio-compra">Precio de compra</label>
             <input
               class="inp num"
-              id="inversion-valor-manual"
+              id="inversion-precio-compra"
               type="text"
               inputmode="numeric"
               placeholder="0"
@@ -1223,19 +1194,8 @@
 
         <div class="day-sep">Actualizar valor</div>
         <form id="form-inversion-valor" novalidate>
-          <div class="campo" id="inversion-detalle-campo-precio" hidden>
-            <label for="inversion-detalle-precio">Precio unitario</label>
-            <input
-              class="inp"
-              id="inversion-detalle-precio"
-              type="text"
-              inputmode="decimal"
-              placeholder="0"
-              autocomplete="off"
-            />
-          </div>
-          <div class="campo" id="inversion-detalle-campo-valor" hidden>
-            <label for="inversion-detalle-valor">Valor actual</label>
+          <div class="campo">
+            <label for="inversion-detalle-valor">Precio actual</label>
             <input
               class="inp num"
               id="inversion-detalle-valor"

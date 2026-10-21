@@ -29,7 +29,6 @@ from ..schemas.investments import (
     respuesta_cartera_desde,
     respuesta_desde_posicion,
 )
-from ..services import calc
 from ..services import investments as servicio
 from .me import asegurar_perfil_y_categorias
 
@@ -67,10 +66,8 @@ def comprar_inversion(
         symbol=datos.symbol,
         name=datos.name,
         investment_type=datos.investment_type,
-        valuation_mode=datos.valuation_mode,
+        initial_value=datos.initial_value,
         nominal_quantity=datos.nominal_quantity,
-        current_unit_price=datos.current_unit_price,
-        valor_manual=datos.manual_value,
     )
     return respuesta_desde_posicion(posicion)
 
@@ -87,17 +84,7 @@ def editar_inversion(
         posicion.name = cambios.name
     if cambios.active is not None:
         posicion.active = cambios.active
-
-    # Nunca los dos a la vez tienen sentido real, pero si llegaran
-    # juntos gana el precio unitario: es el dato "más de la fuente", y
-    # recalcula `current_value` con los nominales que la posición ya
-    # tiene — nunca se multiplica a ciegas por un valor viejo.
-    if cambios.current_unit_price is not None:
-        posicion.current_unit_price = cambios.current_unit_price
-        posicion.current_value = calc.valor_de_inversion(
-            "unit_price", posicion.nominal_quantity, cambios.current_unit_price, posicion.current_value
-        )
-    elif cambios.current_value is not None:
+    if cambios.current_value is not None:
         posicion.current_value = cambios.current_value
 
     sesion.flush()

@@ -9,11 +9,14 @@
 
    La cartera es información, no bitácora de gastos (decisión de
    Gustavo, 2026-10-17, revisa F10-T06): comprar, actualizar el valor y
-   vender nunca tocan el ahorro del mes. Los criterios de aceptación de
-   la tarea, cada uno con su prueba: cargar una posición y actualizar su
-   valor (POST y PUT, los dos modos de valuación), el rendimiento en
-   color según el signo (tabla y tarjeta), y vender pide confirmación
-   (`window.confirm`) sin acreditar nada al ahorro. */
+   vender nunca tocan el ahorro del mes. Revisado 2026-10-20: no hay
+   modo de valuación — "precio de compra" y "precio actual" son
+   siempre el importe total de la posición, nominales es sólo
+   informativo. Los criterios de aceptación de la tarea, cada uno con
+   su prueba: cargar una posición y actualizar su precio actual (POST
+   y PUT), el rendimiento en color según el signo (tabla y tarjeta), y
+   vender pide confirmación (`window.confirm`) sin acreditar nada al
+   ahorro. */
 
 import { test, describe, after } from "node:test";
 import assert from "node:assert/strict";
@@ -113,9 +116,9 @@ async function cargarConDobles() {
   return import(url);
 }
 
-/** Dos posiciones: una por cotización con rendimiento positivo, otra
- * manual con rendimiento negativo — cubre los dos modos de valuación y
- * los dos signos a la vez. */
+/** Dos posiciones: una con nominales y rendimiento positivo, otra sin
+ * nominales (no aplica, tipo "otro") y rendimiento negativo — cubre
+ * los dos casos de "Nominales: —" y los dos signos a la vez. */
 function respuestaBase() {
   return {
     indicators: {
@@ -133,13 +136,9 @@ function respuestaBase() {
         investment_type: "bono",
         nominal_quantity: "732.0000",
         initial_value: "1000000.00",
-        current_unit_price: "1527.530000",
         current_value: "1118151.96",
-        valuation_mode: "unit_price",
         return_amount: "118151.96",
         return_percentage: "11.8",
-        price_source: null,
-        price_updated_at: null,
         active: true,
         created_at: "2026-10-17T00:00:00Z",
         updated_at: "2026-10-17T00:00:00Z",
@@ -151,13 +150,9 @@ function respuestaBase() {
         investment_type: "otro",
         nominal_quantity: "0.0000",
         initial_value: "100000.00",
-        current_unit_price: null,
         current_value: "88000.00",
-        valuation_mode: "manual",
         return_amount: "-12000.00",
         return_percentage: "-12.0",
-        price_source: null,
-        price_updated_at: null,
         active: true,
         created_at: "2026-10-17T00:00:00Z",
         updated_at: "2026-10-17T00:00:00Z",
@@ -331,7 +326,7 @@ describe("al entrar a Cartera", () => {
 });
 
 describe("la tabla de posiciones", () => {
-  test("una fila por posición, con sus nominales, valores y fuente", async () => {
+  test("una fila por posición, con sus nominales y valores", async () => {
     const { dom } = await montar();
     await entrarYEsperar(dom);
 
@@ -339,11 +334,9 @@ describe("la tabla de posiciones", () => {
     assert.match(al30.textContent, /AL30/);
     assert.match(al30.textContent, /Bonar 2030/);
     assert.match(al30.textContent, /732/);
-    assert.match(al30.textContent, /Cotización/);
 
     assert.match(dep.textContent, /DEP/);
-    assert.match(dep.textContent, /Manual/);
-    // Sin nominales reales (valuación manual): "—", nunca "0".
+    // Sin nominales (no aplica a este tipo de posición): "—", nunca "0".
     assert.match(dep.querySelectorAll("td")[1].textContent, /^—$/);
   });
 
@@ -383,7 +376,7 @@ describe("la tabla de posiciones", () => {
 // ===================================================================
 
 describe("abrir la hoja de alta", () => {
-  test("arranca limpia y en modo 'por cotización'", async () => {
+  test("arranca limpia", async () => {
     const { dom } = await montar();
     await entrarYEsperar(dom);
 
@@ -392,36 +385,20 @@ describe("abrir la hoja de alta", () => {
 
     assert.equal($(dom, "hoja-inversion").classList.contains("abierta"), true);
     assert.equal($(dom, "inversion-simbolo").value, "");
-    assert.equal(
-      $(dom, "inversion-modo").querySelector('[data-modo="unit_price"]').classList.contains("activa"),
-      true,
-    );
-    assert.equal($(dom, "inversion-campos-cotizacion").hidden, false);
-    assert.equal($(dom, "inversion-campo-manual").hidden, true);
+    assert.equal($(dom, "inversion-nominales").value, "");
+    assert.equal($(dom, "inversion-precio-compra").value, "");
   });
 
-  test("cambiar a 'valor manual' muestra el campo de valor y esconde nominales/precio", async () => {
+  test("el precio de compra separa los miles; nominales no", async () => {
     const { dom } = await montar();
     await entrarYEsperar(dom);
     $(dom, "btn-nueva-inversion").click();
     await esperar();
 
-    $(dom, "inversion-modo").querySelector('[data-modo="manual"]').click();
-
-    assert.equal($(dom, "inversion-campos-cotizacion").hidden, true);
-    assert.equal($(dom, "inversion-campo-manual").hidden, false);
-  });
-
-  test("el valor manual separa los miles; nominales y precio no", async () => {
-    const { dom } = await montar();
-    await entrarYEsperar(dom);
-    $(dom, "btn-nueva-inversion").click();
-    await esperar();
-
-    const valorManual = /** @type {HTMLInputElement} */ ($(dom, "inversion-valor-manual"));
-    valorManual.value = "150000";
-    valorManual.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
-    assert.equal(valorManual.value, "150.000");
+    const precioCompra = /** @type {HTMLInputElement} */ ($(dom, "inversion-precio-compra"));
+    precioCompra.value = "150000";
+    precioCompra.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+    assert.equal(precioCompra.value, "150.000");
 
     const nominales = /** @type {HTMLInputElement} */ ($(dom, "inversion-nominales"));
     nominales.value = "732.5";
@@ -451,13 +428,13 @@ describe("guardar el alta", () => {
     $(dom, "inversion-nombre").value = "Bonar 2030";
   }
 
-  test("modo por cotización: manda nominal_quantity y current_unit_price, no manual_value", async () => {
+  test("manda initial_value y nominal_quantity", async () => {
     const { dom, llamadas } = await montar();
     await entrarYEsperar(dom);
     await completarComun(dom);
 
     $(dom, "inversion-nominales").value = "732";
-    $(dom, "inversion-precio").value = "1527.53";
+    $(dom, "inversion-precio-compra").value = "1118152";
     enviar(dom, "form-inversion");
     await esperar();
 
@@ -465,27 +442,22 @@ describe("guardar el alta", () => {
     const [ruta, datos] = llamadas.apiPost[0];
     assert.equal(ruta, "/investments");
     assert.equal(datos.symbol, "AL30");
-    assert.equal(datos.valuation_mode, "unit_price");
     assert.equal(datos.nominal_quantity, "732");
-    assert.equal(datos.current_unit_price, "1527.53");
-    assert.equal(datos.manual_value, undefined);
+    assert.equal(datos.initial_value, "1118152.00");
   });
 
-  test("modo manual: manda manual_value, no nominal_quantity ni current_unit_price", async () => {
+  test("sin nominales (no aplica), manda nominal_quantity en cero", async () => {
     const { dom, llamadas } = await montar();
     await entrarYEsperar(dom);
     await completarComun(dom);
 
-    $(dom, "inversion-modo").querySelector('[data-modo="manual"]').click();
-    $(dom, "inversion-valor-manual").value = "150000";
+    $(dom, "inversion-precio-compra").value = "150000";
     enviar(dom, "form-inversion");
     await esperar();
 
     const [, datos] = llamadas.apiPost[0];
-    assert.equal(datos.valuation_mode, "manual");
-    assert.equal(datos.manual_value, "150000.00");
-    assert.equal(datos.nominal_quantity, undefined);
-    assert.equal(datos.current_unit_price, undefined);
+    assert.equal(datos.initial_value, "150000.00");
+    assert.equal(datos.nominal_quantity, "0");
   });
 
   test("después de comprar: cierra la hoja, recarga la cartera y avisa — sin tocar el ahorro", async () => {
@@ -494,7 +466,7 @@ describe("guardar el alta", () => {
     await completarComun(dom);
 
     $(dom, "inversion-nominales").value = "10";
-    $(dom, "inversion-precio").value = "100";
+    $(dom, "inversion-precio-compra").value = "100";
     enviar(dom, "form-inversion");
     await esperar();
 
@@ -512,7 +484,7 @@ describe("guardar el alta", () => {
     await entrarYEsperar(dom);
     await completarComun(dom);
     $(dom, "inversion-nominales").value = "10";
-    $(dom, "inversion-precio").value = "100";
+    $(dom, "inversion-precio-compra").value = "100";
 
     enviar(dom, "form-inversion");
     await esperar();
@@ -528,7 +500,7 @@ describe("guardar el alta", () => {
 // ===================================================================
 
 async function abrirDetalle(dom, { conClick = true } = {}) {
-  const fila = filas(dom)[0]; // AL30, valuation_mode: unit_price
+  const fila = filas(dom)[0]; // AL30
   if (conClick) {
     fila.click();
   } else {
@@ -558,49 +530,44 @@ describe("abrir el detalle de una posición", () => {
     assert.equal($(dom, "hoja-inversion-detalle").classList.contains("abierta"), true);
   });
 
-  test("valuación por cotización: muestra el campo de precio, no el de valor", async () => {
+  test("el campo de precio actual arranca con el valor de hoy", async () => {
     const { dom } = await montar();
     await entrarYEsperar(dom);
     await abrirDetalle(dom);
 
-    assert.equal($(dom, "inversion-detalle-campo-precio").hidden, false);
-    assert.equal($(dom, "inversion-detalle-campo-valor").hidden, true);
-    // "1527.530000" del servidor, sin ceros de más para editar.
-    assert.equal($(dom, "inversion-detalle-precio").value, "1527.53");
+    assert.equal($(dom, "inversion-detalle-valor").value, "1.118.152");
   });
 
-  test("valuación manual: muestra el campo de valor, no el de precio", async () => {
+  test("una posición sin nominales también se puede abrir y actualizar", async () => {
     const { dom } = await montar();
     await entrarYEsperar(dom);
-    filas(dom)[1].click(); // DEP, valuation_mode: manual
+    filas(dom)[1].click(); // DEP, sin nominales
     await esperar();
 
-    assert.equal($(dom, "inversion-detalle-campo-precio").hidden, true);
-    assert.equal($(dom, "inversion-detalle-campo-valor").hidden, false);
     assert.equal($(dom, "inversion-detalle-valor").value, "88.000");
   });
 });
 
 describe("actualizar el valor", () => {
-  test("modo por cotización: PUT con current_unit_price, sin tocar el ahorro", async () => {
+  test("PUT con current_value en pesos con .00, sin tocar el ahorro", async () => {
     const { dom, llamadas } = await montar();
     await entrarYEsperar(dom);
     await abrirDetalle(dom);
 
-    $(dom, "inversion-detalle-precio").value = "1600";
+    $(dom, "inversion-detalle-valor").value = "1600000";
     enviar(dom, "form-inversion-valor");
     await esperar();
 
     assert.equal(llamadas.apiPut.length, 1);
     assert.equal(llamadas.apiPut[0][0], "/investments/1");
-    assert.deepEqual(llamadas.apiPut[0][1], { current_unit_price: "1600" });
+    assert.deepEqual(llamadas.apiPut[0][1], { current_value: "1600000.00" });
     assert.equal($(dom, "hoja-inversion-detalle").classList.contains("abierta"), false);
   });
 
-  test("modo manual: PUT con current_value en pesos con .00", async () => {
+  test("también sirve para una posición sin nominales", async () => {
     const { dom, llamadas } = await montar();
     await entrarYEsperar(dom);
-    filas(dom)[1].click(); // DEP, manual
+    filas(dom)[1].click(); // DEP, sin nominales
     await esperar();
 
     $(dom, "inversion-detalle-valor").value = "95000";
@@ -619,7 +586,7 @@ describe("actualizar el valor", () => {
     await entrarYEsperar(dom);
     await abrirDetalle(dom);
 
-    $(dom, "inversion-detalle-precio").value = "1600";
+    $(dom, "inversion-detalle-valor").value = "1600000";
     enviar(dom, "form-inversion-valor");
     await esperar();
 

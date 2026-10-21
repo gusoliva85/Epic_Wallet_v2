@@ -298,6 +298,13 @@ create table employment_history (
 create index employment_user_date_idx on employment_history (user_id, effective_date desc);
 
 -- ============ INVERSIONES (cartera actual, sin bitácora) ============
+-- Revisado 2026-10-20: sin modo de valuación. initial_value (precio de
+-- compra) y current_value (precio actual) son siempre el importe total
+-- de la posición, cargado a mano — nunca nominales por un precio
+-- unitario. nominal_quantity queda puramente informativo. Se sacaron
+-- current_unit_price, valuation_mode, price_source y price_updated_at
+-- (migración 7a3f9c2e1d84): los últimos dos estaban preparados para la
+-- cotización automática de después del MVP y nadie los llegó a usar.
 create table investments (
   id                bigint generated always as identity primary key,
   user_id           uuid not null references profiles(id) on delete cascade,
@@ -307,12 +314,7 @@ create table investments (
                      ('obligacion_negociable','bono','cedear','accion','fci','otro')),
   nominal_quantity  numeric(18,4) not null default 0 check (nominal_quantity >= 0),
   initial_value     numeric(14,2) not null default 0 check (initial_value >= 0),
-  current_unit_price numeric(18,6),           -- null = se valúa por valor manual
   current_value     numeric(14,2) not null default 0,
-  valuation_mode    text not null default 'unit_price'
-                    check (valuation_mode in ('unit_price','manual')),
-  price_source      text,
-  price_updated_at  timestamptz,
   active            boolean not null default true,
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now()
@@ -467,11 +469,10 @@ def saving_rate(income: Decimal, saving: Decimal) -> Decimal | None:
 def accumulated_balance(opening: Decimal, savings: list[Decimal]) -> Decimal:
     return money(opening + sum(savings, Decimal(0)))
 
-def investment_value(mode: str, nominal: Decimal,
-                     unit_price: Decimal | None, manual_value: Decimal) -> Decimal:
-    if mode == "unit_price" and unit_price is not None:
-        return money(nominal * unit_price)
-    return money(manual_value)
+# Revisado 2026-10-20: no hay `investment_value` ni modo de valuación.
+# El valor de una posición es el importe total que se carga a mano
+# (precio de compra, precio actual) — no hace falta ninguna cuenta
+# para armarlo.
 
 def investment_return(current: Decimal, initial: Decimal) -> Decimal:
     return money(current - initial)
@@ -910,7 +911,7 @@ Uniforme en toda la API, para que el frontend tenga un único camino de manejo:
 | Movimiento | `amount > 0`; `category_id` existe, está activa y su `type` coincide con `transaction_type`; `transaction_date` válida y dentro del mes indicado; `description` ≤ 500 caracteres |
 | Mes histórico | `year`/`month` válidos y no futuros; totales ≥ 0; si vienen categorías, su suma se compara con el total de egresos y se advierte la diferencia |
 | Categoría | `name` obligatorio, 1–60 caracteres, único por tipo; `type` ∈ {income, expense} |
-| Inversión | `symbol` y `name` obligatorios; `investment_type` del enum; `nominal_quantity ≥ 0`; `initial_value ≥ 0`; si `valuation_mode = unit_price` entonces `current_unit_price` es obligatorio |
+| Inversión | `symbol` y `name` obligatorios; `investment_type` del enum; `initial_value > 0` (precio de compra); `nominal_quantity ≥ 0`, informativo, no entra en ninguna cuenta (revisado 2026-10-20) |
 | Registro laboral | `company`, `position`, `salary ≥ 0`, `effective_date` válida |
 
 No se permite seleccionar un mes futuro que todavía no exista (sección 12.1 del general): `navigation.next` llega en `null` y el botón se deshabilita.
