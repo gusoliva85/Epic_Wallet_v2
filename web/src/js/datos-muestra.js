@@ -31,29 +31,6 @@ export const METRICAS = [
   { nombre: "Meses registrados", valor: "6" },
 ];
 
-/* Las categorías de configuración, con su estado. Se desactivan, nunca
-   se borran si tienen histórico. */
-export const PREFERENCIAS = [
-  {
-    id: "alertas",
-    nombre: "Alertas analíticas",
-    detalle: "Avisos de comportamiento del gasto.",
-    activa: true,
-  },
-  {
-    id: "cotizaciones",
-    nombre: "Actualizar cotizaciones",
-    detalle: "Una vez por día, al abrir la aplicación.",
-    activa: true,
-  },
-  {
-    id: "resumen",
-    nombre: "Resumen al cerrar el mes",
-    detalle: "Un repaso de cómo terminó el mes.",
-    activa: false,
-  },
-];
-
 export const LABORALES = [
   { nombre: "Sueldo actual", valor: "$1.980.000" },
   { nombre: "Vigente desde", valor: "Septiembre 2026" },

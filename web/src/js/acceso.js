@@ -20,6 +20,7 @@ import { entrar } from "./auth.js";
 import { navegar } from "./router.js";
 import { INICIO, REGISTRO } from "./nav.js";
 import { icono } from "./iconos.js";
+import { sincronizarTema } from "./preferencias.js";
 
 /* Lo que se tarda, como mínimo, en contestar «credenciales
    incorrectas». Sin esto, un intento con un correo que no existe falla
@@ -187,6 +188,13 @@ export async function alEnviar(evento) {
     // de un input queda al alcance de cualquier extensión y vuelve a
     // aparecer si se recarga con el campo restaurado.
     clave.value = "";
+
+    // F11-T01: es el punto donde un dispositivo nuevo (o uno que
+    // perdió la sesión) se entera de la preferencia de la cuenta. No
+    // se espera: si falla o tarda, entrar no tiene que depender de
+    // eso — el tema ya está aplicado por `tema.js` desde antes.
+    void sincronizarTema();
+
     navegar(INICIO);
   } catch (e) {
     // Acá no debería llegar nada: `entrar()` ya devuelve el error en

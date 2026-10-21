@@ -913,6 +913,7 @@ Uniforme en toda la API, para que el frontend tenga un único camino de manejo:
 | Categoría | `name` obligatorio, 1–60 caracteres, único por tipo; `type` ∈ {income, expense} |
 | Inversión | `symbol` y `name` obligatorios; `investment_type` del enum; `initial_value > 0` (precio de compra); `nominal_quantity ≥ 0`, informativo, no entra en ninguna cuenta (revisado 2026-10-20) |
 | Registro laboral | `company`, `position`, `salary ≥ 0`, `effective_date` válida |
+| Preferencias | `theme` ∈ {light, dark, null}; `null` borra la preferencia guardada (F11-T01) |
 
 No se permite seleccionar un mes futuro que todavía no exista (sección 12.1 del general): `navigation.next` llega en `null` y el botón se deshabilita.
 

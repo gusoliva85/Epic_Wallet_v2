@@ -111,6 +111,14 @@ async function cargarConDobles(espia, navegaciones) {
     .replace(
       'import { icono } from "./iconos.js";',
       'const icono = (n) => `<!--${n}-->`;',
+    )
+    // F11-T01: sincroniza el tema contra la cuenta al entrar. No hace
+    // a ningún criterio de esta pantalla — ya tiene sus propias
+    // pruebas en `preferencias.test.mjs`—, así que acá se dobla por
+    // un no-op en vez de resolver el módulo real contra la red.
+    .replace(
+      'import { sincronizarTema } from "./preferencias.js";',
+      "const sincronizarTema = async () => {};",
     );
 
   /* El comentario con un número al azar hace que cada prueba genere una

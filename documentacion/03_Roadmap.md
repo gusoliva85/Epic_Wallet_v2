@@ -444,10 +444,13 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 
 **Al cerrar esta fase el MVP está completo.**
 
-- [ ] **F11-T01 · Configuración**
+- [~] **F11-T01 · Configuración**
   **Tipo:** Backend → Frontend · **Ref:** General §42, §48.9 · *reemplaza F14-T01 a F14-T05*
   **Hacer:** tabla `app_settings`, `GET` y `PUT /api/settings`, y la vista de configuración completa: preferencias de la aplicación (tema, formato de importes), sección de cuenta y saldo inicial.
   **Aceptación:** · las preferencias persisten entre sesiones y dispositivos · el saldo inicial se edita desde acá · la vista reúne lo que hoy está disperso.
+  *"Formato de importes" se sacó del alcance (decisión de Gustavo, 2026-10-21): no había nada concreto que elegir ahí todavía. El saldo inicial y la sección de cuenta ya estaban resueltos desde F09-T05/F02-T11; lo que faltaba de verdad era que el tema viajara entre dispositivos, no sólo en este navegador.*
+  *Tabla `app_settings` clave/valor (`user_id`, `key`, `value jsonb`, único por `(user_id, key)`), migración `c4d8a1e6f352` —escrita y revisada, **pendiente de aplicar contra producción**, bloqueada por el modo automático igual que `7a3f9c2e1d84` de F10-T04—. `services/settings.py` sólo conoce una clave hoy (`theme`); `GET`/`PUT /api/settings` tipan `theme` como `"light"|"dark"|null`, no el valor libre de la tabla. `PUT` con `theme: null` borra la preferencia (vuelve a seguir el dispositivo). Probado con `tests/api/test_settings_endpoints.py` (pendiente de correr de verdad hasta que se aplique la migración).*
+  *Frontend: `tema.js` (bloqueante, en el `<head>`) ganó `fijar()` y `preferenciaGuardada()`, reutilizados por `alternar()` — sigue aplicando el tema al instante desde `localStorage`, antes de que haya sesión. `preferencias.js` (nuevo) sincroniza contra la cuenta: si la cuenta ya tiene un tema guardado, manda sobre este dispositivo; si no tiene nada pero el dispositivo sí, sube ese valor en vez de perderlo. Se llama al entrar a Ajustes y al iniciar sesión. El botón rápido de tema de la barra superior (`boton-tema.js`) también persiste ahora, no sólo cambia local. La tarjeta "Preferencias" de Ajustes (`config-preferencias.js`) reemplaza los interruptores de muestra (alertas, cotizaciones, resumen — de funciones que no existen) por un `view-switch` de Claro/Oscuro/Sistema, el único real. Probado en `tests/js/preferencias.test.mjs` y `tests/js/config-preferencias.test.mjs`.*
 
 - [ ] **F11-T02 · Exportación y respaldo**
   **Tipo:** Backend → Frontend · **Ref:** General §58 · Técnico §18 · *reemplaza F14-T06 a F14-T10*

@@ -76,36 +76,21 @@ function analisis() {
   );
 }
 
-/* ----------------------------------------------------------- ajustes */
+/* La vista Ajustes: "Categorías" tiene datos reales desde F03-T10
+   (config-categorias.js) y "Preferencias" desde F11-T01
+   (config-preferencias.js, el tema real). Ya no hay nada de muestra
+   que escribir para ninguna de las dos — mismo caso que Inicio,
+   Movimientos, Historial, Patrimonio y Cartera, más arriba.
 
-function config() {
-  // Categorías: F03-T10 las reemplazó por datos reales de
-  // `GET /api/categories`, pintados por config-categorias.js. Ya no
-  // hay nada de muestra que escribir acá.
-
-  escribir(
-    "config-preferencias",
-    D.PREFERENCIAS.map(
-      (p) =>
-        '<div class="cfg-row cg">' +
-        `<div><b>${esc(p.nombre)}</b><span>${esc(p.detalle)}</span></div>` +
-        `<button class="toggle" type="button" role="switch" ` +
-        `aria-checked="${p.activa}" aria-label="${esc(p.nombre)}"></button>` +
-        "</div>",
-    ).join(""),
-  );
-
-  // "Datos laborales" (#config-laborales): desde F09-T05 lo pinta
-  // `saldo-inicial.js` — tres fichas siguen siendo de muestra
-  // (historial salarial, después del MVP) y una es real (el saldo
-  // inicial). Ya no hay nada que escribir acá.
-}
+   "Datos laborales" (#config-laborales): desde F09-T05 lo pinta
+   `saldo-inicial.js` — tres fichas siguen siendo de muestra
+   (historial salarial, después del MVP) y una es real (el saldo
+   inicial). */
 
 /* ------------------------------------------------------------ armado */
 
 export function pintarVistas() {
   analisis();
-  config();
 }
 
 /** Los interruptores de ajustes y los conmutadores, sin lógica real.

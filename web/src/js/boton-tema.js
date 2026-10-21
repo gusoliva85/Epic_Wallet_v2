@@ -4,7 +4,14 @@
 
    Cualquier elemento con `data-tema` funciona como interruptor, así
    que cuando la barra superior lo tenga (F01-T05) no hay que tocar
-   este archivo. */
+   este archivo.
+
+   F11-T01: el toque rápido de este botón también guarda la elección
+   en la cuenta (`guardarTema`), no sólo en este dispositivo — si no,
+   alternar desde acá se perdería al mirar la cuenta desde otro
+   dispositivo. */
+
+import { guardarTema } from "./preferencias.js";
 
 const SOL =
   '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4' +
@@ -49,7 +56,8 @@ function conectar() {
     pintar(boton);
     boton.addEventListener("click", () => {
       marcarOrigen(boton);
-      window.EpicTema.alternar();
+      const nuevo = window.EpicTema.actual() === "dark" ? "light" : "dark";
+      void guardarTema(nuevo);
       botones.forEach(pintar);
     });
   });

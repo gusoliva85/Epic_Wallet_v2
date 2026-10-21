@@ -1528,6 +1528,12 @@ value
 
 Permitirá guardar preferencias futuras.
 
+> **Revisado 2026-10-21 (F11-T01).** La primera preferencia real es
+> el tema (claro/oscuro/sistema), que ya existía sólo en este
+> dispositivo (`localStorage`) y ahora viaja entre dispositivos a
+> través de la cuenta. "Formato de importes" se sacó del alcance de
+> esta tarea: no había todavía nada concreto que elegir ahí.
+
 ------------------------------------------------------------------------
 
 # 43. Relaciones principales

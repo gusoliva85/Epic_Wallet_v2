@@ -47,6 +47,20 @@
     return guardado() || delSistema();
   }
 
+  /** Mismo efecto visual en los tres casos que cambian el tema: el
+   * círculo de la View Transitions API si existe y no hay movimiento
+   * reducido, aplicado directo si no. */
+  function conTransicion(fn) {
+    var sinMovimiento =
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (document.startViewTransition && !sinMovimiento) {
+      document.startViewTransition(fn);
+    } else {
+      fn();
+    }
+  }
+
   function aplicar(tema) {
     document.documentElement.setAttribute("data-theme", tema);
 
@@ -71,26 +85,35 @@
       return document.documentElement.getAttribute("data-theme") || efectivo();
     },
 
-    alternar: function () {
-      var nuevo = this.actual() === OSCURO ? CLARO : OSCURO;
+    /** La elección guardada en este dispositivo, o `null` si no hay
+     * ninguna (sigue al sistema). Para reconciliar con la preferencia
+     * de la cuenta (F11-T01): decide si este dispositivo tiene algo
+     * propio que no vino todavía de `GET /api/settings`. */
+    preferenciaGuardada: function () {
+      return guardado();
+    },
+
+    /** Fija un tema explícito ("light" u "oscuro"), en este
+     * dispositivo. Lo usa tanto el botón de la barra como la
+     * preferencia guardada en la cuenta, al sincronizarla. */
+    fijar: function (tema) {
+      if (tema !== CLARO && tema !== OSCURO) {
+        this.seguirAlSistema();
+        return this.actual();
+      }
       try {
-        localStorage.setItem(CLAVE, nuevo);
+        localStorage.setItem(CLAVE, tema);
       } catch (e) {
         /* sin almacenamiento, el cambio vale sólo para esta visita */
       }
+      conTransicion(function () {
+        aplicar(tema);
+      });
+      return tema;
+    },
 
-      var sinMovimiento =
-        window.matchMedia &&
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-      if (document.startViewTransition && !sinMovimiento) {
-        document.startViewTransition(function () {
-          aplicar(nuevo);
-        });
-      } else {
-        aplicar(nuevo);
-      }
-      return nuevo;
+    alternar: function () {
+      return this.fijar(this.actual() === OSCURO ? CLARO : OSCURO);
     },
 
     /** Vuelve a seguir al sistema: olvida la elección. */
@@ -100,7 +123,9 @@
       } catch (e) {
         /* nada que olvidar */
       }
-      aplicar(delSistema());
+      conTransicion(function () {
+        aplicar(delSistema());
+      });
     },
   };
 
