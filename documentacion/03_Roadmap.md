@@ -406,12 +406,13 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   *`services/calc.py`: `valor_de_inversion` (por precio unitario o manual, Técnico §6.2), `rendimiento_de_inversion`, `rendimiento_porcentual` (`None` con valor inicial en cero, delega en `variacion_porcentual` — el valor inicial de una inversión nunca es negativo) y `total_invertido`. Comprar/vender no cambia el patrimonio neto: mismo invariante que F09-T01, probado de nuevo en términos de esta tarea. Sin servicio ni endpoint todavía —eso es F10-T04/T06—, así que no hay nada que se vea distinto en la aplicación; lo valida `tests/unit/test_calc.py` (12 tests nuevos).*
   **Revisado 2026-10-20, pisa lo de arriba.** No hay modo de valuación: `valor_de_inversion` se sacó entera. El precio de compra y el precio actual son siempre el importe total que Gustavo carga a mano —nunca nominales por un precio unitario—, así que no hace falta ninguna cuenta para armar el valor de una posición nueva. `rendimiento_de_inversion`, `rendimiento_porcentual` y `total_invertido` no cambian: ya operaban sobre los dos totales. Ver General §20.1/§22 y Técnico §6.2, los tres con su nota de revisión.
 
-- [~] **F10-T04 · Tabla `investments` y servicio de cartera**
+- [x] **F10-T04 · Tabla `investments` y servicio de cartera**
   **Tipo:** Backend · **Ref:** Técnico §6.2, §7.3 · *fusiona F10-T04 y F10-T05*
   **Hacer:** modelo, migración y RLS; servicio con los indicadores de la cartera y las operaciones de compra y venta en una transacción.
   **Aceptación:** · `downgrade` probado · una venta a medias no deja la cartera descuadrada · eliminar una inversión pide confirmación (R10).
   *Tabla `investments` aplicada contra producción, `downgrade` probado (bajada y vuelta a subir sin error). `services/investments.py`: `comprar_posicion`, `vender_posicion` (borra de verdad, sin bitácora, General §21) e `indicadores_de_cartera`. A propósito, esto NO crea todavía el movimiento `source='system'` que mueve la plata del ahorro (Regla 7, Técnico §7.3: "el endpoint es uno solo y hace las dos puntas") — eso, la categoría de transferencia y "eliminar pide confirmación" (R10, es de la interfaz) quedan para F10-T06, que es quien arma el endpoint. Probado con `tests/api/test_investments_servicio.py` contra la base real, llamando al servicio directo sin pasar por HTTP (el endpoint todavía no existe) — mismo patrón que F04-T05.*
   **Revisado 2026-10-20, pisa lo de arriba.** Se sacan `valuation_mode`, `current_unit_price`, `price_source` y `price_updated_at` de la tabla (migración `7a3f9c2e1d84`, escrita y revisada, **pendiente de aplicar contra producción** — sin datos reales que migrar: todavía nadie cargó una posición de verdad). `initial_value` y `current_value` son siempre el importe total de la posición —precio de compra y precio actual—; `nominal_quantity` queda informativo. `comprar_posicion` ya no recibe modo ni precio unitario, recibe `initial_value` directo.
+  **Aprobada por Gustavo, 2026-10-21** (junto con F10-T08: no tiene pantalla propia que revisar aparte, se probó de hecho usando Cartera). **Sigue pendiente aplicar la migración `7a3f9c2e1d84` contra producción** — bloqueada por el modo automático, hay que correrla a mano.
 
 - [x] **F10-T06 · Endpoints de inversiones**
   **Tipo:** Backend · *fusiona F10-T06 y F10-T07*
@@ -433,6 +434,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 - [ ] **F10-T12 · Carga real de la cartera**
   **Tipo:** QA
   **Aceptación:** · tus posiciones reales están cargadas y el total coincide con lo que tenés.
+  *No es un bloqueante (decisión de Gustavo, 2026-10-21, mismo criterio que F08-T11 y F09-T08): se sigue con la Fase 11 mientras la carga a su ritmo.*
 
 ---
 
