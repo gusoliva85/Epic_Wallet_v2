@@ -12,6 +12,7 @@
    es de las fases que les corresponden. */
 
 import { crearHoja } from "../components/sheet.js";
+import { aviso } from "../components/avisos.js";
 import { conectarSinConexion } from "../components/estados.js";
 import * as D from "../datos-muestra.js";
 
