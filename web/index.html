@@ -286,27 +286,25 @@
             <div class="chart-wrap" id="grafico-diario"></div>
           </article>
 
-          <div class="grid-2">
-            <article class="card shell" aria-labelledby="t-categorias">
-              <div class="card-head">
-                <div>
-                  <h2 id="t-categorias">Gastos por categoría</h2>
-                  <p>Tocá una categoría para ver sus movimientos.</p>
-                </div>
-                <div
-                  class="view-switch"
-                  role="group"
-                  aria-label="Orden de las categorías"
-                  id="categorias-orden"
-                >
-                  <button type="button" class="activa" data-orden="mayor">Mayor gasto</button>
-                  <button type="button" data-orden="az">A–Z</button>
-                  <button type="button" data-orden="variacion">Variación</button>
-                </div>
+          <article class="card shell" aria-labelledby="t-categorias">
+            <div class="card-head">
+              <div>
+                <h2 id="t-categorias">Gastos por categoría</h2>
+                <p>Tocá una categoría para ver sus movimientos.</p>
               </div>
-              <div class="rows" id="categorias-inicio"></div>
-            </article>
-          </div>
+              <div
+                class="view-switch"
+                role="group"
+                aria-label="Orden de las categorías"
+                id="categorias-orden"
+              >
+                <button type="button" class="activa" data-orden="mayor">Mayor gasto</button>
+                <button type="button" data-orden="az">A–Z</button>
+                <button type="button" data-orden="variacion">Variación</button>
+              </div>
+            </div>
+            <div class="rows" id="categorias-inicio"></div>
+          </article>
         </section>
 
         <!-- ----------------------------------------------- MOVIMIENTOS -->
@@ -691,23 +689,31 @@
               </div>
               <div class="kv-grid" id="config-laborales"></div>
             </article>
+          </div>
 
-            <article class="card shell">
-              <div class="card-head">
-                <div>
-                  <h2>Categorías</h2>
-                  <p>Se desactivan, nunca se borran si tienen histórico.</p>
-                </div>
-                <button class="link-btn" type="button" id="btn-nueva-categoria">
-                  + Nueva
-                </button>
+          <!-- Categorías queda fuera del grid de dos columnas, a
+               propósito (apronte de escritorio, 2026-10-21): puede
+               tener 21 filas, y emparejada con una tarjeta corta en la
+               misma fila de un grid de dos columnas deja un hueco
+               vacío del alto de toda la lista al lado. De ancho
+               completo no tiene con qué desparejar. -->
+          <article class="card shell">
+            <div class="card-head">
+              <div>
+                <h2>Categorías</h2>
+                <p>Se desactivan, nunca se borran si tienen histórico.</p>
               </div>
-              <!-- F03-T10: datos reales de GET /api/categories, pintados
-                   por config-categorias.js. Ya no son las de muestra de
-                   F01-T13. -->
-              <div class="rows" id="config-categorias"></div>
-            </article>
+              <button class="link-btn" type="button" id="btn-nueva-categoria">
+                + Nueva
+              </button>
+            </div>
+            <!-- F03-T10: datos reales de GET /api/categories, pintados
+                 por config-categorias.js. Ya no son las de muestra de
+                 F01-T13. -->
+            <div class="rows" id="config-categorias"></div>
+          </article>
 
+          <div class="grid-2">
             <article class="card shell">
               <div class="card-head">
                 <div>
@@ -741,7 +747,9 @@
 
             <!-- Sesión, aparte de Cuenta (Gustavo, 2026-10-17): cerrar
                  sesión es la última acción de la pantalla, no parte
-                 del formulario de nombre y contraseña. -->
+                 del formulario de nombre y contraseña. Emparejada acá
+                 con Copia de seguridad, no con Categorías: las dos son
+                 cortas y cierran parejo en el grid de dos columnas. -->
             <article class="card shell">
               <div class="card-head">
                 <div>

@@ -1140,6 +1140,16 @@
   .kpi--hero {
     grid-column: span 3;
   }
+
+  /* Héroe + cuatro métricas (hoy sólo Inicio: Ingresos, Egresos,
+     Gasto de hoy, Total de ahorros): la héroe y las primeras tres
+     llenan la fila justo (3+1+1+1=6), y la cuarta métrica queda sola
+     en la fila siguiente — angosta, con aire vacío al lado. Ocupa
+     todo el ancho en vez de quedar huérfana. Apronte de escritorio,
+     2026-10-21. */
+  .kpi-grid > :nth-child(5):last-child {
+    grid-column: 1 / -1;
+  }
 }
 
 .kpi-label {

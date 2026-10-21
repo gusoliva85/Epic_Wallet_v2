@@ -482,6 +482,35 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 
 ---
 
+# FASE 12 — Apronte de escritorio
+
+**Objetivo:** la aplicación ya se ve bien en el celular (prioridad del proyecto, General intro) y eso no se toca. Esta fase es sólo el ajuste fino de los mismos puntos de corte de escritorio que ya estaban planificados (skill §5: `lg` ≥960px, `xl` ≥1024px) pero nunca se probaron a fondo en un navegador ancho.
+
+**Por qué existe esta fase:** Gustavo mandó capturas de escritorio (Inicio, Cartera, Ajustes) y pidió revisar si el diseño de escritorio se había tenido en cuenta. Se agrega acá, a pedido suyo, para implementar después de la Fase 11 — no se adelanta.
+
+- [~] **F12-T01 · Dos huecos de layout en escritorio (Inicio y Ajustes)**
+  **Tipo:** Frontend · **Ref:** `.claude/skills/epic-wallet-ui/SKILL.md` §5, §11.1
+  **Hacer:** corregir los huecos de layout encontrados en una auditoría visual real (Playwright, cuenta de prueba con datos representativos, 1280 y 1920px, los dos temas) contra los seis puntos de corte.
+  **Aceptación:** · a 1024px+ ninguna tarjeta de KPI queda sola en una fila con media pantalla vacía al lado · a 960px+ ninguna tarjeta de Ajustes deja un hueco vacío del alto de otra columna · nada de esto cambia una línea de lo que ya se ve en el celular.
+  *Encontrado y corregido, 2026-10-21 (rama `fase12-apronte-escritorio`, sin mergear — falta tu aprobación):*
+  1. **Inicio, `.kpi-grid` a 1024px+:** la héroe y las tres primeras tarjetas de color (Ingresos, Egresos, Gasto de hoy) llenan la fila justo (3+1+1+1 de 6 columnas), y "Total de ahorros" —la cuarta— quedaba sola en la fila siguiente, angosta, con media fila vacía al lado. Ahora esa cuarta tarjeta ocupa todo el ancho de su fila (`components.css`, regla acotada a exactamente 5 tarjetas, no afecta a Cartera ni a ninguna vista con otra cantidad).
+  2. **Inicio, "Gastos por categoría" a 960px+:** estaba sola dentro de un `.grid-2` (grid de dos columnas) sin nada en la segunda columna, dejando vacía la mitad de la pantalla debajo del gráfico. Pasa a tarjeta de ancho completo, como ya son "Comportamiento diario" arriba y los paneles de Historial.
+  3. **Ajustes a 960px+:** "Categorías" (hasta 21 filas) y "Copia de seguridad" (3 botones) compartían fila en un `.grid-2` de cinco tarjetas; como una fila de grid toma la altura de su celda más alta, quedaba un hueco vacío del largo de toda la lista al lado de "Copia de seguridad", y después "Sesión" —la quinta tarjeta— caía sola debajo de "Categorías" con el mismo vacío al lado. "Categorías" pasa a ancho completo, fuera del grid; "Copia de seguridad" se empareja con "Sesión", las dos cortas.
+  *Verificado con medición real de `getBoundingClientRect()` en Playwright antes de tocar nada —no a simple vista—: `.app{max-width:1240px}` ya funciona bien en las seis vistas a cualquier ancho, así que **no hay un problema general de "todo estirado" por falta de un contenedor máximo**; lo que se veía raro en las capturas eran estos dos huecos puntuales. `npm test` (570/570) sigue en verde, no se tocó ningún archivo de `@media` por debajo de 960px.*
+  **Para probar:** abrir la rama en la URL de preview desde una pantalla ancha (no hace falta el celular para esto) y mirar Inicio y Ajustes. Si se ve bien, se mergea y se marca `[x]`.
+
+- [ ] **F12-T02 · El cambio de tema en escritorio**
+  **Tipo:** Frontend (investigación primero) · **Ref:** `tema.js`, skill §6 "Cambio de tema"
+  **Hacer:** Gustavo había dicho que el cambio de tema claro/oscuro "no funciona bien" en escritorio, sin más detalle. Los dos temas fijos (sin animar) se revisaron en la auditoría de F12-T01 y los tokens de color se ven bien en los dos — el problema, si existe, está en la **transición** (`document.startViewTransition`, skill §6) o en algún parpadeo puntual al tocar el botón, y eso no se puede confirmar con una captura estática. Reproducir en vivo (grabación de pantalla o cuadro por cuadro con Playwright) tocando el botón de tema en cada vista a 1024px+, anotar qué se ve mal exactamente, y recién ahí corregir.
+  **Aceptación:** · se reproduce el problema concreto (no una sospecha) · se corrige sin tocar el celular · Gustavo confirma desde su navegador que ya se ve bien.
+
+- [ ] **F12-T03 · El resto, guiado por lo que vayas encontrando**
+  **Tipo:** Frontend
+  **Hacer:** la auditoría de F12-T01 miró las seis vistas a 1280 y 1920px, pero una revisión automática no reemplaza mirar la pantalla de verdad (criterio del CLAUDE.md). A medida que uses la aplicación desde la PC y encuentres algo —una tarjeta en un lugar que no corresponde, un gráfico que se ve pobre, algo demasiado grande o chico—, lo vas marcando y se agrega acá como una entrada concreta, se corrige y se tacha. Sin lista inventada de antemano.
+  **Aceptación:** cada entrada que se agregue acá se marca `[x]` cuando vos confirmás que ya se ve bien.
+
+---
+
 # Después del MVP
 
 Temas reales del documento general que **no** entran en el MVP. No tienen tareas detalladas a propósito: se detallan cuando les llegue el turno, con lo que se haya aprendido construyendo el resto. Si querés adelantar alguno, decímelo y lo subo.
