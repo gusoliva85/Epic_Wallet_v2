@@ -191,8 +191,14 @@ def test_importar_sin_confirmar_solo_da_la_vista_previa(cliente, cuentas: tuple[
     assert cuerpo["applied"] is False
     assert cuerpo["categories"] == 21
 
-    # No escribió nada: b sigue sin meses.
-    assert cliente.get("/api/months", headers=b.cabeceras).json() == []
+    # No escribió nada importado. `GET /api/months` no sirve para
+    # comprobarlo con un `== []`: abre el mes actual solo, por diseño
+    # (routers/months.py, F03-T10), así que una cuenta nueva ya tiene
+    # uno en cuanto se la lista — con eso alcanza, y por eso se verifica
+    # que sea justo ese (en curso, en cero) y no algo importado.
+    meses = cliente.get("/api/months", headers=b.cabeceras).json()
+    assert len(meses) <= 1
+    assert all(m["status"] == "open" and m["income_total"] == "0.00" for m in meses)
 
 
 @sin_entorno
