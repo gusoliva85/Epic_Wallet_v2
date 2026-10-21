@@ -243,6 +243,70 @@ describe("el 401: una renovación, nunca un bucle", () => {
   });
 });
 
+describe("descargar", () => {
+  test("pide sin Content-Type y devuelve el blob con el nombre del servidor", async () => {
+    const blobFalso = { tipo: "blob-de-prueba" };
+    const { api, llamadas } = await montar({
+      fetchImpl: async () => ({
+        ok: true,
+        status: 200,
+        headers: { get: (n) => (n === "Content-Disposition" ? 'attachment; filename="epic-wallet.json"' : null) },
+        blob: async () => blobFalso,
+      }),
+    });
+
+    const { blob, filename } = await api.descargar("/export");
+
+    assert.equal(llamadas.fetch[0][0], "/api/export");
+    assert.equal(llamadas.fetch[0][1].headers["Content-Type"], undefined, "una descarga no manda cuerpo JSON");
+    assert.equal(filename, "epic-wallet.json");
+    assert.equal(blob, blobFalso);
+  });
+
+  test("sin Content-Disposition, cae en un nombre genérico", async () => {
+    const { api } = await montar({
+      fetchImpl: async () => ({
+        ok: true,
+        status: 200,
+        headers: { get: () => null },
+        blob: async () => ({}),
+      }),
+    });
+
+    const { filename } = await api.descargar("/export");
+    assert.equal(filename, "respaldo");
+  });
+
+  test("un error de la API se traduce igual que en las otras formas de pedir", async () => {
+    const { api } = await montar({
+      fetchImpl: async () => ({
+        ok: false,
+        status: 409,
+        json: async () => ({ error: { code: "CONFLICT", message: "Esta cuenta ya tiene datos." } }),
+      }),
+    });
+
+    await assert.rejects(api.descargar("/export"), (e) => {
+      assert.equal(e.code, "CONFLICT");
+      assert.equal(e.message, "Esta cuenta ya tiene datos.");
+      return true;
+    });
+  });
+
+  test("sin red, el error es SIN_RED", async () => {
+    const { api } = await montar({
+      fetchImpl: async () => {
+        throw new TypeError("Failed to fetch");
+      },
+    });
+
+    await assert.rejects(api.descargar("/export"), (e) => {
+      assert.equal(e.code, "SIN_RED");
+      return true;
+    });
+  });
+});
+
 describe("cerrarSesion", () => {
   test("limpia la sesión y manda al login", async () => {
     // Es la misma función exportada que usa `request()` al segundo

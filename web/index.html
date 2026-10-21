@@ -525,10 +525,9 @@
           <h2 id="t-cfg" class="solo-lector">Ajustes</h2>
 
           <!-- ======================= CUENTA · F02-T11 =======================
-               Categorías (F03-T10), datos laborales (F09-T05) y
-               preferencias (F11-T01) ya tienen datos reales. Sólo
-               "Copia de seguridad" sigue con los botones sin conectar
-               de F01-T13, hasta F11-T02.
+               Categorías (F03-T10), datos laborales (F09-T05),
+               preferencias (F11-T01) y copia de seguridad (F11-T02)
+               ya tienen datos reales.
 
                Dos formularios, no uno: guardar el nombre no debería
                pedir la contraseña, y cambiar la contraseña no debería
@@ -716,10 +715,28 @@
                   <p>Todo lo cargado, en un archivo.</p>
                 </div>
               </div>
-              <div class="filtros" style="padding-bottom: 14px">
-                <button class="chip" type="button">Exportar datos</button>
-                <button class="chip" type="button">Importar</button>
+              <div class="filtros" style="padding-bottom: 10px">
+                <button class="chip" type="button" id="btn-exportar-json">
+                  Exportar datos
+                </button>
+                <button class="chip" type="button" id="btn-exportar-csv">
+                  Exportar CSV
+                </button>
+                <button class="chip" type="button" id="btn-importar">Importar</button>
               </div>
+              <input
+                type="file"
+                id="input-importar"
+                accept="application/json,.json"
+                hidden
+              />
+              <p
+                class="acceso-error"
+                id="respaldo-error"
+                role="alert"
+                aria-live="assertive"
+                hidden
+              ></p>
             </article>
 
             <!-- Sesión, aparte de Cuenta (Gustavo, 2026-10-17): cerrar
@@ -1268,6 +1285,50 @@
       </div>
     </aside>
 
+    <!-- Vista previa de una importación · F11-T02. Modal: pide
+         atención completa antes de escribir nada en la cuenta. Sólo
+         se abre después de pedir la vista previa a
+         `POST /api/import` (confirm: false); "Confirmar" repite el
+         mismo pedido con confirm: true. -->
+    <aside
+      class="hoja hoja--modal"
+      id="hoja-importar"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="importar-titulo"
+      aria-hidden="true"
+      tabindex="-1"
+    >
+      <div class="hoja-asa" aria-hidden="true"></div>
+      <div class="hoja-cabeza">
+        <div>
+          <h2 id="importar-titulo">Importar un respaldo</h2>
+          <p>Sólo funciona en una cuenta limpia, sin datos cargados.</p>
+        </div>
+        <button class="hoja-cerrar" type="button" data-cerrar aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
+      <div class="hoja-cuerpo">
+        <div class="kv-grid" id="importar-vista-previa" style="grid-template-columns: 1fr"></div>
+
+        <p
+          class="acceso-error"
+          id="importar-error"
+          role="alert"
+          aria-live="assertive"
+          hidden
+        ></p>
+
+        <button class="btn btn--principal" id="importar-confirmar" type="button">
+          <span class="btn-texto">Confirmar importación</span>
+          <span class="btn-girador" aria-hidden="true"></span>
+        </button>
+      </div>
+    </aside>
+
     <!-- Alta de movimiento · F04-T09.
          La abre el botón flotante #btn-nuevo. Modal y no cajón: es un
          formulario, pide atención completa (mismo criterio que
@@ -1762,6 +1823,7 @@
     <script type="module" src="/src/js/config-cuenta.js"></script>
     <script type="module" src="/src/js/config-categorias.js"></script>
     <script type="module" src="/src/js/config-preferencias.js"></script>
+    <script type="module" src="/src/js/respaldo.js"></script>
     <script type="module" src="/src/js/saldo-inicial.js"></script>
     <script type="module" src="/src/js/alta-movimiento.js"></script>
     <script type="module" src="/src/js/movimientos.js"></script>

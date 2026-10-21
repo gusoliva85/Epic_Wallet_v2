@@ -132,9 +132,45 @@ async function request(path, options = {}, reintentar = true) {
   return cuerpo;
 }
 
-/** Las cinco formas de pedir, listas para usar. Cada endpoint nuevo
- * agrega una línea acá, no un `fetch` suelto en otro archivo: es lo
- * que mantiene el token, el reintento y el formato de error en un solo
+/**
+ * Pide un archivo para descargar (F11-T02, `GET /api/export`): la
+ * única respuesta de la API que no es JSON, así que no puede pasar
+ * por `request()` — `res.json()` ahí tragaría un ZIP entero sin
+ * avisar. Sin el reintento de un 401: es una descarga que dispara un
+ * toque, no vale la pena duplicar esa lógica para un solo botón.
+ *
+ * @param {string} path
+ * @returns {Promise<{blob: Blob, filename: string}>}
+ */
+async function descargar(path) {
+  const cab = await cabeceras();
+  let res;
+  try {
+    res = await fetch(`/api${path}`, { headers: { ...(cab ?? {}) } });
+  } catch (e) {
+    throw new ApiError({ code: "SIN_RED", status: 0 });
+  }
+
+  if (!res.ok) {
+    let cuerpo = null;
+    try {
+      cuerpo = await res.json();
+    } catch {
+      /* sin cuerpo JSON */
+    }
+    throw new ApiError({ ...(cuerpo?.error ?? {}), status: res.status });
+  }
+
+  // El nombre que puso el servidor (`Content-Disposition`), para que
+  // la descarga no se llame "download" a secas.
+  const disposicion = res.headers.get("Content-Disposition") || "";
+  const nombre = /filename="([^"]+)"/.exec(disposicion)?.[1] ?? "respaldo";
+  return { blob: await res.blob(), filename: nombre };
+}
+
+/** Las formas de pedir, listas para usar. Cada endpoint nuevo agrega
+ * una línea acá, no un `fetch` suelto en otro archivo: es lo que
+ * mantiene el token, el reintento y el formato de error en un solo
  * lugar. */
 export const api = {
   /** @param {string} path */
@@ -148,4 +184,6 @@ export const api = {
   put: (path, datos) => request(path, { method: "PUT", body: JSON.stringify(datos) }),
   /** @param {string} path */
   del: (path) => request(path, { method: "DELETE" }),
+  /** @param {string} path */
+  descargar,
 };
