@@ -340,20 +340,32 @@ describe("la tabla de posiciones", () => {
     assert.match(dep.querySelectorAll("td")[1].textContent, /^—$/);
   });
 
-  test("el rendimiento se ve en color según el signo, en la fila y en la tarjeta", async () => {
+  test("el rendimiento: el monto queda neutro, sólo el porcentaje lleva el color del signo", async () => {
     const { dom } = await montar();
     await entrarYEsperar(dom);
 
     const [al30, dep] = filas(dom);
     const celdaAl30 = al30.querySelectorAll("td")[4];
     const celdaDep = dep.querySelectorAll("td")[4];
-    assert.ok(celdaAl30.classList.contains("amt-in"), "rendimiento positivo: amt-in");
-    assert.ok(celdaDep.classList.contains("amt-out"), "rendimiento negativo: amt-out");
+    assert.equal(celdaAl30.classList.contains("amt-in"), false, "el monto no lleva color");
+    assert.ok(celdaAl30.querySelector("span").classList.contains("amt-in"), "el porcentaje sí: amt-in");
+    assert.equal(celdaDep.classList.contains("amt-out"), false, "el monto no lleva color");
+    assert.ok(celdaDep.querySelector("span").classList.contains("amt-out"), "el porcentaje sí: amt-out");
+  });
+
+  test("Invertido y Rendimiento son tarjetas de color sólido, como las del tablero de Inicio", async () => {
+    const { dom } = await montar();
+    await entrarYEsperar(dom);
+
+    const invertido = tarjeta($(dom, "kpis-cartera"), "Invertido");
+    assert.ok(invertido.classList.contains("kpi-color"));
+    assert.match(invertido.getAttribute("style"), /--c-card:var\(--color-card-pat\)/);
 
     // Rendimiento total de la cartera (positivo en respuestaBase): la
     // tarjeta usa el color "inc", nunca el "egr" de un rendimiento negativo.
-    const estiloTarjeta = tarjeta($(dom, "kpis-cartera"), "Rendimiento").getAttribute("style");
-    assert.match(estiloTarjeta, /--c:var\(--color-inc\)/);
+    const rendimiento = tarjeta($(dom, "kpis-cartera"), "Rendimiento");
+    assert.ok(rendimiento.classList.contains("kpi-color"));
+    assert.match(rendimiento.getAttribute("style"), /--c-card:var\(--color-card-inc\)/);
   });
 
   test("con la cartera entera en rojo, la tarjeta de Rendimiento usa el color egr", async () => {
@@ -367,7 +379,31 @@ describe("la tabla de posiciones", () => {
     await entrarYEsperar(dom);
 
     const estiloTarjeta = tarjeta($(dom, "kpis-cartera"), "Rendimiento").getAttribute("style");
-    assert.match(estiloTarjeta, /--c:var\(--color-egr\)/);
+    assert.match(estiloTarjeta, /--c-card:var\(--color-card-egr\)/);
+  });
+
+  test("la tarjeta héroe colorea el porcentaje de su subtítulo según el signo", async () => {
+    const { dom } = await montar();
+    await entrarYEsperar(dom);
+
+    const sub = tarjeta($(dom, "kpis-cartera"), "Valor de la cartera").querySelector(".kpi-sub");
+    assert.match(sub.innerHTML, /amt-in/);
+    assert.match(sub.textContent, /sobre lo invertido/);
+  });
+
+  test("con rendimiento negativo, el subtítulo de la héroe usa amt-out", async () => {
+    const { dom } = await montar({
+      apiGet: async () => {
+        const r = structuredClone(respuestaBase());
+        r.indicators.return_amount = "-50000.00";
+        r.indicators.return_percentage = "-4.5";
+        return r;
+      },
+    });
+    await entrarYEsperar(dom);
+
+    const sub = tarjeta($(dom, "kpis-cartera"), "Valor de la cartera").querySelector(".kpi-sub");
+    assert.match(sub.innerHTML, /amt-out/);
   });
 });
 
@@ -545,6 +581,18 @@ describe("abrir el detalle de una posición", () => {
     await esperar();
 
     assert.equal($(dom, "inversion-detalle-valor").value, "88.000");
+  });
+
+  test("en el detalle, el monto del rendimiento es neutro y sólo el porcentaje lleva color", async () => {
+    const { dom } = await montar();
+    await entrarYEsperar(dom);
+    await abrirDetalle(dom);
+
+    const kv = $(dom, "inversion-detalle-kv");
+    const filaRendimiento = [...kv.children].find((d) => d.textContent.includes("Rendimiento"));
+    const monto = filaRendimiento.querySelector("b");
+    assert.equal(monto.classList.contains("amt-in"), false, "el <b> que envuelve todo no lleva color");
+    assert.ok(monto.querySelector("span.amt-in"), "el porcentaje sí, en su propio span");
   });
 });
 

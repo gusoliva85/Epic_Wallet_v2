@@ -60,19 +60,22 @@ function tarjetasDeCartera(ind) {
       pieDer: posiciones,
       color: "sav",
     }),
+    // Tarjetas de color sólido, misma estética que las cuatro del
+    // tablero de Inicio (kpi.js, variante `tarjeta`): "Invertido" en
+    // el azul de patrimonio, "Rendimiento" en verde o rojo según el
+    // signo — reusa inc/egr con su significado de siempre (ganó/perdió
+    // plata), no literalmente ingreso/egreso del mes.
     tarjetaMetrica({
       etiqueta: "Invertido",
       cifra: fmt(ind.total_invested),
       sub: "Suma de los valores iniciales",
-      color: "accent",
-      icono: "billetera",
+      tarjeta: "pat",
     }),
     tarjetaMetrica({
       etiqueta: "Rendimiento",
       cifra: fmtS(ind.return_amount),
       sub: "Sobre el total de la cartera",
-      color: Number(ind.return_amount) < 0 ? "egr" : "inc",
-      icono: Number(ind.return_amount) < 0 ? "baja" : "sube",
+      tarjeta: Number(ind.return_amount) < 0 ? "egr" : "inc",
     }),
   ];
 }
@@ -100,6 +103,20 @@ function pintarIndicadores() {
 
   pintarTarjetas(caja, tarjetasDeCartera(cartera.indicators));
   animarCifras(caja, valoresParaContar(cartera.indicators));
+  pintarSubRendimientoHeroe(caja, cartera.indicators);
+}
+
+/** El sub de la tarjeta héroe ("13,6% sobre lo invertido") pasa por
+ * `esc()` dentro de `kpi.js` —es un componente genérico, no acepta
+ * HTML— así que el color del signo se agrega acá, después de pintar,
+ * sólo en esta tarjeta de esta pantalla. El monto no lleva color,
+ * sólo el porcentaje. */
+function pintarSubRendimientoHeroe(caja, ind) {
+  const sub = caja.querySelector(".kpi--hero .kpi-sub");
+  if (!sub) return;
+  sub.innerHTML =
+    `<span class="${colorDeSigno(ind.return_amount)}">${esc(pct(ind.return_percentage))}</span>` +
+    " sobre lo invertido";
 }
 
 function pintarTabla() {
@@ -128,8 +145,8 @@ function pintarTabla() {
         `<td class="num">${esc(nominales)}</td>` +
         `<td class="num">${esc(fmt(p.initial_value))}</td>` +
         `<td class="num">${esc(fmt(p.current_value))}</td>` +
-        `<td class="num ${colorDeSigno(p.return_amount)}">${esc(fmtS(p.return_amount))}` +
-        `<br><span style="font-size: var(--text-pill)">${esc(pct(p.return_percentage))}</span></td>` +
+        `<td class="num">${esc(fmtS(p.return_amount))}` +
+        `<br><span class="${colorDeSigno(p.return_amount)}" style="font-size: var(--text-pill)">${esc(pct(p.return_percentage))}</span></td>` +
         "</tr>"
       );
     })
@@ -305,18 +322,18 @@ function pintarKvDetalle(p) {
     ],
     ["Precio de compra", fmt(p.initial_value)],
     ["Precio actual", fmt(p.current_value)],
-    [
-      "Rendimiento",
-      `${fmtS(p.return_amount)} · ${pct(p.return_percentage)}`,
-      colorDeSigno(p.return_amount),
-    ],
   ];
-  return filas
+  const basicas = filas
     .map(
-      ([etiqueta, valor, clase]) =>
-        `<div class="kv cg"><span>${esc(etiqueta)}</span><b class="num${clase ? ` ${clase}` : ""}">${esc(valor)}</b></div>`,
+      ([etiqueta, valor]) =>
+        `<div class="kv cg"><span>${esc(etiqueta)}</span><b class="num">${esc(valor)}</b></div>`,
     )
     .join("");
+  // El monto va neutro; sólo el porcentaje lleva el color del signo.
+  const rendimiento =
+    `<div class="kv cg"><span>Rendimiento</span><b class="num">${esc(fmtS(p.return_amount))} · ` +
+    `<span class="${colorDeSigno(p.return_amount)}">${esc(pct(p.return_percentage))}</span></b></div>`;
+  return basicas + rendimiento;
 }
 
 function alAbrirDetalle(p) {
