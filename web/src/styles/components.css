@@ -1492,6 +1492,18 @@
   color: color-mix(in srgb, var(--color-egr) 82%, var(--mix-ink));
 }
 
+/* `.tbl-wrap td` (más específico, elemento + clase) pisaba el color de
+   estas dos arriba cuando van en una celda de tabla —el caso de la
+   columna "Rendimiento" de Cartera—. Mismas mezclas, con el elemento
+   repetido para ganarle la especificidad. */
+.tbl-wrap td.amt-in {
+  color: color-mix(in srgb, var(--color-inc) 86%, var(--mix-ink));
+}
+
+.tbl-wrap td.amt-out {
+  color: color-mix(in srgb, var(--color-egr) 82%, var(--mix-ink));
+}
+
 /* ---- barra de participación de la fila de categoría ---- */
 
 .cat-track {

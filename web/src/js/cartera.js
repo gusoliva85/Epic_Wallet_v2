@@ -65,12 +65,14 @@ function tarjetasDeCartera(ind) {
       cifra: fmt(ind.total_invested),
       sub: "Suma de los valores iniciales",
       color: "accent",
+      icono: "billetera",
     }),
     tarjetaMetrica({
       etiqueta: "Rendimiento",
       cifra: fmtS(ind.return_amount),
       sub: "Sobre el total de la cartera",
       color: Number(ind.return_amount) < 0 ? "egr" : "inc",
+      icono: Number(ind.return_amount) < 0 ? "baja" : "sube",
     }),
   ];
 }
