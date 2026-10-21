@@ -32,7 +32,7 @@ Criterio para el futuro: *si el test falla, ¿me enteré de algo que la pantalla
 ## Stack
 
 - **Backend:** Python 3.12, FastAPI, SQLAlchemy 2.0, Alembic. Capas: `routers` → `services` → `repos` → `core`. Todo cálculo financiero es una **función pura** en `services/calc.py`.
-- **Frontend:** HTML + Tailwind v4 + JavaScript ES2022 con módulos nativos. **Sin React ni bundler.** Gráficos en SVG propio, sin Chart.js. Una página, siete vistas, enrutado por hash.
+- **Frontend:** HTML + Tailwind v4 + JavaScript ES2022 con módulos nativos. **Sin React ni bundler.** Gráficos en SVG propio, sin Chart.js. Una página, seis vistas, enrutado por hash.
 - **Base:** Supabase Postgres, **un solo proyecto y un solo esquema (`public`)**. Región `sa-east-1` (São Paulo).
 - **Auth:** Supabase Auth. El JWT se verifica con la clave pública del JWKS (ES256).
 - **Despliegue:** Vercel, función en `gru1`. Preview por rama, producción en `main`.

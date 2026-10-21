@@ -134,7 +134,7 @@ La especificación completa de cada gráfico está en la sección 14.
 │  index.html  ·  app.css (Tailwind compilado)                  │
 │  js/  main.js · router.js · api.js · state.js                 │
 │        views/ (inicio, movimientos, historial, inversiones,   │
-│                patrimonio, analisis, config)                  │
+│                patrimonio, config)                             │
 │        components/ (kpi, rows, charts, sheet, form, toast)    │
 │  service-worker.js  ·  manifest.json                          │
 └───────────────┬───────────────────────────────────────────────┘
@@ -995,7 +995,7 @@ epic-wallet/
 │   │       ├── components/
 │   │       └── views/               # login, registro, recuperar, nueva-clave,
 │   │                                # inicio, movimientos, historial,
-│   │                                # inversiones, patrimonio, analisis, config
+│   │                                # inversiones, patrimonio, config
 │   └── public/                       # CSS compilado y assets
 ├── migrations/                       # Alembic
 ├── scripts/
@@ -1056,16 +1056,18 @@ Reglas no negociables:
 
 ## 12. Frontend
 
-### 12.1 Una página, siete vistas
+### 12.1 Una página, seis vistas
 
-Igual que el mockup: un solo `index.html` con siete `<section class="view">`, de las cuales una está activa. La navegación cambia el hash (`#/inicio`, `#/movimientos`, …), lo que da historial del navegador y botón "atrás" sin recargar.
+Igual que el mockup: un solo `index.html` con seis `<section class="view">`, de las cuales una está activa. La navegación cambia el hash (`#/inicio`, `#/movimientos`, …), lo que da historial del navegador y botón "atrás" sin recargar.
+
+*(Revisado 2026-10-21: "Análisis" se sacó de la navegación — ver General §47.)*
 
 ```javascript
 // web/src/js/router.js
 // Rutas públicas (sin sesión) y privadas (con sesión).
 const PUBLICAS = ['login','registro','recuperar','nueva-clave'];
 const PRIVADAS = ['inicio','movimientos','historial','inversiones',
-                  'patrimonio','analisis','config'];
+                  'patrimonio','config'];
 const routes = [...PUBLICAS, ...PRIVADAS];
 
 export function navigate(id, { replace = false } = {}) {
@@ -1738,7 +1740,7 @@ Al cerrar cada fase se escribe `docs/FASE_XX_<nombre>.md` con qué se hizo en le
 | Perfil y categorías iniciales | Trigger de Postgres sobre `auth.users`, no el backend | 8.4 |
 | Envío de mails | SMTP propio obligatorio; el de Supabase sólo sirve para pruebas | 8.5 |
 | Aislamiento de datos | `user_id` en consultas + RLS | 6.5 |
-| Frontend | Estático, una página, siete vistas, hash routing | 12.1 |
+| Frontend | Estático, una página, seis vistas, hash routing | 12.1 |
 | Estilos | Tailwind v4 con los tokens del mockup | 13 |
 | Gráficos | SVG propio, sin Chart.js | 4.3, 14 |
 | Gráfico diario | Barras de ingreso y egreso + línea de ahorro acumulado con doble eje | 14.1 |

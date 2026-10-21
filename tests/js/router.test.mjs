@@ -25,7 +25,6 @@ const SECCIONES = [
   "historial",
   "inversiones",
   "patrimonio",
-  "analisis",
   "config",
 ];
 
@@ -57,7 +56,7 @@ async function cargarRouterConDobles() {
   return import(url);
 }
 
-/** Monta un DOM con las siete vistas y devuelve el enrutador cargado
+/** Monta un DOM con las seis vistas y devuelve el enrutador cargado
  * en ese contexto. `hash` simula con qué URL se entró.
  *
  * `haySesion` por defecto en `true`: todas las pruebas de este bloque
@@ -153,7 +152,7 @@ describe("enrutador", () => {
     assert.equal(activa(dom), "inversiones");
   });
 
-  test("cada una de las siete rutas abre su vista", async () => {
+  test("cada una de las seis rutas abre su vista", async () => {
     for (const id of SECCIONES) {
       const { dom } = await montar(`#/${id}`);
       assert.equal(activa(dom), id, `#/${id} tenía que abrir ${id}`);
@@ -206,14 +205,14 @@ describe("enrutador", () => {
   test("volver a la vista activa no repite la animacion de entrada", async () => {
     // Tocar dos veces la misma posición de la barra no tiene que hacer
     // parpadear la pantalla.
-    const { dom, router } = await montar("#/analisis");
+    const { dom, router } = await montar("#/patrimonio");
     const vistos = [];
     dom.window.document.addEventListener(router.EVENTO, (ev) =>
       vistos.push(ev.detail.id),
     );
-    router.navegar("analisis");
-    router.navegar("analisis");
-    await esperarVista(dom, "analisis");
+    router.navegar("patrimonio");
+    router.navegar("patrimonio");
+    await esperarVista(dom, "patrimonio");
     assert.deepEqual(
       vistos,
       [],
@@ -223,17 +222,17 @@ describe("enrutador", () => {
 
   test("solo una vista queda visible a la vez", async () => {
     const { dom, router } = await montar("#/inicio");
-    router.navegar("analisis");
-    await esperarVista(dom, "analisis");
+    router.navegar("patrimonio");
+    await esperarVista(dom, "patrimonio");
     const visibles = dom.window.document.querySelectorAll(
       ".view:not([hidden])",
     );
     assert.equal(visibles.length, 1);
-    assert.equal(visibles[0].dataset.vista, "analisis");
+    assert.equal(visibles[0].dataset.vista, "patrimonio");
   });
 
   test("las vistas inactivas salen del arbol de accesibilidad", async () => {
-    // Sin `hidden`, el lector lee las siete secciones seguidas y el
+    // Sin `hidden`, el lector lee las seis secciones seguidas y el
     // tabulador recorre los botones de las que no se ven.
     const { dom } = await montar("#/historial");
     const ocultas = [...dom.window.document.querySelectorAll(".view[hidden]")];
@@ -304,9 +303,9 @@ describe("enrutador", () => {
     dom.window.document.addEventListener(router.EVENTO, (ev) => {
       recibido = ev.detail.id;
     });
-    router.navegar("analisis");
-    await esperarVista(dom, "analisis");
-    assert.equal(recibido, "analisis");
+    router.navegar("patrimonio");
+    await esperarVista(dom, "patrimonio");
+    assert.equal(recibido, "patrimonio");
   });
 
   test("rutaActual devuelve null cuando el hash no sirve", async () => {
@@ -353,7 +352,7 @@ describe("enrutador", () => {
     assert.equal(recargo, false);
   });
 
-  test("las rutas del enrutador son las siete de nav.js", async () => {
+  test("las rutas del enrutador son las seis de nav.js", async () => {
     // Si se agregara una sección a nav.js y no al enrutador, su
     // posición en la barra llevaría a inicio sin que nada avise.
     //
@@ -381,7 +380,7 @@ describe("enrutador", () => {
 
    `login` y `registro` comparten el mismo `#acceso`: no son dos
    pantallas que el enrutador prenda y apague enteras, son dos
-   tarjetas `[data-cuenta]` adentro de una, igual que las siete
+   tarjetas `[data-cuenta]` adentro de una, igual que las seis
    `.view` adentro de `.app`. Lo que hay que probar es que el
    enrutador elige la tarjeta correcta y nunca deja las dos visibles
    ni las dos ocultas. */
@@ -505,7 +504,7 @@ describe("pantallas de cuenta dentro de #acceso", () => {
 /* ===================================================================
    Guardia de rutas · F02-T12
 
-   Se prueba sobre el `montar()` principal —el de las siete vistas—,
+   Se prueba sobre el `montar()` principal —el de las seis vistas—,
    sin el DOM de `#acceso`: alcanza con mirar qué `.view` queda activa
    (o ninguna) y a qué hash se corrigió la URL. `pintar()` ya tolera
    que `#acceso`/`.app` no existan (`if (acceso && app)`), así que una
@@ -567,7 +566,7 @@ describe("guardia de rutas", () => {
     assert.equal(activa(dom), "inicio");
 
     globalThis.__haySesion = false;
-    router.navegar("analisis");
+    router.navegar("patrimonio");
     // `esperarVista` espera que una `.view` se active; acá se espera
     // lo contrario —que la guardia redirija y ninguna quede activa—,
     // así que se sondea el hash a mano en vez de reusarla.

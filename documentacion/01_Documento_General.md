@@ -1648,12 +1648,17 @@ Movimientos
 Historial
 Inversiones
 Patrimonio
-Análisis
 Configuración
 ```
 
 El diseño visual definitivo se definirá posteriormente a partir del
 mockup existente.
+
+> **Revisado 2026-10-21.** "Análisis" se sacó de la navegación: a
+> pedido de Gustavo, no le resultaba útil y el contenido planeado acá
+> (§48.8, §53) nunca pasó de datos de muestra. Si alguna vez vuelve a
+> hacer falta algo de esto, es una pantalla nueva, a diseñar desde la
+> necesidad concreta que la pida — no la reaparición de ésta.
 
 ------------------------------------------------------------------------
 
@@ -1735,6 +1740,9 @@ Detalle de ahorro, inversiones y patrimonio neto.
 ## 48.8 Análisis
 
 Métricas y comparaciones.
+
+> **Revisado 2026-10-21:** sacada de la navegación, ver la nota de la
+> sección 47.
 
 ## 48.9 Configuración
 

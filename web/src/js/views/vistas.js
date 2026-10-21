@@ -1,4 +1,4 @@
-/* Contenido de las siete vistas · F01-T13
+/* Contenido de las seis vistas · F01-T13
 
    Un módulo por vista sería más prolijo, pero hoy cada uno sería diez
    líneas que leen de `datos-muestra.js` y escriben en un contenedor.
@@ -11,7 +11,6 @@
    gráfico funcionan todavía. Están maquetados y en su lugar; la lógica
    es de las fases que les corresponden. */
 
-import { esc } from "../format.js";
 import { crearHoja } from "../components/sheet.js";
 import { conectarSinConexion } from "../components/estados.js";
 import * as D from "../datos-muestra.js";
@@ -46,35 +45,15 @@ function escribir(id, html) {
 /* La vista Patrimonio (ecuación, composición y su pie) tiene datos
    reales desde F09-T05 (`patrimonio.js`, `GET /api/patrimony`). Ya no
    hay nada de muestra que escribir acá — mismo caso que Inicio,
-   Movimientos e Historial, más arriba. `ficha()` se queda, la sigue
-   usando `analisis()` más abajo. */
+   Movimientos e Historial, más arriba.
 
-function ficha(nombre, valor, total = false) {
-  return (
-    `<div class="kv cg${total ? " kv--total" : ""}">` +
-    `<span>${esc(nombre)}</span><b class="num">${esc(valor)}</b></div>`
-  );
-}
-
-/* ---------------------------------------------------------- análisis */
-
-function analisis() {
-  escribir(
-    "analisis-salarios",
-    D.SALARIOS.map(
-      (s) =>
-        '<div class="row cg" style="cursor: default; grid-template-columns: 1fr auto">' +
-        `<span class="row-main"><b>${esc(s.desde)}</b><span>Sueldo vigente desde este mes</span></span>` +
-        `<span class="row-val"><b class="num">${esc(s.importe)}</b><span>${esc(s.variacion)}</span></span>` +
-        "</div>",
-    ).join(""),
-  );
-
-  escribir(
-    "analisis-metricas",
-    D.METRICAS.map((m) => ficha(m.nombre, m.valor)).join(""),
-  );
-}
+   La vista Análisis (historial salarial y métricas, `ficha()` y
+   `D.SALARIOS`/`D.METRICAS` de este archivo) se sacó entera
+   (2026-10-21, a pedido de Gustavo: no le resultaba útil, y el
+   contenido era 100% de muestra, sin ningún endpoint real detrás).
+   `nav.js` ya no la lista, así que no hay ruta ni posición en ninguna
+   barra. Si algún día se retoma el tema "Después del MVP" (General
+   §28, §53), es una vista nueva, no ésta reaparecida. */
 
 /* La vista Ajustes: "Categorías" tiene datos reales desde F03-T10
    (config-categorias.js) y "Preferencias" desde F11-T01
@@ -90,7 +69,12 @@ function analisis() {
 /* ------------------------------------------------------------ armado */
 
 export function pintarVistas() {
-  analisis();
+  // Ninguna vista real le queda a este módulo que pintar: todas las
+  // que tenían datos de muestra (análisis, incluida) ya pasaron a
+  // datos reales o se sacaron. Sigue existiendo —y exportada— porque
+  // `tests/js/kpi.test.mjs` y `tests/js/rows.test.mjs` la llaman como
+  // guarda de regresión: comprueban que ya no escribe nada en los
+  // contenedores que hoy son de otros módulos.
 }
 
 /** Los interruptores de ajustes y los conmutadores, sin lógica real.

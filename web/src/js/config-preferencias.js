@@ -37,8 +37,13 @@ function pintar() {
   const caja = $("config-preferencias");
   if (!caja) return;
 
+  // `.cfg-row` es flex en fila a propósito —label a la izquierda,
+  // interruptor a la derecha—, pero un `view-switch` de tres pastillas
+  // no entra al lado de la descripción sin quedar apretado (Gustavo,
+  // 2026-10-21: "quedó cortado"). Acá va en columna: la descripción
+  // arriba, el switch abajo, con todo el ancho de la tarjeta.
   caja.innerHTML =
-    '<div class="cfg-row cg">' +
+    '<div class="cfg-row cg" style="flex-direction: column; align-items: stretch; gap: 10px">' +
     "<div><b>Tema</b><span>Claro, oscuro o el de tu dispositivo.</span></div>" +
     '<div class="view-switch" role="group" aria-label="Tema" id="pref-tema">' +
     OPCIONES.map((o) => `<button type="button" data-tema="${o.valor}">${o.etiqueta}</button>`).join(

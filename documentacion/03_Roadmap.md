@@ -22,7 +22,9 @@ Esta aplicación la van a usar **pocas personas conocidas**, cada una viendo sus
 | Entornos de base de datos | 2 esquemas + plan de partir en 2 proyectos | **1 esquema** |
 | Fase de auditoría de seguridad | 16 tareas | **1 tarea** |
 
-**Lo que no cambió:** el modelo financiero, las dos naturalezas de mes, las siete pantallas, el diseño «Vidrio Grafito», los seis indicadores, los cinco gráficos, el histórico consolidado, las inversiones, RLS y el login. La aplicación que vas a usar es la misma.
+**Lo que no cambió (al momento de escribir esto):** el modelo financiero, las dos naturalezas de mes, las siete pantallas, el diseño «Vidrio Grafito», los seis indicadores, los cinco gráficos, el histórico consolidado, las inversiones, RLS y el login. La aplicación que vas a usar es la misma.
+
+> **Revisado 2026-10-21:** de las siete pantallas de entonces quedan seis — "Análisis" se sacó de la navegación (F11-T01, el mismo día que la tarea de Configuración), a pedido de Gustavo: no le resultaba útil y nunca tuvo más que datos de muestra detrás. Ver la fila de la tabla de "Después del MVP" más abajo.
 
 **Lo que se movió a «Después del MVP»:** cotizaciones automáticas, historial salarial, análisis, alertas, PWA offline y preparación de integraciones. Están descriptas como temas, sin tareas detalladas: detallarlas hoy es escribir algo que se va a reescribir cuando les llegue el turno.
 
@@ -451,6 +453,8 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   *"Formato de importes" se sacó del alcance (decisión de Gustavo, 2026-10-21): no había nada concreto que elegir ahí todavía. El saldo inicial y la sección de cuenta ya estaban resueltos desde F09-T05/F02-T11; lo que faltaba de verdad era que el tema viajara entre dispositivos, no sólo en este navegador.*
   *Tabla `app_settings` clave/valor (`user_id`, `key`, `value jsonb`, único por `(user_id, key)`), migración `c4d8a1e6f352` —escrita y revisada, **pendiente de aplicar contra producción**, bloqueada por el modo automático igual que `7a3f9c2e1d84` de F10-T04—. `services/settings.py` sólo conoce una clave hoy (`theme`); `GET`/`PUT /api/settings` tipan `theme` como `"light"|"dark"|null`, no el valor libre de la tabla. `PUT` con `theme: null` borra la preferencia (vuelve a seguir el dispositivo). Probado con `tests/api/test_settings_endpoints.py` (pendiente de correr de verdad hasta que se aplique la migración).*
   *Frontend: `tema.js` (bloqueante, en el `<head>`) ganó `fijar()` y `preferenciaGuardada()`, reutilizados por `alternar()` — sigue aplicando el tema al instante desde `localStorage`, antes de que haya sesión. `preferencias.js` (nuevo) sincroniza contra la cuenta: si la cuenta ya tiene un tema guardado, manda sobre este dispositivo; si no tiene nada pero el dispositivo sí, sube ese valor en vez de perderlo. Se llama al entrar a Ajustes y al iniciar sesión. El botón rápido de tema de la barra superior (`boton-tema.js`) también persiste ahora, no sólo cambia local. La tarjeta "Preferencias" de Ajustes (`config-preferencias.js`) reemplaza los interruptores de muestra (alertas, cotizaciones, resumen — de funciones que no existen) por un `view-switch` de Claro/Oscuro/Sistema, el único real. Probado en `tests/js/preferencias.test.mjs` y `tests/js/config-preferencias.test.mjs`.*
+  **Ajuste de layout, mismo día (Gustavo: "quedó cortado").** El `view-switch` de tres pastillas no entraba al lado de la descripción dentro de `.cfg-row` (fila, pensada para una descripción corta y un interruptor chico al costado). Pasa a columna: descripción arriba, switch abajo, con todo el ancho de la tarjeta.
+  **Pendiente de probar de verdad: falta aplicar la migración `c4d8a1e6f352` contra producción.** El toggle de tema se ve funcionando igual sin ella —el cambio se aplica al instante en este dispositivo antes de intentar guardarlo (`preferencias.js`, `guardarTema`)—, pero el `PUT /api/settings` de fondo falla en silencio (tabla inexistente, sólo queda en la consola) y nada queda guardado en la cuenta. La prueba real es entre dos dispositivos: hoy no pasaría. Explicado en el chat, 2026-10-21.
 
 - [ ] **F11-T02 · Exportación y respaldo**
   **Tipo:** Backend → Frontend · **Ref:** General §58 · Técnico §18 · *reemplaza F14-T06 a F14-T10*
@@ -483,7 +487,7 @@ Temas reales del documento general que **no** entran en el MVP. No tienen tareas
 |---|---|---|
 | **Cotizaciones automáticas** | Actualizar solo el valor de las inversiones (General §25, §26) | El propio documento general lo condiciona a «si se encuentra una fuente viable». La actualización manual de F10 ya cubre la necesidad |
 | **Alertas** | Las cinco reglas analíticas (General §29) | Son útiles pero nada depende de ellas. Con los datos cargados vas a saber mejor qué umbrales querés |
-| **Historial salarial y análisis** | Evolución salarial y métricas históricas (General §28, §53) | Dato interesante, no operativo |
+| **Historial salarial y análisis** | Evolución salarial y métricas históricas (General §28, §53) | Dato interesante, no operativo — la pantalla "Análisis" que llegó a existir se sacó el 2026-10-21, sin uso real detrás |
 | **PWA offline** | Service worker con caché de lectura y atajos (General §45, Técnico §15.1) | Ya se instala y se abre en modo aplicación desde F00-T11. El offline es comodidad |
 | **Integraciones futuras** | Importación de Excel y Mercado Pago (General §60, §61) | Explícitamente fuera del MVP en el documento general. La anti-duplicación ya está en la base desde F04-T03 |
 

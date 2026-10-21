@@ -1,4 +1,4 @@
-/* Las siete secciones de la aplicación, en un solo lugar.
+/* Las seis secciones de la aplicación, en un solo lugar.
    La barra superior (F01-T05), la inferior (F01-T06) y el enrutador
    (F01-T07) leen de acá: si una sección cambia de nombre o de icono,
    se cambia una vez y las tres quedan de acuerdo.
@@ -49,13 +49,6 @@ export const SECCIONES = [
     icono:
       '<path d="M3 9.5L12 4l9 5.5"/><path d="M5.5 9.5V19h13V9.5"/>' +
       '<path d="M9 19v-4h6v4"/><path d="M3 21h18"/>',
-  },
-  {
-    id: "analisis",
-    label: "Análisis",
-    corta: "Análisis",
-    en_barra_inferior: false,
-    icono: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
   },
   {
     id: "config",

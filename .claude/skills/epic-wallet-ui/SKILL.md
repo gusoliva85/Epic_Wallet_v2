@@ -241,18 +241,20 @@ Pasó en este proyecto: ocho tokens que se creían agregados nunca entraron a `t
 
 ## 7 · Navegación y vistas
 
-Una sola página con siete `<section class="view" data-vista="...">`. **`web/src/js/router.js` es el único que decide cuál está activa.**
+Una sola página con seis `<section class="view" data-vista="...">`. **`web/src/js/router.js` es el único que decide cuál está activa.**
 
 ```text
 #/inicio  #/movimientos  #/historial  #/inversiones
-#/patrimonio  #/analisis  #/config
+#/patrimonio  #/config
 ```
+
+*(`#/analisis` existió hasta el 2026-10-21: se sacó —a pedido de Gustavo, era sólo datos de muestra sin ningún endpoint detrás— junto con su posición en `nav.js`.)*
 
 Reglas:
 
 - **Nadie lee la ruta del DOM ni del hash.** Se escucha el evento `epic:ruta` (`import { EVENTO } from "./router.js"`), que llega con `detail.id`. Así las barras no se ponen de acuerdo entre ellas sino cada una con el enrutador, y quedan bien también cuando se llega por «atrás» o por recarga.
 - **Para ir a una sección se llama `navegar(id)`**, nunca se toca `location.hash` a mano. `navegar` valida: una ruta que no existe cae en inicio sin dejar entrada en el historial.
-- **Las vistas inactivas llevan `hidden`,** que lo pone el enrutador. No alcanza una clase: sin `hidden`, el lector de pantalla lee las siete secciones seguidas y el tabulador recorre los botones de las que no se ven.
+- **Las vistas inactivas llevan `hidden`,** que lo pone el enrutador. No alcanza una clase: sin `hidden`, el lector de pantalla lee las seis secciones seguidas y el tabulador recorre los botones de las que no se ven.
 - **Hash, no rutas reales.** Con `/movimientos` el servidor tiene que devolver `index.html` en cada ruta o una recarga da 404; el hash ya da historial, «atrás» y enlaces que se pueden guardar.
 - **Sólo `hashchange`.** Todas las entradas que crea el enrutador son de hash y el navegador emite `hashchange` tanto al cambiarlo como al recorrer el historial. Agregar `popstate` no cubre ningún caso más: es una línea que nunca se ejecuta sola.
 - Al cambiar de vista **se vuelve arriba con `behavior: "instant"`.** Suave, un desplazamiento de miles de píxeles tarda segundos y parece que la aplicación se colgó.
@@ -373,7 +375,7 @@ Las pestañas **se generan desde `SECCIONES` de `web/src/js/nav.js`**, nunca a m
 
 ### Navegación del teléfono
 
-`.botnav` es un `.shell` **fijo** abajo, con cinco posiciones en rejilla. Siete no entran: en 390 px darían 53 px cada una y las etiquetas no se leen, así que tres secciones se mudan a la hoja de «Más». El reparto lo decide `en_barra_inferior` en `web/src/js/nav.js`, nunca el HTML.
+`.botnav` es un `.shell` **fijo** abajo, con cinco posiciones en rejilla: las seis secciones no entran todas —en 390 px darían 53 px cada una y las etiquetas no se leen—, así que dos se mudan a la hoja de «Más». El reparto lo decide `en_barra_inferior` en `web/src/js/nav.js`, nunca el HTML.
 
 ```text
 bottom: calc(10px + env(safe-area-inset-bottom))   ← sin el inset, la fila
