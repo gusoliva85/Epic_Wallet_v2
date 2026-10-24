@@ -278,6 +278,29 @@ a {
     view-transition-name: contenido-vista;
   }
 
+  /* El trabado que reportó Gustavo ("aprieto y se traba todo") es casi
+     seguro esto: `main` tiene adentro una pantalla entera de tarjetas
+     `.shell`/`.cg`, cada una con su propio `backdrop-filter: blur(...)`
+     (skill §3) — capturar esa foto dos veces (vieja y nueva) para la
+     transición le pide al GPU del teléfono volver a calcular el
+     desenfoque de todo a la vez, en el peor momento posible. Mientras
+     dura el deslizo se usa el mismo respaldo sólido que ya existe para
+     cuando el navegador no tiene `backdrop-filter` (§3, el bloque
+     `@supports not`): no es un color nuevo, es el mismo token que ya
+     estaba pensado para "sin desenfoque". Dura menos que un parpadeo,
+     así que no se nota el cambio — lo que se nota es que deja de
+     trabarse. */
+  :root[data-transicion-vista] main .shell {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--glass-shell-fallback);
+  }
+  :root[data-transicion-vista] main .cg {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--glass-content-fallback);
+  }
+
   /* SIN espacio antes de `::view-transition-*`: es un selector
      compuesto —":root[...] pegado al pseudo-elemento", el mismo
      elemento, con una condición más—, no un combinador descendiente.
@@ -298,26 +321,23 @@ a {
     mix-blend-mode: normal;
   }
 
-  /* Ni los 420ms de la entrada de vista de siempre ni `--ease`:
-     Gustavo lo probó y "apenas se nota". Es el mismo motivo que ya
-     está escrito arriba para el círculo de tema —`--ease` arranca
-     rápido (72% del recorrido ya a los 32% del tiempo) y a mitad de
-     camino el ojo lo lee como terminado—, pero esta vez le tocó al
-     deslizo en vez de al círculo. `ease-in-out` reparte el
-     movimiento parejo de punta a punta, y 550ms —más que una entrada
-     de vista normal, menos que el círculo— es lo que se nota sin
-     sentirse lento. */
+  /* 550ms con el blur de fondo recalculándose en vivo se sentía lento
+     y trabado (Gustavo). Con el blur ya sacado arriba durante el
+     deslizo, el punto medio entre los 420ms que "apenas se notaban" y
+     los 550ms que se sentían lentos es 320ms — rápido de verdad, pero
+     con `ease-in-out` (reparte el movimiento parejo, no todo junto al
+     principio) sigue leyéndose como un deslizo y no como un salto. */
   :root[data-transicion-vista="izquierda"]::view-transition-old(contenido-vista) {
-    animation: vista-sale-izquierda 0.55s ease-in-out both;
+    animation: vista-sale-izquierda 0.32s ease-in-out both;
   }
   :root[data-transicion-vista="izquierda"]::view-transition-new(contenido-vista) {
-    animation: vista-entra-derecha 0.55s ease-in-out both;
+    animation: vista-entra-derecha 0.32s ease-in-out both;
   }
   :root[data-transicion-vista="derecha"]::view-transition-old(contenido-vista) {
-    animation: vista-sale-derecha 0.55s ease-in-out both;
+    animation: vista-sale-derecha 0.32s ease-in-out both;
   }
   :root[data-transicion-vista="derecha"]::view-transition-new(contenido-vista) {
-    animation: vista-entra-izquierda 0.55s ease-in-out both;
+    animation: vista-entra-izquierda 0.32s ease-in-out both;
   }
 
   /* Mismo sentido que el dedo: deslizar a la izquierda trae la vista
