@@ -220,20 +220,26 @@ a {
    la esquina más lejana — así termina de cubrir toda la pantalla sin
    que se note el borde del círculo. La vista VIEJA se queda quieta
    debajo, sin animación propia: si las dos animaran a la vez, se
-   verían los dos fundidos mezclados y el círculo no se notaría. */
+   verían los dos fundidos mezclados y el círculo no se notaría.
+
+   `:not([data-transicion-vista])`: el mismo mecanismo (view transition
+   sobre `root`) lo usa también el deslizo entre vistas de acá abajo
+   (F12-T04), con su propia animación — sin este freno, las dos
+   correrían juntas y la barra superior haría un círculo de fondo
+   encima de cada deslizo, que no es lo que tiene que pasar. */
 @supports (view-transition-name: root) or
   (-webkit-view-transition-name: root) {
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
+  :root:not([data-transicion-vista]) ::view-transition-old(root),
+  :root:not([data-transicion-vista]) ::view-transition-new(root) {
     animation: none;
     mix-blend-mode: normal;
   }
 
-  ::view-transition-old(root) {
+  :root:not([data-transicion-vista]) ::view-transition-old(root) {
     z-index: 1;
   }
 
-  ::view-transition-new(root) {
+  :root:not([data-transicion-vista]) ::view-transition-new(root) {
     z-index: 2;
     clip-path: circle(
       0px at var(--origen-tema-x, 50%) var(--origen-tema-y, 50%)
@@ -253,6 +259,79 @@ a {
         var(--origen-tema-r, 150%) at var(--origen-tema-x, 50%)
           var(--origen-tema-y, 50%)
       );
+    }
+  }
+
+  /* ---- deslizar entre vistas (F12-T04, celular) ----
+     `router.js` pone `data-transicion-vista` en `<html>` sólo para
+     las navegaciones que vienen de un gesto (`gestos.js`), nunca para
+     un toque en la barra: ésas siguen siendo el cambio instantáneo de
+     siempre.
+
+     Sólo `main` —las seis vistas, nada más— pasa a tener su propio
+     nombre de transición y se desliza; la barra superior, la de mes y
+     el botón `+` quedan en el grupo `root` de siempre, que acá arriba
+     se deja quieto (`animation: none`): no hace falta mover lo que no
+     cambió para que el gesto se sienta fluido, y es lo que lo separa
+     de un efecto pegado encima en vez de parte del diseño. */
+  :root[data-transicion-vista] main {
+    view-transition-name: contenido-vista;
+  }
+
+  :root[data-transicion-vista] ::view-transition-old(root),
+  :root[data-transicion-vista] ::view-transition-new(root) {
+    animation: none;
+  }
+
+  :root[data-transicion-vista] ::view-transition-old(contenido-vista),
+  :root[data-transicion-vista] ::view-transition-new(contenido-vista) {
+    /* Misma duración que la entrada de vista de siempre (skill §6,
+       420ms): el deslizo reemplaza esa entrada para este cambio en
+       particular, no es un efecto aparte con su propio ritmo. */
+    animation-duration: 0.42s;
+    animation-timing-function: var(--ease);
+    animation-fill-mode: both;
+    mix-blend-mode: normal;
+  }
+
+  :root[data-transicion-vista="izquierda"]
+    ::view-transition-old(contenido-vista) {
+    animation-name: vista-sale-izquierda;
+  }
+  :root[data-transicion-vista="izquierda"]
+    ::view-transition-new(contenido-vista) {
+    animation-name: vista-entra-derecha;
+  }
+  :root[data-transicion-vista="derecha"]
+    ::view-transition-old(contenido-vista) {
+    animation-name: vista-sale-derecha;
+  }
+  :root[data-transicion-vista="derecha"]
+    ::view-transition-new(contenido-vista) {
+    animation-name: vista-entra-izquierda;
+  }
+
+  /* Mismo sentido que el dedo: deslizar a la izquierda trae la vista
+     siguiente desde la derecha, como pasar una página — la vieja sale
+     por donde entró el dedo. */
+  @keyframes vista-sale-izquierda {
+    to {
+      transform: translateX(-100%);
+    }
+  }
+  @keyframes vista-entra-derecha {
+    from {
+      transform: translateX(100%);
+    }
+  }
+  @keyframes vista-sale-derecha {
+    to {
+      transform: translateX(100%);
+    }
+  }
+  @keyframes vista-entra-izquierda {
+    from {
+      transform: translateX(-100%);
     }
   }
 }

@@ -45,6 +45,25 @@ export function rutaActual() {
 
 let ultima = null;
 
+/* Pista de dirección para la próxima vez que `pintar()` cambie de
+   vista, puesta por quien dispara la navegación (hoy sólo
+   `gestos.js`) justo antes de llamar a `navegar()`. Una navegación la
+   consume y la borra: nunca queda pegada a la siguiente, que vuelve a
+   ser el cambio instantáneo de siempre si nadie pidió nada. */
+let proximaDireccion = null;
+
+/**
+ * Pide que la próxima vez que cambie de vista lo haga con un deslizo
+ * hacia la izquierda o la derecha (F12-T04), en vez del cambio
+ * instantáneo de siempre. Es opt-in a propósito: tocar la barra
+ * superior o la inferior no llama a esto, y siguen cambiando de vista
+ * tal como lo hacían antes de que existiera.
+ * @param {"izquierda" | "derecha"} direccion
+ */
+export function animarProximaComo(direccion) {
+  proximaDireccion = direccion;
+}
+
 function pintar(id) {
   // Volver a pintar la vista que ya está activa repetiría la animación
   // de entrada: tocar dos veces la misma posición de la barra haría
@@ -52,52 +71,75 @@ function pintar(id) {
   if (id === ultima) return;
   ultima = id;
 
-  document.querySelectorAll(".view").forEach((vista) => {
-    const activa = vista.dataset.vista === id;
-    vista.classList.toggle("activa", activa);
-    // `hidden` y no sólo una clase: una vista inactiva tiene que salir
-    // del árbol de accesibilidad y del orden de tabulación, o el
-    // lector lee las siete y el tabulador recorre botones invisibles.
-    vista.hidden = !activa;
-  });
+  const direccion = proximaDireccion;
+  proximaDireccion = null;
 
-  // Las pantallas de cuenta van encima de la aplicación, no dentro: no
-  // tienen barras, ni mes, ni botón de alta. Mientras una está abierta,
-  // todo lo de atrás queda `inert` — si no, el tabulador sigue
-  // recorriendo la aplicación tapada y el lector de pantalla la lee
-  // igual, aunque no se vea nada de ella.
-  const publica = esPublica(id);
-  const acceso = document.getElementById("acceso");
-  const app = document.querySelector(".app");
-  if (acceso && app) {
-    acceso.hidden = !publica;
-    app.inert = publica;
-    // `aria-hidden` además de `inert`: hay lectores que todavía no
-    // implementan `inert` y sin esto leerían las dos cosas a la vez.
-    if (publica) app.setAttribute("aria-hidden", "true");
-    else app.removeAttribute("aria-hidden");
+  const mutar = () => {
+    document.querySelectorAll(".view").forEach((vista) => {
+      const activa = vista.dataset.vista === id;
+      vista.classList.toggle("activa", activa);
+      // `hidden` y no sólo una clase: una vista inactiva tiene que salir
+      // del árbol de accesibilidad y del orden de tabulación, o el
+      // lector lee las siete y el tabulador recorre botones invisibles.
+      vista.hidden = !activa;
+    });
 
-    // Dentro de `#acceso` conviven varias tarjetas —login, registro—,
-    // igual que las siete vistas conviven dentro de `.app`. La misma
-    // regla aplica: la que no está activa lleva `hidden`, no sólo una
-    // clase, o el tabulador sigue entrando a sus campos.
-    if (publica) {
-      acceso.querySelectorAll("[data-cuenta]").forEach((tarjeta) => {
-        tarjeta.hidden = tarjeta.dataset.cuenta !== id;
-      });
+    // Las pantallas de cuenta van encima de la aplicación, no dentro: no
+    // tienen barras, ni mes, ni botón de alta. Mientras una está abierta,
+    // todo lo de atrás queda `inert` — si no, el tabulador sigue
+    // recorriendo la aplicación tapada y el lector de pantalla la lee
+    // igual, aunque no se vea nada de ella.
+    const publica = esPublica(id);
+    const acceso = document.getElementById("acceso");
+    const app = document.querySelector(".app");
+    if (acceso && app) {
+      acceso.hidden = !publica;
+      app.inert = publica;
+      // `aria-hidden` además de `inert`: hay lectores que todavía no
+      // implementan `inert` y sin esto leerían las dos cosas a la vez.
+      if (publica) app.setAttribute("aria-hidden", "true");
+      else app.removeAttribute("aria-hidden");
+
+      // Dentro de `#acceso` conviven varias tarjetas —login, registro—,
+      // igual que las siete vistas conviven dentro de `.app`. La misma
+      // regla aplica: la que no está activa lleva `hidden`, no sólo una
+      // clase, o el tabulador sigue entrando a sus campos.
+      if (publica) {
+        acceso.querySelectorAll("[data-cuenta]").forEach((tarjeta) => {
+          tarjeta.hidden = tarjeta.dataset.cuenta !== id;
+        });
+      }
     }
+
+    const titulo = tituloDeRuta(id);
+    if (titulo) document.title = titulo;
+
+    // Al cambiar de vista se vuelve arriba. Sin esto, entrar a una
+    // sección desde el final de una lista larga la abre por la mitad.
+    // `instant` a propósito: un desplazamiento suave de 3000 px tarda
+    // segundos y parece que la aplicación se colgó.
+    window.scrollTo({ top: 0, behavior: "instant" });
+
+    document.dispatchEvent(new CustomEvent(EVENTO, { detail: { id } }));
+  };
+
+  const sinMovimiento =
+    window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
+
+  if (direccion && document.startViewTransition && !sinMovimiento) {
+    // `base.css` lee este atributo para decidir qué deslizar —sólo
+    // `main`, no la aplicación entera— y lo saca el propio código de
+    // acá cuando termina, nunca queda pegado para la próxima.
+    document.documentElement.setAttribute("data-transicion-vista", direccion);
+    const transicion = document.startViewTransition(mutar);
+    transicion.finished
+      .catch(() => {})
+      .finally(() => {
+        document.documentElement.removeAttribute("data-transicion-vista");
+      });
+  } else {
+    mutar();
   }
-
-  const titulo = tituloDeRuta(id);
-  if (titulo) document.title = titulo;
-
-  // Al cambiar de vista se vuelve arriba. Sin esto, entrar a una
-  // sección desde el final de una lista larga la abre por la mitad.
-  // `instant` a propósito: un desplazamiento suave de 3000 px tarda
-  // segundos y parece que la aplicación se colgó.
-  window.scrollTo({ top: 0, behavior: "instant" });
-
-  document.dispatchEvent(new CustomEvent(EVENTO, { detail: { id } }));
 }
 
 /**

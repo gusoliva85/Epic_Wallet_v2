@@ -11,12 +11,16 @@
 
    QUÉ NO HACE A PROPÓSITO, y por qué:
 
-   - No sigue el dedo con una animación de arrastre. Las seis vistas
-     son secciones independientes, no un riel con las seis visibles a
-     la vez — montar eso es rehacer el enrutador entero por un efecto
-     visual. El gesto sólo decide SI cambiar de vista; una vez que lo
-     decide, usa `navegar()` y la entrada ya animada que cada vista
-     tiene desde F01-T07/F01-T13 hace el resto.
+   - No sigue el dedo en vivo, cuadro a cuadro. Las seis vistas son
+     secciones independientes, no un riel con las seis montadas a la
+     vez — animar eso en tiempo real contra el dedo es rehacer el
+     enrutador entero por un efecto visual. Lo que hace es más simple
+     y rinde mejor: al soltar, decide SI cambiar de vista y en qué
+     sentido, y se lo pasa a `router.js` (`animarProximaComo`), que
+     desliza sólo el contenido con la View Transitions API —círculo
+     de tema y deslizo de vista son el mismo mecanismo, con
+     animaciones distintas; ver `base.css`—, nunca la aplicación
+     entera: la barra superior, la de mes y el botón `+` no se mueven.
    - No pisa el scroll vertical de la página: mientras no esté claro
      que el gesto es horizontal, nunca se llama `preventDefault()` y
      el navegador sigue scrolleando como si este archivo no existiera.
@@ -33,7 +37,7 @@
      hasta que el propio gesto se aclare. */
 
 import { SECCIONES } from "./nav.js";
-import { navegar, rutaActual, EVENTO } from "./router.js";
+import { navegar, rutaActual, EVENTO, animarProximaComo } from "./router.js";
 
 /* Mismo corte que la skill §5 para `lg`: a partir de 960px manda la
    barra superior y no hay nada que deslizar — es una pantalla ancha,
@@ -131,7 +135,12 @@ function alPointerSuelto(ev) {
   gesto = null;
 
   const destino = resolverGesto({ dx, dy, actual: vistaActual });
-  if (destino) navegar(destino);
+  if (destino) {
+    // Mismo sentido que el dedo: deslizar a la izquierda (dx negativo)
+    // trae la vista siguiente desde la derecha, como pasar una página.
+    animarProximaComo(dx < 0 ? "izquierda" : "derecha");
+    navegar(destino);
+  }
 }
 
 function alPointerCancelado(ev) {

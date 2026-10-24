@@ -45,10 +45,11 @@ async function cargarConDobles() {
       `import { SECCIONES } from "${rutaAbsoluta("nav.js")}?t=${Math.random()}";`,
     )
     .replace(
-      'import { navegar, rutaActual, EVENTO } from "./router.js";',
+      'import { navegar, rutaActual, EVENTO, animarProximaComo } from "./router.js";',
       "const EVENTO = \"epic:ruta\";\n" +
         "const navegar = (...a) => globalThis.__espia.navegar(...a);\n" +
-        "const rutaActual = () => globalThis.__espia.rutaActual();",
+        "const rutaActual = () => globalThis.__espia.rutaActual();\n" +
+        "const animarProximaComo = (...a) => globalThis.__espia.animarProximaComo?.(...a);",
     );
 
   const unico = `\n// ${Math.random()}\n`;
@@ -78,10 +79,11 @@ function montar({ movil = true, rutaInicial = "inicio" } = {}) {
   globalThis.PointerEvent = dom.window.PointerEvent;
   dom.window.matchMedia = () => ({ matches: movil });
 
-  const llamadas = { navegar: [] };
+  const llamadas = { navegar: [], animarProximaComo: [] };
   globalThis.__espia = {
     navegar: (id) => llamadas.navegar.push(id),
     rutaActual: () => rutaInicial,
+    animarProximaComo: (direccion) => llamadas.animarProximaComo.push(direccion),
   };
   return { dom, llamadas };
 }
@@ -147,13 +149,24 @@ function deslizar(dom, elemento, { x0, y0, x1, y1, tipoPuntero = "touch" }) {
 }
 
 describe("en el celular", () => {
-  test("un deslizo largo a la izquierda sobre contenido común navega a la vista siguiente", async () => {
+  test("un deslizo largo a la izquierda sobre contenido común navega a la vista siguiente, animado hacia la izquierda", async () => {
     const { dom, llamadas } = montar({ movil: true, rutaInicial: "inicio" });
     await cargarConDobles();
 
     deslizar(dom, dom.window.document.getElementById("libre"), { x0: 300, y0: 200, x1: 150, y1: 205 });
 
     assert.deepEqual(llamadas.navegar, ["movimientos"]);
+    assert.deepEqual(llamadas.animarProximaComo, ["izquierda"]);
+  });
+
+  test("hacia la derecha, retrocede animado hacia la derecha", async () => {
+    const { dom, llamadas } = montar({ movil: true, rutaInicial: "historial" });
+    await cargarConDobles();
+
+    deslizar(dom, dom.window.document.getElementById("libre"), { x0: 150, y0: 200, x1: 300, y1: 205 });
+
+    assert.deepEqual(llamadas.navegar, ["movimientos"]);
+    assert.deepEqual(llamadas.animarProximaComo, ["derecha"]);
   });
 
   test("con el dedo (mouse), no pasa nada — no es un gesto de teléfono", async () => {
