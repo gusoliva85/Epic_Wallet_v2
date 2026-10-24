@@ -280,35 +280,40 @@ a {
 
   :root[data-transicion-vista] ::view-transition-old(root),
   :root[data-transicion-vista] ::view-transition-new(root) {
-    animation: none;
+    animation: none !important;
   }
 
   :root[data-transicion-vista] ::view-transition-old(contenido-vista),
   :root[data-transicion-vista] ::view-transition-new(contenido-vista) {
-    /* Misma duración que la entrada de vista de siempre (skill §6,
-       420ms): el deslizo reemplaza esa entrada para este cambio en
-       particular, no es un efecto aparte con su propio ritmo. */
-    animation-duration: 0.42s;
-    animation-timing-function: var(--ease);
-    animation-fill-mode: both;
-    mix-blend-mode: normal;
+    mix-blend-mode: normal !important;
   }
 
+  /* Un solo `animation` por regla —mismo patrón que el círculo de
+     arriba—, no separado en `animation-name` aparte: con los dos
+     long-hand en reglas distintas, el navegador seguía con su propio
+     fundido cruzado (`-ua-view-transition-fade-in/out`) en vez del
+     deslizo, aunque la especificidad ganara en el papel. Con todo en
+     una sola declaración no hay margen para que se mezcle con nada.
+     `!important` porque la hoja de estilos del navegador para
+     `::view-transition-*` no es una hoja de autor común — sin esto no
+     siempre le gana. Misma duración que la entrada de vista de
+     siempre (skill §6, 420ms): el deslizo la reemplaza para este
+     cambio en particular, no es un efecto aparte con su propio ritmo. */
   :root[data-transicion-vista="izquierda"]
     ::view-transition-old(contenido-vista) {
-    animation-name: vista-sale-izquierda;
+    animation: vista-sale-izquierda 0.42s var(--ease) both !important;
   }
   :root[data-transicion-vista="izquierda"]
     ::view-transition-new(contenido-vista) {
-    animation-name: vista-entra-derecha;
+    animation: vista-entra-derecha 0.42s var(--ease) both !important;
   }
   :root[data-transicion-vista="derecha"]
     ::view-transition-old(contenido-vista) {
-    animation-name: vista-sale-derecha;
+    animation: vista-sale-derecha 0.42s var(--ease) both !important;
   }
   :root[data-transicion-vista="derecha"]
     ::view-transition-new(contenido-vista) {
-    animation-name: vista-entra-izquierda;
+    animation: vista-entra-izquierda 0.42s var(--ease) both !important;
   }
 
   /* Mismo sentido que el dedo: deslizar a la izquierda trae la vista
