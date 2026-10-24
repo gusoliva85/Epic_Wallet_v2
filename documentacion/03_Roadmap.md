@@ -76,19 +76,20 @@ Se testea **lo que da un número o protege un dato**:
 | Fase | Nombre | Pendientes | Qué queda funcionando |
 |---|---|---|---|
 | **0** | Puesta en marcha y producción | — cerrada | URL pública, PWA instalable, API respondiendo |
-| **1** | Sistema de estilo y esqueleto visual | — cerrada | Las 7 pantallas navegables con datos de ejemplo, claro/oscuro |
-| **2** | Cuentas de usuario | **4** | Registro, login, cambio de contraseña, cuentas aisladas |
-| **3** | Meses y categorías | **5** | Navegación de meses real y categorías administrables |
-| **4** | Movimientos | **6** | Alta, edición, baja y listado con recálculo del mes |
-| **5** | Indicadores del dashboard | **4** | Los 6 indicadores con datos reales |
-| **6** | Gráficos | **5** | Los 5 gráficos |
-| **7** | Desglose y detalle de categoría | **3** | Desglose ordenable y movimientos por categoría |
-| **8** | Histórico y carga del Excel | **5** | **Acá la aplicación ya te sirve todos los días** |
-| **9** | Ahorro acumulado y patrimonio | **4** | Saldo acumulado y patrimonio neto |
-| **10** | Inversiones | **5** | Cartera con compra, venta y rendimientos |
-| **11** | Cierre del MVP | **5** | Configuración, respaldo, recuperación de contraseña, MVP verificado |
+| **1** | Sistema de estilo y esqueleto visual | — cerrada | Las seis pantallas navegables con datos de ejemplo, claro/oscuro |
+| **2** | Cuentas de usuario | — cerrada | Registro, login, cambio de contraseña, cuentas aisladas |
+| **3** | Meses y categorías | — cerrada | Navegación de meses real y categorías administrables |
+| **4** | Movimientos | — cerrada | Alta, edición, baja y listado con recálculo del mes |
+| **5** | Indicadores del dashboard | — cerrada | Los 6 indicadores con datos reales |
+| **6** | Gráficos | — cerrada | Los 5 gráficos |
+| **7** | Desglose y detalle de categoría | — cerrada | Desglose ordenable y movimientos por categoría |
+| **8** | Histórico y carga del Excel | **1**, de carga de datos, no bloquea | **Acá la aplicación ya te sirve todos los días** |
+| **9** | Ahorro acumulado y patrimonio | **1**, de verificación, no bloquea | Saldo acumulado y patrimonio neto |
+| **10** | Inversiones | **1**, de carga de datos, no bloquea | Cartera con compra, venta y rendimientos |
+| **11** | Cierre del MVP | **3** (T03, T04, T05) | Configuración y respaldo ya aprobados; falta correo/recuperación, repaso de seguridad y la verificación final |
+| **12** | Apronte de escritorio | **2** (T02, T03) | Layout de escritorio y gestos en el celular ya aprobados; falta el cambio de tema en escritorio (sin reproducir todavía) y lo que vaya apareciendo |
 
-**46 tareas pendientes.** Hasta el final de la Fase 6 —el MVP de la sección 64 del documento general— hay **24**.
+**Revisado 2026-10-23** junto con Gustavo: todo lo de las fases 0 a 10 está aprobado (las tres pendientes de carga de datos no cuentan como tareas de código). De la Fase 11, F11-T01 y F11-T02 aprobadas; de la Fase 12, F12-T01 y F12-T04 aprobadas. Quedan **8 tareas** entre las dos fases abiertas.
 
 ---
 
@@ -455,7 +456,8 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   *Tabla `app_settings` clave/valor (`user_id`, `key`, `value jsonb`, único por `(user_id, key)`), migración `c4d8a1e6f352`. `services/settings.py` sólo conoce una clave hoy (`theme`); `GET`/`PUT /api/settings` tipan `theme` como `"light"|"dark"|null`, no el valor libre de la tabla. `PUT` con `theme: null` borra la preferencia (vuelve a seguir el dispositivo). Probado con `tests/api/test_settings_endpoints.py`: las 7 pruebas corrieron contra Supabase real el 2026-10-21 (migración ya aplicada) y pasan.*
   *Frontend: `tema.js` (bloqueante, en el `<head>`) ganó `fijar()` y `preferenciaGuardada()`, reutilizados por `alternar()` — sigue aplicando el tema al instante desde `localStorage`, antes de que haya sesión. `preferencias.js` (nuevo) sincroniza contra la cuenta: si la cuenta ya tiene un tema guardado, manda sobre este dispositivo; si no tiene nada pero el dispositivo sí, sube ese valor en vez de perderlo. Se llama al entrar a Ajustes y al iniciar sesión. El botón rápido de tema de la barra superior (`boton-tema.js`) también persiste ahora, no sólo cambia local. La tarjeta "Preferencias" de Ajustes (`config-preferencias.js`) reemplaza los interruptores de muestra (alertas, cotizaciones, resumen — de funciones que no existen) por un `view-switch` de Claro/Oscuro/Sistema, el único real. Probado en `tests/js/preferencias.test.mjs` y `tests/js/config-preferencias.test.mjs`.*
   **Ajuste de layout, mismo día (Gustavo: "quedó cortado").** El `view-switch` de tres pastillas no entraba al lado de la descripción dentro de `.cfg-row` (fila, pensada para una descripción corta y un interruptor chico al costado). Pasa a columna: descripción arriba, switch abajo, con todo el ancho de la tarjeta.
-  **Migración `c4d8a1e6f352` aplicada contra producción el 2026-10-21** (Gustavo, desde su PowerShell). `/api/health` respondió bien después y `tests/api/test_settings_endpoints.py` pasa contra la base real. Falta la prueba entre dos dispositivos de verdad (cambiar el tema en uno y verlo llegar al otro) — eso lo tenés que probar vos cuando lo uses.
+  **Migración `c4d8a1e6f352` aplicada contra producción el 2026-10-21** (Gustavo, desde su PowerShell). `/api/health` respondió bien después y `tests/api/test_settings_endpoints.py` pasa contra la base real.
+  **Aprobada por Gustavo, 2026-10-23.**
 
 - [~] **F11-T02 · Exportación y respaldo**
   **Tipo:** Backend → Frontend · **Ref:** General §58 · Técnico §18 · *reemplaza F14-T06 a F14-T10*
@@ -464,6 +466,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   *Alcance completo (decisión de Gustavo, 2026-10-21): Técnico §18 decía "sin importación en el MVP", pero el criterio de aceptación de acá siempre pidió una restauración probada — se resolvió la contradicción a favor del roadmap. `GET /api/export` arma el respaldo entero (perfil, categorías, meses, movimientos, inversiones, pasivos, preferencias) en JSON o, con `?format=csv`, un ZIP con un CSV por tabla —el ZIP es de sólo lectura, la reimportación es siempre con el JSON—. `POST /api/import` restaura, pero sólo **en una cuenta limpia** (sin meses, inversiones, pasivos ni preferencias todavía): fusionar un respaldo con datos ya cargados es un problema bastante más difícil y no lo pedía la tarea. Dos pasos sobre el mismo endpoint: `confirm:false` sólo devuelve los conteos para mostrar antes de escribir nada; `confirm:true` recién ahí escribe. Las categorías del respaldo se reconcilian por `(type, name)` contra las 21 que ya trae la cuenta nueva, no se bloquean.*
   *Frontend: la tarjeta "Copia de seguridad" de Ajustes pasa de decorativa a real — "Exportar datos" y "Exportar CSV" descargan con el nombre que manda el servidor; "Importar" abre el selector de archivo, pide la vista previa y la muestra en una hoja antes de confirmar. Una importación exitosa recarga la aplicación entera (cambia casi todo) en vez de invalidar el caché de cada vista por separado. `api.js` ganó `descargar()`, la única llamada que no es JSON.*
   **Migraciones aplicadas el 2026-10-21 y las 7 pruebas de `tests/api/test_respaldo_endpoints.py` corren contra Supabase real, incluida la de punta a punta** (se carga una cuenta con un poco de todo, se exporta, se importa en una cuenta nueva y se compara). Una de las pruebas encontró un bug real de verdad —no del respaldo, de la prueba—: verificaba "la vista previa no escribió nada" pidiendo `GET /api/months` y esperando `[]`, pero ese endpoint abre solo el mes actual si no existe (F03-T10, a propósito); se corrigió la prueba para que verifique que lo único que hay es ese mes en cero, no algo importado.
+  **Aprobada por Gustavo, 2026-10-23.**
 
 - [ ] **F11-T03 · Correo, recuperación de contraseña y contraseña nueva**
   **Tipo:** Infra → Frontend · **Ref:** Técnico §8.5, §8.6 · General §48.1.2, §48.1.3 · *reemplaza F16-T12, F16-T13 y F16-T14*
@@ -489,7 +492,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 
 **Por qué existe esta fase:** Gustavo mandó capturas de escritorio (Inicio, Cartera, Ajustes) y pidió revisar si el diseño de escritorio se había tenido en cuenta. Se agrega acá, a pedido suyo, para implementar después de la Fase 11 — no se adelanta.
 
-- [~] **F12-T01 · Dos huecos de layout en escritorio (Inicio y Ajustes)**
+- [x] **F12-T01 · Dos huecos de layout en escritorio (Inicio y Ajustes)**
   **Tipo:** Frontend · **Ref:** `.claude/skills/epic-wallet-ui/SKILL.md` §5, §11.1
   **Hacer:** corregir los huecos de layout encontrados en una auditoría visual real (Playwright, cuenta de prueba con datos representativos, 1280 y 1920px, los dos temas) contra los seis puntos de corte.
   **Aceptación:** · a 1024px+ ninguna tarjeta de KPI queda sola en una fila con media pantalla vacía al lado · a 960px+ ninguna tarjeta de Ajustes deja un hueco vacío del alto de otra columna · nada de esto cambia una línea de lo que ya se ve en el celular.
@@ -498,7 +501,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   2. **Inicio, "Gastos por categoría" a 960px+:** estaba sola dentro de un `.grid-2` (grid de dos columnas) sin nada en la segunda columna, dejando vacía la mitad de la pantalla debajo del gráfico. Pasa a tarjeta de ancho completo, como ya son "Comportamiento diario" arriba y los paneles de Historial.
   3. **Ajustes a 960px+:** "Categorías" (hasta 21 filas) y "Copia de seguridad" (3 botones) compartían fila en un `.grid-2` de cinco tarjetas; como una fila de grid toma la altura de su celda más alta, quedaba un hueco vacío del largo de toda la lista al lado de "Copia de seguridad", y después "Sesión" —la quinta tarjeta— caía sola debajo de "Categorías" con el mismo vacío al lado. "Categorías" pasa a ancho completo, fuera del grid; "Copia de seguridad" se empareja con "Sesión", las dos cortas.
   *Verificado con medición real de `getBoundingClientRect()` en Playwright antes de tocar nada —no a simple vista—: `.app{max-width:1240px}` ya funciona bien en las seis vistas a cualquier ancho, así que **no hay un problema general de "todo estirado" por falta de un contenedor máximo**; lo que se veía raro en las capturas eran estos dos huecos puntuales. `npm test` (570/570) sigue en verde, no se tocó ningún archivo de `@media` por debajo de 960px.*
-  **Para probar:** abrir la aplicación desde una pantalla ancha (no hace falta el celular para esto) y mirar Inicio y Ajustes. Si se ve bien, me lo decís y se marca `[x]`.
+  **Aprobada por Gustavo, 2026-10-23.**
 
 - [ ] **F12-T02 · El cambio de tema en escritorio**
   **Tipo:** Frontend (investigación primero) · **Ref:** `tema.js`, skill §6 "Cambio de tema"
