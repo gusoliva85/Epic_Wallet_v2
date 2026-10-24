@@ -298,20 +298,26 @@ a {
     mix-blend-mode: normal;
   }
 
-  /* Misma duración y curva que la entrada de vista de siempre (skill
-     §6, 420ms): el deslizo la reemplaza para este cambio en
-     particular, no es un efecto aparte con su propio ritmo. */
+  /* Ni los 420ms de la entrada de vista de siempre ni `--ease`:
+     Gustavo lo probó y "apenas se nota". Es el mismo motivo que ya
+     está escrito arriba para el círculo de tema —`--ease` arranca
+     rápido (72% del recorrido ya a los 32% del tiempo) y a mitad de
+     camino el ojo lo lee como terminado—, pero esta vez le tocó al
+     deslizo en vez de al círculo. `ease-in-out` reparte el
+     movimiento parejo de punta a punta, y 550ms —más que una entrada
+     de vista normal, menos que el círculo— es lo que se nota sin
+     sentirse lento. */
   :root[data-transicion-vista="izquierda"]::view-transition-old(contenido-vista) {
-    animation: vista-sale-izquierda 0.42s var(--ease) both;
+    animation: vista-sale-izquierda 0.55s ease-in-out both;
   }
   :root[data-transicion-vista="izquierda"]::view-transition-new(contenido-vista) {
-    animation: vista-entra-derecha 0.42s var(--ease) both;
+    animation: vista-entra-derecha 0.55s ease-in-out both;
   }
   :root[data-transicion-vista="derecha"]::view-transition-old(contenido-vista) {
-    animation: vista-sale-derecha 0.42s var(--ease) both;
+    animation: vista-sale-derecha 0.55s ease-in-out both;
   }
   :root[data-transicion-vista="derecha"]::view-transition-new(contenido-vista) {
-    animation: vista-entra-izquierda 0.42s var(--ease) both;
+    animation: vista-entra-izquierda 0.55s ease-in-out both;
   }
 
   /* Mismo sentido que el dedo: deslizar a la izquierda trae la vista
