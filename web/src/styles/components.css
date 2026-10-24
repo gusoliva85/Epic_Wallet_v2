@@ -86,6 +86,18 @@
   padding: 14px max(13px, env(safe-area-inset-left))
     calc(104px + env(safe-area-inset-bottom))
     max(13px, env(safe-area-inset-right));
+  /* Navegación por gestos en el celular (F12-T04, `gestos.js`): sin
+     esto, el navegador decide por su cuenta —y casi de inmediato,
+     confirmado con un toque real por CDP— que un arrastre horizontal
+     es un intento de scroll, se queda con el gesto entero y manda
+     `pointercancel` antes de que `gestos.js` llegue a ver más de un
+     `pointermove`. `pan-y` dice lo contrario: el scroll vertical
+     sigue siendo 100% nativo (no pasa por acá), pero el horizontal
+     queda libre para que lo decida JavaScript. Por eso NO es lo mismo
+     que el intento que se revirtió en el gráfico diario (F06-T09): acá
+     no hay nada con scroll horizontal propio *fuera* de `.tbl-wrap` y
+     `.chart-wrap`, que reafirman su propio eje abajo. */
+  touch-action: pan-y;
 }
 
 /* ============================================================
@@ -1949,6 +1961,10 @@
   overflow-x: auto;
   padding: 4px 0 2px;
   -webkit-overflow-scrolling: touch;
+  /* Reafirma su propio eje: `.app` pide `pan-y` para la navegación
+     por gestos (F12-T04), y esto es lo que le devuelve el horizontal
+     a esta tabla en particular sin tocar esa regla general. */
+  touch-action: pan-x;
 }
 
 .tbl-wrap table {
@@ -2102,6 +2118,12 @@
   padding: 14px 10px 6px;
   overflow-x: auto;
   scrollbar-width: thin;
+  /* Mismo motivo que `.tbl-wrap`: `.app` pide `pan-y` para la
+     navegación por gestos (F12-T04), esto le devuelve el horizontal
+     a este gráfico en particular. Sin esto se repetiría el problema
+     que ya se revirtió una vez acá (F06-T09): el scroll lateral del
+     gráfico dejaría de andar en el celular. */
+  touch-action: pan-x;
 }
 
 .chart-wrap svg {
