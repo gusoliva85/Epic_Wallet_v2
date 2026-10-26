@@ -448,7 +448,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 
 **Al cerrar esta fase el MVP está completo.**
 
-- [~] **F11-T01 · Configuración**
+- [x] **F11-T01 · Configuración**
   **Tipo:** Backend → Frontend · **Ref:** General §42, §48.9 · *reemplaza F14-T01 a F14-T05*
   **Hacer:** tabla `app_settings`, `GET` y `PUT /api/settings`, y la vista de configuración completa: preferencias de la aplicación (tema, formato de importes), sección de cuenta y saldo inicial.
   **Aceptación:** · las preferencias persisten entre sesiones y dispositivos · el saldo inicial se edita desde acá · la vista reúne lo que hoy está disperso.
@@ -459,7 +459,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Migración `c4d8a1e6f352` aplicada contra producción el 2026-10-21** (Gustavo, desde su PowerShell). `/api/health` respondió bien después y `tests/api/test_settings_endpoints.py` pasa contra la base real.
   **Aprobada por Gustavo, 2026-10-23.**
 
-- [~] **F11-T02 · Exportación y respaldo**
+- [x] **F11-T02 · Exportación y respaldo**
   **Tipo:** Backend → Frontend · **Ref:** General §58 · Técnico §18 · *reemplaza F14-T06 a F14-T10*
   **Hacer:** `GET /api/export` con todos los datos del usuario en JSON y CSV; botón de descarga en configuración; y **una restauración probada de verdad**, porque un respaldo que nunca se restauró no es un respaldo.
   **Aceptación:** · la exportación trae todo: meses, movimientos, categorías, inversiones y perfil · **se restaura el respaldo en una cuenta limpia y los datos quedan iguales** · la descarga funciona desde el celular.
