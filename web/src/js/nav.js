@@ -69,9 +69,9 @@ export const SECCIONES = [
  * rutas —tienen hash, historial y «atrás»—, así que el enrutador tiene
  * que conocerlas.
  *
- * Crecen con las tareas: `registro` entró en F02-T10. `recuperar` y
- * `nueva-clave` llegan en F11-T03, con el correo. Se agregan acá cuando
- * la pantalla existe, no antes: una ruta declarada sin pantalla deja la
+ * Crecen con las tareas: `registro` entró en F02-T10; `recuperar` y
+ * `nueva-clave`, en F11-T03 con el correo. Se agregan acá cuando la
+ * pantalla existe, no antes: una ruta declarada sin pantalla deja la
  * aplicación en blanco, que es peor que caer en el inicio.
  *
  * Quién puede entrar a cada una lo decide la guardia de F02-T12. Hasta
@@ -81,10 +81,14 @@ export const SECCIONES = [
  */
 export const LOGIN = "login";
 export const REGISTRO = "registro";
+export const RECUPERAR = "recuperar";
+export const NUEVA_CLAVE = "nueva-clave";
 
 export const PUBLICAS = [
   { id: LOGIN, label: "Iniciar sesión" },
   { id: REGISTRO, label: "Crear cuenta" },
+  { id: RECUPERAR, label: "Recuperar contraseña" },
+  { id: NUEVA_CLAVE, label: "Contraseña nueva" },
 ];
 
 /** @param {string} id */

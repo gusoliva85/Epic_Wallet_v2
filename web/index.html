@@ -1472,7 +1472,7 @@
       </div>
     </aside>
 
-    <!-- =================== PANTALLAS DE CUENTA · F02-T09 y F02-T10 ===================
+    <!-- ============ PANTALLAS DE CUENTA · F02-T09, F02-T10 y F11-T03 ============
          Va encima de la aplicación, no dentro: no tiene barras, ni mes,
          ni botón de alta. El enrutador la muestra en `#/login` y
          `#/registro`, alternando qué `[data-cuenta]` queda sin `hidden`,
@@ -1649,12 +1649,16 @@
             <button class="acceso-enlace" id="login-ir-registro" type="button">
               Crear cuenta
             </button>
-            <!-- «Olvidé mi contraseña» llega en F11-T03, cuando el correo
-                 esté configurado. Hasta entonces no se muestra ningún
-                 enlace apagado acá: ya quedó uno arriba mientras existió
-                 el registro sin hacer, y lo que enseñó es que un enlace
-                 que no lleva a nada se siente roto más de lo que avisa
-                 que «todavía no». -->
+          </p>
+
+          <!-- F11-T03. Va en su propia línea y no al lado de «Crear
+               cuenta»: son dos salidas distintas de esta pantalla y
+               juntas en una sola línea se leen como una sola opción
+               con dos enlaces. -->
+          <p class="acceso-pie">
+            <button class="acceso-enlace" id="login-ir-recuperar" type="button">
+              Olvidé mi contraseña
+            </button>
           </p>
         </div>
       </div>
@@ -1695,6 +1699,15 @@
             Te mandamos un correo para confirmar tu cuenta. Abrí el enlace
             y después volvé a iniciar sesión.
           </p>
+          <!-- «Ofrece reenviarlo» es parte de General §48.1.1, no un
+               extra: el correo de confirmación es el que más cae en
+               spam, y sin reenvío la única salida es crear otra cuenta
+               con otro correo. -->
+          <button class="btn" id="registro-reenviar" type="button">
+            <span class="btn-texto">Reenviar el correo</span>
+            <span class="btn-girador" aria-hidden="true"></span>
+          </button>
+          <span class="campo-nota" id="registro-reenviado" aria-live="polite"></span>
           <button class="btn" id="registro-volver-login" type="button">
             Ir a iniciar sesión
           </button>
@@ -1805,6 +1818,199 @@
           </button>
         </p>
       </div>
+
+      <!-- ============== OLVIDÉ MI CONTRASEÑA · F11-T03 ==============
+           General §48.1.2: un campo y un botón. Lo único que tiene de
+           particular es que el mensaje de respuesta es **el mismo
+           exista o no la cuenta** — ni el texto ni el tiempo pueden
+           contar con qué correos hay cuenta, igual que en el login. -->
+      <div class="acceso-card shell" data-cuenta="recuperar" hidden role="main">
+        <div class="acceso-marca">
+          <span class="acceso-sello" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <rect x="3.5" y="5" width="17" height="14" rx="3" />
+              <circle cx="12" cy="12" r="3.2" />
+              <path d="M12 6.2v1.6M12 16.2v1.6" />
+            </svg>
+          </span>
+          <span class="acceso-nombre">Epic Wallet</span>
+        </div>
+
+        <h1 id="recuperar-titulo">¿Olvidaste tu contraseña?</h1>
+        <p class="acceso-bajada">
+          Poné tu correo y te mandamos un enlace para elegir una nueva.
+        </p>
+
+        <!-- Lo que se ve una vez enviado. Dice «si hay una cuenta» a
+             propósito: afirmar que el correo salió sería confirmar que
+             esa cuenta existe. -->
+        <div class="acceso-confirmar" id="recuperar-listo" hidden>
+          <p>
+            Si hay una cuenta con ese correo, en un minuto te llega el
+            enlace. Revisá también la carpeta de spam.
+          </p>
+          <button class="btn" id="recuperar-volver-login" type="button">
+            Ir a iniciar sesión
+          </button>
+        </div>
+
+        <form id="form-recuperar" novalidate>
+          <div class="campo">
+            <label for="recuperar-email">Correo</label>
+            <input
+              class="inp"
+              id="recuperar-email"
+              name="email"
+              type="email"
+              autocomplete="username"
+              inputmode="email"
+              autocapitalize="none"
+              spellcheck="false"
+              required
+              placeholder="vos@ejemplo.com"
+            />
+          </div>
+
+          <p
+            class="acceso-error"
+            id="recuperar-error"
+            role="alert"
+            aria-live="assertive"
+            hidden
+          ></p>
+
+          <button class="btn btn--principal" id="recuperar-enviar" type="submit">
+            <span class="btn-texto">Enviar enlace</span>
+            <span class="btn-girador" aria-hidden="true"></span>
+          </button>
+        </form>
+
+        <p class="acceso-pie">
+          ¿Te acordaste?
+          <button class="acceso-enlace" id="recuperar-ir-login" type="button">
+            Iniciá sesión
+          </button>
+        </p>
+      </div>
+
+      <!-- ================ CONTRASEÑA NUEVA · F11-T03 ================
+           General §48.1.3. Se llega sólo por el enlace del correo, y
+           es la única pantalla que cambia la contraseña **sin pedir la
+           anterior** — en `Ajustes` sí se pide (`config-cuenta.js`),
+           porque ahí no hubo ningún enlace que pruebe nada. Quién
+           puede entrar lo decide la guardia de `router.js`.
+
+           Tres estados excluyentes, y los tres existen en el HTML
+           desde el arranque para que el cambio entre ellos no tenga
+           que construir nada: verificando el enlace, enlace que no
+           sirve, y el formulario. -->
+      <div class="acceso-card shell" data-cuenta="nueva-clave" hidden role="main">
+        <div class="acceso-marca">
+          <span class="acceso-sello" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <rect x="3.5" y="5" width="17" height="14" rx="3" />
+              <circle cx="12" cy="12" r="3.2" />
+              <path d="M12 6.2v1.6M12 16.2v1.6" />
+            </svg>
+          </span>
+          <span class="acceso-nombre">Epic Wallet</span>
+        </div>
+
+        <h1 id="nueva-titulo">Elegí una contraseña nueva</h1>
+        <p class="acceso-bajada">
+          Después de guardarla entrás directo, no hace falta volver a
+          iniciar sesión.
+        </p>
+
+        <!-- Mientras se canjea el token del enlace. Es una sola vuelta
+             de red, pero en un teléfono con mala señal son segundos, y
+             un formulario que todavía no puede guardar nada es peor que
+             decir que se está verificando. -->
+        <p class="campo-nota" id="nueva-verificando" aria-live="polite">
+          Verificando el enlace…
+        </p>
+
+        <div class="acceso-confirmar" id="nueva-invalido" hidden>
+          <p>
+            Este enlace no sirve o ya venció. Los enlaces son de un solo
+            uso: si ya lo usaste, pedí uno nuevo.
+          </p>
+          <button class="btn" id="nueva-pedir-otro" type="button">
+            Pedir un enlace nuevo
+          </button>
+        </div>
+
+        <form id="form-nueva-clave" novalidate hidden>
+          <div class="campo">
+            <label for="nueva-clave1">Contraseña nueva</label>
+            <div class="clave-wrap">
+              <input
+                class="inp"
+                id="nueva-clave1"
+                name="clave"
+                type="password"
+                autocomplete="new-password"
+                minlength="8"
+                required
+              />
+              <button
+                class="clave-ojo"
+                id="nueva-ojo"
+                type="button"
+                aria-label="Mostrar contraseña"
+                aria-pressed="false"
+                aria-controls="nueva-clave1"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true"></svg>
+              </button>
+            </div>
+            <div class="fuerza-clave" id="nueva-fuerza" hidden>
+              <div class="fuerza-track">
+                <div class="fuerza-fill" id="nueva-fuerza-barra"></div>
+              </div>
+              <span class="campo-nota" id="nueva-fuerza-texto"></span>
+            </div>
+          </div>
+
+          <div class="campo">
+            <label for="nueva-clave2">Repetir contraseña</label>
+            <div class="clave-wrap">
+              <input
+                class="inp"
+                id="nueva-clave2"
+                name="clave2"
+                type="password"
+                autocomplete="new-password"
+                required
+              />
+              <button
+                class="clave-ojo"
+                id="nueva-ojo2"
+                type="button"
+                aria-label="Mostrar contraseña"
+                aria-pressed="false"
+                aria-controls="nueva-clave2"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true"></svg>
+              </button>
+            </div>
+            <span class="campo-nota" id="nueva-coincide" aria-live="polite"></span>
+          </div>
+
+          <p
+            class="acceso-error"
+            id="nueva-error"
+            role="alert"
+            aria-live="assertive"
+            hidden
+          ></p>
+
+          <button class="btn btn--principal" id="nueva-enviar" type="submit">
+            <span class="btn-texto">Guardar</span>
+            <span class="btn-girador" aria-hidden="true"></span>
+          </button>
+        </form>
+      </div>
     </div>
 
     <!-- La notificación breve. Va VACÍA en el HTML y se queda: un
@@ -1829,6 +2035,14 @@
     <script type="module" src="/src/js/views/vistas.js"></script>
     <script type="module" src="/src/js/acceso.js"></script>
     <script type="module" src="/src/js/registro.js"></script>
+    <script type="module" src="/src/js/recuperar.js"></script>
+    <!-- `enlace-correo.js` tiene que correr ANTES de `app.js`: cuando
+         el enrutador arranca, el hash y la marca de recuperación ya
+         tienen que estar en su lugar (F11-T03). Lo arrastra
+         `nueva-clave.js`, que lo importa, pero va declarado igual para
+         que el orden sea explícito y no dependa del grafo de imports. -->
+    <script type="module" src="/src/js/enlace-correo.js"></script>
+    <script type="module" src="/src/js/nueva-clave.js"></script>
     <script type="module" src="/src/js/config-cuenta.js"></script>
     <script type="module" src="/src/js/config-categorias.js"></script>
     <script type="module" src="/src/js/config-preferencias.js"></script>

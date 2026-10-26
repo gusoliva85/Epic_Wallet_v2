@@ -95,8 +95,12 @@ async function cargarConDobles(espia, navegaciones) {
   let codigo = readFileSync(resolve(RAIZ, "web", "src", "js", "registro.js"), "utf8");
   codigo = codigo
     .replace(
-      'import { registrarse } from "./auth.js";',
-      "const registrarse = (...a) => globalThis.__espia.registrarse(...a);",
+      'import { registrarse, reenviarConfirmacion } from "./auth.js";',
+      [
+        "const registrarse = (...a) => globalThis.__espia.registrarse(...a);",
+        "const reenviarConfirmacion = (...a) =>",
+        "  globalThis.__espia.reenviarConfirmacion?.(...a) ?? { ok: true };",
+      ].join(" "),
     )
     .replace(
       'import { navegar } from "./router.js";',
@@ -109,6 +113,19 @@ async function cargarConDobles(espia, navegaciones) {
     .replace(
       'import { conectarOjito } from "./acceso.js";',
       `import { conectarOjito } from "file:///${resolve(RAIZ, "web", "src", "js", "acceso.js").replace(/\\/g, "/")}?t=${Math.random()}";`,
+    )
+    /* F11-T03: el medidor de fortaleza y la comparación de las dos
+       contraseñas se mudaron a `clave-ui.js`, compartidas con la
+       pantalla de contraseña nueva. Se importan REALES, igual que
+       `conectarOjito`: son funciones puras sobre el DOM, sin red ni
+       estado, y doblarlas sería dejar de probar justo lo que estas
+       pruebas verifican. */
+    .replace(
+      // `[^}]*` y no `[\s\S]*?`: lazy o no, el motor empieza a probar
+      // desde el `import {` más temprano del archivo y se llevaba
+      // puesto el de `conectarOjito` de la línea de arriba.
+      /import \{[^}]*\} from "\.\/clave-ui\.js";/,
+      `import { MINIMO_CLAVE, mostrarFortaleza as pintarFortaleza, actualizarCoincidencia as compararClaves, puntuarFortaleza } from "file:///${resolve(RAIZ, "web", "src", "js", "clave-ui.js").replace(/\\/g, "/")}?t=${Math.random()}";`,
     );
 
   const unico = `

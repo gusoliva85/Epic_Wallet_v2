@@ -27,6 +27,7 @@ from typing import Any
 import pytest
 from sqlalchemy import text
 
+from tests.api.ayudas_auth import confirmar_correo
 from tests.api.ayudas_db import escritura, motor_de_pruebas
 
 RAIZ = Path(__file__).resolve().parents[2]
@@ -98,6 +99,11 @@ def _crear_cuenta() -> Cuenta:
     uid = str(cuerpo.get("id") or cuerpo.get("user", {}).get("id"))
     token = cuerpo.get("access_token")
     if not token:
+        # F11-T03: con la confirmación por correo activada, `signup` no
+        # devuelve sesión y el `grant_type=password` daría
+        # `email_not_confirmed`. Nadie va a abrir el mail de una cuenta
+        # de QA, así que se confirma con la clave de servicio.
+        confirmar_correo(uid)
         estado, sesion = _auth("/token?grant_type=password", {"email": correo, "password": clave})
         token = sesion.get("access_token")
     assert token, "la cuenta se creó pero no hay token"

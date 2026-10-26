@@ -24,8 +24,16 @@
    lectura local (`getSession()` no toca la red), y cachearla sería
    quedarse con una respuesta vieja justo después de cerrar sesión. */
 
-import { SECCIONES, PUBLICAS, INICIO, LOGIN, esPublica, tituloDeRuta } from "./nav.js";
-import { haySesion } from "./auth.js";
+import {
+  SECCIONES,
+  PUBLICAS,
+  INICIO,
+  LOGIN,
+  NUEVA_CLAVE,
+  esPublica,
+  tituloDeRuta,
+} from "./nav.js";
+import { haySesion, recuperacionEnCurso } from "./auth.js";
 
 // Las siete secciones más las pantallas de cuenta. Las dos barras de
 // navegación siguen leyendo sólo `SECCIONES`, así que una pantalla de
@@ -179,7 +187,22 @@ async function resolverDestino(id) {
   const publica = esPublica(id);
   const sesion = await haySesion();
   if (!publica && !sesion) return LOGIN; // privada sin sesión
-  if (publica && sesion) return INICIO; // pública con sesión ya puesta
+
+  if (publica && sesion) {
+    // La única excepción a «pública con sesión cae en inicio»:
+    // `nueva-clave` (F11-T03). El enlace del correo **crea** una
+    // sesión al canjearse, así que sin esta salvedad la pantalla que
+    // viene a continuación se expulsaría a sí misma en el momento
+    // exacto en que empieza a hacer falta —y lo mismo pasaría al
+    // recargar a mitad del flujo.
+    //
+    // Y sólo con la marca de recuperación en curso: con cualquier
+    // sesión abierta, esta pantalla sería la forma de cambiar la
+    // contraseña sin saber la anterior, salteando el chequeo que
+    // `config-cuenta.js` hace a propósito.
+    if (id === NUEVA_CLAVE && recuperacionEnCurso()) return id;
+    return INICIO; // pública con sesión ya puesta
+  }
   return id;
 }
 

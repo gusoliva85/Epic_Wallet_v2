@@ -18,7 +18,7 @@
 
 import { entrar } from "./auth.js";
 import { navegar } from "./router.js";
-import { INICIO, REGISTRO } from "./nav.js";
+import { INICIO, REGISTRO, RECUPERAR } from "./nav.js";
 import { icono } from "./iconos.js";
 import { sincronizarTema } from "./preferencias.js";
 
@@ -244,6 +244,12 @@ export function arrancar() {
   // (skill §7), y un enlace nativo lo tocaría por su cuenta.
   const irARegistro = $("login-ir-registro");
   irARegistro?.addEventListener("click", () => navegar(REGISTRO));
+
+  // «Olvidé mi contraseña» (F11-T03). Mismo criterio que el de arriba:
+  // `navegar()` y no un `<a href>`, el enrutador es el único que toca
+  // el hash.
+  const irARecuperar = $("login-ir-recuperar");
+  irARecuperar?.addEventListener("click", () => navegar(RECUPERAR));
 }
 
 if (document.readyState === "loading") {

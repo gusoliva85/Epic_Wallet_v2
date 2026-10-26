@@ -86,7 +86,7 @@ Se testea **lo que da un número o protege un dato**:
 | **8** | Histórico y carga del Excel | **1**, de carga de datos, no bloquea | **Acá la aplicación ya te sirve todos los días** |
 | **9** | Ahorro acumulado y patrimonio | **1**, de verificación, no bloquea | Saldo acumulado y patrimonio neto |
 | **10** | Inversiones | **1**, de carga de datos, no bloquea | Cartera con compra, venta y rendimientos |
-| **11** | Cierre del MVP | **3** (T03, T04, T05) | Configuración y respaldo ya aprobados; falta correo/recuperación, repaso de seguridad y la verificación final |
+| **11** | Cierre del MVP | **3** (T03 a probar, T04, T05) | Configuración y respaldo aprobados; el correo y la recuperación están implementados y esperan la configuración del SMTP en Supabase; faltan el repaso de seguridad y la verificación final |
 | **12** | Apronte de escritorio | **2** (T02, T03) | Layout de escritorio y gestos en el celular ya aprobados; falta el cambio de tema en escritorio (sin reproducir todavía) y lo que vaya apareciendo |
 
 **Revisado 2026-10-23** junto con Gustavo: todo lo de las fases 0 a 10 está aprobado (las tres pendientes de carga de datos no cuentan como tareas de código). De la Fase 11, F11-T01 y F11-T02 aprobadas; de la Fase 12, F12-T01 y F12-T04 aprobadas. Quedan **8 tareas** entre las dos fases abiertas.
@@ -468,10 +468,39 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Migraciones aplicadas el 2026-10-21 y las 7 pruebas de `tests/api/test_respaldo_endpoints.py` corren contra Supabase real, incluida la de punta a punta** (se carga una cuenta con un poco de todo, se exporta, se importa en una cuenta nueva y se compara). Una de las pruebas encontró un bug real de verdad —no del respaldo, de la prueba—: verificaba "la vista previa no escribió nada" pidiendo `GET /api/months` y esperando `[]`, pero ese endpoint abre solo el mes actual si no existe (F03-T10, a propósito); se corrigió la prueba para que verifique que lo único que hay es ese mes en cero, no algo importado.
   **Aprobada por Gustavo, 2026-10-23.**
 
-- [ ] **F11-T03 · Correo, recuperación de contraseña y contraseña nueva**
+- [~] **F11-T03 · Correo, recuperación de contraseña y contraseña nueva**
   **Tipo:** Infra → Frontend · **Ref:** Técnico §8.5, §8.6 · General §48.1.2, §48.1.3 · *reemplaza F16-T12, F16-T13 y F16-T14*
   **Hacer:** SMTP propio en Supabase con las plantillas en español; activar la confirmación por correo; pantalla de *Olvidé mi contraseña* con enlace de un solo uso que vence, **sin revelar si el email tiene cuenta**; pantalla de contraseña nueva; habilitar el enlace apagado del login.
   **Aceptación:** · llega el mail y el enlace deja poner una contraseña nueva · el enlace usado o vencido no sirve otra vez · un email sin cuenta recibe la misma respuesta que uno con cuenta · una cuenta nueva recibe su mail de confirmación.
+
+  *Código hecho 2026-10-26. **Falta la parte de infraestructura, que es tuya:** los cuatro pasos del panel de Supabase están abajo. Hasta que estén, las pantallas funcionan pero el mail no llega.*
+
+  **Dos rutas públicas nuevas**, `#/recuperar` y `#/nueva-clave` (los nombres son los de la skill §8), con sus tarjetas en `index.html` y sus módulos `recuperar.js` y `nueva-clave.js`. El login ganó el enlace «Olvidé mi contraseña», que estaba sin poner a propósito desde F02-T09.
+
+  **La excepción en la guardia de rutas, que es la decisión de seguridad de la tarea.** `#/nueva-clave` es la única pantalla que cambia la contraseña **sin pedir la anterior** —en Ajustes sí se pide (`config-cuenta.js`), y eso no se toca—, y el enlace del correo **crea una sesión** al canjearse. Sin una salvedad, la pantalla se expulsaría a sí misma en el momento exacto en que empieza a hacer falta («pública con sesión cae en inicio»). Pero abrirla a cualquier sesión sería peor: un teléfono desbloqueado un minuto alcanzaría para cambiar la contraseña sin saber la vieja. Se resolvió con una marca de «recuperación en curso» en `sessionStorage` (`auth.js`), que pone `enlace-correo.js` sólo al encontrar el token en la URL y se suelta en cuanto la contraseña quedó cambiada, o si el enlace se rechaza, o al pedir otro. `router.js` deja ver la ruta con sesión **sólo** con esa marca. Cuatro pruebas en `router.test.mjs` cubren los cuatro cruces de sesión × marca.
+
+  **Las plantillas usan `{{ .TokenHash }}`, no el `{{ .ConfirmationURL }}` de fábrica**, y el motivo es práctico: el cliente está en modo PKCE, y PKCE guarda su verificador en el navegador que **pidió** el enlace. Pedir la recuperación en el celular y abrir el mail en la PC es lo más normal del mundo, y por ese camino fallaría con un error que no dice nada. Un `token_hash` no necesita verificador: vale desde cualquier navegador, una sola vez, y vence. El camino de fábrica igual se acepta (`enlace-correo.js` reconoce el `?code=`), porque una plantilla que quede sin personalizar no puede dejar el enlace muerto en silencio.
+
+  **El token se saca de la URL en cuanto se lee** (`replaceState`): es una credencial de un solo uso y no tiene por qué quedar en el historial del navegador ni viajar en el `Referer`. Y se entrega una sola vez (`tomarEnlacePendiente`), así que un enlace rechazado no se reintenta.
+
+  **Lo que no revela si un correo tiene cuenta.** `recuperar.js` repite el piso de respuesta de 350 ms del login y del registro: mandar un mail de verdad y no mandar nada no tardan lo mismo, y esa diferencia cuenta lo mismo que contaría un texto distinto. El mensaje dice «si hay una cuenta con ese correo…» y no «te mandamos un correo», que sería confirmar que existe. El 429 sí se informa: no dice nada del correo, dice algo de cuántas veces se tocó el botón.
+
+  **Reenvío del correo de confirmación** en la tarjeta de registro (General §48.1.1, «ofrece reenviarlo»): el mail de confirmación es el que más cae en spam y sin reenvío la única salida sería crear otra cuenta. El botón queda apagado un minuto después de cada reenvío, porque el límite de Supabase es por minuto y dos toques seguidos darían un 429 que se lee como si la aplicación estuviera fallando.
+
+  **El medidor de fortaleza y la comparación de «repetir» se mudaron a `clave-ui.js`**, compartidos entre registro y contraseña nueva. Eran los mismos dos y copiarlos habría dado dos lugares donde decir cosas distintas el día que uno se ajuste.
+
+  **Consecuencia en las pruebas de API, resuelta de antemano.** Con la confirmación por correo activada, `POST /auth/v1/signup` **deja de devolver sesión** y `grant_type=password` responde `email_not_confirmed`: de ahí salía el token de doce módulos de `tests/api/`. Nadie va a abrir el mail de `epicwallet.qa.…@example.com`, así que `tests/api/ayudas_auth.py::confirmar_correo` marca el correo de la cuenta de prueba como confirmado con la clave de servicio, igual que lo haría un panel de administración. Toca sólo el uid que la prueba acaba de crear, no borra nada, y es tolerante: sin clave de servicio o con la confirmación apagada no hace nada y todo sigue como antes. Verificado en los dos estados.
+
+  **Lo que falta y es tuyo (panel de Supabase).** En este orden:
+
+  1. **SMTP propio** · Project Settings → Authentication → SMTP Settings. Técnico §8.5 recomienda Resend (3.000 mails/mes). El servicio de fábrica limita a unos pocos mails por hora y manda desde un dominio compartido que cae en spam: con eso la recuperación no funciona en la práctica.
+  2. **URL Configuration** · Site URL `https://epic-wallet-v2.vercel.app`; Redirect URLs: `https://epic-wallet-v2.vercel.app/**`, `https://*.vercel.app/**` (para las previews) y `http://localhost:3000/**`. Sin esto el enlace falla con *«requested path is invalid»*, que es el error más común de esta parte.
+  3. **Email Templates**, en español y con estos enlaces exactos (es de donde sale el `token_hash`):
+     - *Reset Password* → `{{ .SiteURL }}/?token_hash={{ .TokenHash }}&type=recovery#/nueva-clave`
+     - *Confirm signup* → `{{ .SiteURL }}/?token_hash={{ .TokenHash }}&type=signup#/login`
+  4. **Recién al final, activar «Confirm email»** · Authentication → Providers → Email. Es el paso que cambia el registro: una cuenta nueva pasa a ver «revisá tu correo» en vez de entrar directo. Si se activa antes del punto 1, una cuenta nueva queda sin poder entrar hasta que el mail funcione.
+
+  **Qué probar desde el celular, una vez hechos los cuatro pasos:** pedir el enlace desde «Olvidé mi contraseña» con tu correo y con uno inventado (tiene que decir lo mismo las dos veces) · abrir el enlace y poner una contraseña nueva · volver a abrir el **mismo** enlace y confirmar que ya no sirve · crear una cuenta de prueba y ver que llega su mail de confirmación y que el reenvío funciona.
 
 - [ ] **F11-T04 · Repaso de seguridad**
   **Tipo:** QA · **Ref:** Técnico §17 · *reemplaza F16-T01 a F16-T09*

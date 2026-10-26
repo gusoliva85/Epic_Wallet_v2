@@ -43,12 +43,26 @@ async function cargarRouterConDobles() {
     `?t=${Math.random()}`;
   codigo = codigo
     .replace(
-      'import { SECCIONES, PUBLICAS, INICIO, LOGIN, esPublica, tituloDeRuta } from "./nav.js";',
-      `import { SECCIONES, PUBLICAS, INICIO, LOGIN, esPublica, tituloDeRuta } from "${navUrl}";`,
+      /import \{[^}]*\} from "\.\/nav\.js";/,
+      `import {
+  SECCIONES,
+  PUBLICAS,
+  INICIO,
+  LOGIN,
+  NUEVA_CLAVE,
+  esPublica,
+  tituloDeRuta,
+} from "${navUrl}";`,
     )
+    // F11-T03: la guardia también pregunta si hay una recuperación en
+    // curso, para dejar ver `#/nueva-clave` con sesión abierta. Por
+    // defecto `false`: las pruebas de ese caso lo ponen explícito.
     .replace(
-      'import { haySesion } from "./auth.js";',
-      "const haySesion = async () => globalThis.__haySesion;",
+      /import \{[^}]*\} from "\.\/auth\.js";/,
+      [
+        "const haySesion = async () => globalThis.__haySesion;",
+        "const recuperacionEnCurso = () => globalThis.__recuperacion === true;",
+      ].join(""),
     );
 
   const unico = `\n// ${Math.random()}\n`;
@@ -63,7 +77,7 @@ async function cargarRouterConDobles() {
  * son de cuando la aplicación ya funciona con una cuenta adentro, de
  * antes de que existiera la guardia de rutas (F02-T12). Las pruebas de
  * la guardia en sí ponen `haySesion` explícito, en los dos valores. */
-async function montar(hash = "", { haySesion = true } = {}) {
+async function montar(hash = "", { haySesion = true, recuperacion = false } = {}) {
   const vistas = SECCIONES.map(
     (id) => `<section class="view" data-vista="${id}" hidden></section>`,
   ).join("");
@@ -89,6 +103,7 @@ async function montar(hash = "", { haySesion = true } = {}) {
   globalThis.history = dom.window.history;
   globalThis.CustomEvent = dom.window.CustomEvent;
   globalThis.__haySesion = haySesion;
+  globalThis.__recuperacion = recuperacion;
 
   const router = await cargarRouterConDobles();
   await router.arrancar();
@@ -389,7 +404,10 @@ describe("enrutador", () => {
  * las pantallas de cuenta, que son las que ve alguien sin sesión. La
  * única prueba que necesita estar adentro con la aplicación pasa
  * `haySesion: true` explícito. */
-async function montarConAcceso(hash = "#/login", { haySesion = false } = {}) {
+async function montarConAcceso(
+  hash = "#/login",
+  { haySesion = false, recuperacion = false } = {},
+) {
   const vistas = SECCIONES.map(
     (id) => `<section class="view" data-vista="${id}" hidden></section>`,
   ).join("");
@@ -401,6 +419,7 @@ async function montarConAcceso(hash = "#/login", { haySesion = false } = {}) {
       `<div class="acceso" id="acceso" hidden>` +
       `<div class="acceso-card" data-cuenta="login"></div>` +
       `<div class="acceso-card" data-cuenta="registro" hidden></div>` +
+      `<div class="acceso-card" data-cuenta="nueva-clave" hidden></div>` +
       `</div>` +
       `</body></html>`,
     { url: `https://epic-wallet-v2.vercel.app/${hash}`, pretendToBeVisual: true },
@@ -413,6 +432,7 @@ async function montarConAcceso(hash = "#/login", { haySesion = false } = {}) {
   globalThis.history = dom.window.history;
   globalThis.CustomEvent = dom.window.CustomEvent;
   globalThis.__haySesion = haySesion;
+  globalThis.__recuperacion = recuperacion;
 
   const router = await cargarRouterConDobles();
   await router.arrancar();
@@ -473,11 +493,19 @@ describe("pantallas de cuenta dentro de #acceso", () => {
     router.navegar("registro");
     await esperarTarjeta(dom, "registro");
 
-    const ocultas = dom.window.document.querySelectorAll(
-      "#acceso .acceso-card[data-cuenta][hidden]",
+    // Se cuenta cuántas quedan visibles y no cuántas ocultas: la
+    // afirmación es «una sola a la vez», y así no hay que volver a
+    // tocar el número cada vez que se agrega una pantalla de cuenta
+    // (F11-T03 agregó dos).
+    const visibles = dom.window.document.querySelectorAll(
+      "#acceso .acceso-card[data-cuenta]:not([hidden])",
     );
-    assert.equal(ocultas.length, 1, "tiene que quedar exactamente una oculta");
-    assert.equal(ocultas[0].dataset.cuenta, "login");
+    assert.equal(visibles.length, 1, "tiene que quedar exactamente una visible");
+    assert.equal(visibles[0].dataset.cuenta, "registro");
+    assert.equal(
+      dom.window.document.querySelector('[data-cuenta="login"]').hidden,
+      true,
+    );
   });
 
   test("#acceso queda oculto y .app deja de ser inert en una ruta de la aplicación", async () => {
@@ -540,6 +568,51 @@ describe("guardia de rutas", () => {
     const { dom } = await montar("#/login", { haySesion: false });
     assert.equal(activa(dom), null);
     assert.equal(dom.window.location.hash, "#/login");
+  });
+
+  /* F11-T03 · la única excepción a «pública con sesión cae en inicio».
+
+     Las dos pruebas de abajo son las que sostienen que la pantalla de
+     contraseña nueva no sea una forma de cambiar la contraseña sin
+     saber la anterior: con sesión abierta se entra SÓLO si hay una
+     recuperación en curso, es decir si se llegó por el enlace del
+     correo. Sin la marca, una sesión olvidada en un teléfono
+     desbloqueado alcanzaría para saltear el chequeo de `Ajustes`. */
+
+  test("nueva-clave con sesión y recuperación en curso se puede ver", async () => {
+    const { dom } = await montar("#/nueva-clave", {
+      haySesion: true,
+      recuperacion: true,
+    });
+    assert.equal(activa(dom), null, "no es una vista de la aplicación");
+    assert.equal(dom.window.location.hash, "#/nueva-clave");
+  });
+
+  test("nueva-clave con sesión y SIN recuperación en curso manda al inicio", async () => {
+    const { dom } = await montar("#/nueva-clave", {
+      haySesion: true,
+      recuperacion: false,
+    });
+    assert.equal(activa(dom), "inicio");
+    assert.equal(dom.window.location.hash, "#/inicio");
+  });
+
+  test("nueva-clave sin sesión se puede ver: el enlace todavía no se canjeó", async () => {
+    // Es el primer instante del flujo: `enlace-correo.js` puso la
+    // marca y el hash, pero el canje —que crea la sesión— lo hace la
+    // pantalla cuando ya está en pantalla.
+    const { dom } = await montar("#/nueva-clave", {
+      haySesion: false,
+      recuperacion: true,
+    });
+    assert.equal(activa(dom), null);
+    assert.equal(dom.window.location.hash, "#/nueva-clave");
+  });
+
+  test("recuperar con sesión ya puesta manda al inicio, como las otras públicas", async () => {
+    const { dom } = await montar("#/recuperar", { haySesion: true });
+    assert.equal(activa(dom), "inicio");
+    assert.equal(dom.window.location.hash, "#/inicio");
   });
 
   test("una ruta inválida sin sesión cae en login, no en inicio", async () => {

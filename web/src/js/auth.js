@@ -64,6 +64,7 @@ const MENSAJES = {
   red: "No se pudo conectar. Revisá tu conexión e intentá de nuevo.",
   debil: "La contraseña tiene que tener al menos 8 caracteres.",
   ya_existe: "No se pudo crear la cuenta con esos datos.",
+  enlace: "El enlace no sirve o ya venció. Pedí uno nuevo.",
   generico: "Algo no funcionó. Intentá de nuevo en un momento.",
 };
 
@@ -102,6 +103,23 @@ export function mensajeDeError(error) {
     texto.includes("user not found")
   ) {
     return MENSAJES.credenciales;
+  }
+
+  // Enlace de correo vencido, ya usado o adulterado. Los tres casos
+  // dicen lo mismo a propósito: «ya usado» contra «nunca existió»
+  // vuelve a ser la diferencia que cuenta con qué correos hay cuenta,
+  // esta vez por la puerta del enlace.
+  if (
+    codigo === "otp_expired" ||
+    codigo === "validation_failed" ||
+    // Lo que manda GoTrue cuando el enlace lo rechazó él, del lado del
+    // servidor, y vuelve con el motivo en la URL.
+    codigo === "access_denied" ||
+    texto.includes("expired") ||
+    texto.includes("invalid or has expired") ||
+    texto.includes("token has invalid claims")
+  ) {
+    return MENSAJES.enlace;
   }
 
   if (codigo === "email_not_confirmed" || texto.includes("not confirmed")) {
@@ -293,7 +311,7 @@ export async function salir() {
 export async function recuperarClave(email, volverA) {
   try {
     const { error } = await clienteDeAuth().resetPasswordForEmail(email.trim(), {
-      redirectTo: volverA ?? `${globalThis.location?.origin ?? ""}/#/clave-nueva`,
+      redirectTo: volverA ?? `${globalThis.location?.origin ?? ""}/#/nueva-clave`,
     });
     // Un 429 sí se informa: es útil saber que hay que esperar.
     if (error && Number(/** @type {any} */ (error).status) === 429) return falla(error);
@@ -314,6 +332,110 @@ export async function actualizarUsuario(cambios) {
     const { data, error } = await clienteDeAuth().updateUser(cambios);
     if (error) return falla(error);
     return exito(data.user);
+  } catch (e) {
+    return falla(e);
+  }
+}
+
+// ===================================================================
+//  Los enlaces del correo · F11-T03
+// ===================================================================
+
+/* Marca de «hay una recuperación en curso», en `sessionStorage`.
+
+   Existe por una razón de seguridad concreta, no de comodidad: la
+   pantalla de contraseña nueva es la única que cambia la clave **sin
+   pedir la anterior**, y eso está bien sólo porque para llegar hay que
+   haber abierto un enlace del correo. Si fuera alcanzable con
+   cualquier sesión abierta, dejar el teléfono desbloqueado un minuto
+   alcanzaría para que otro cambie la contraseña sin saber la vieja —
+   justo el chequeo que `config-cuenta.js` hace a propósito.
+
+   `sessionStorage` y no una variable del módulo: recargar la página a
+   mitad del flujo (o que el teclado del teléfono fuerce un reload) no
+   tiene que dejar al usuario con una sesión nueva y sin pantalla donde
+   poner la contraseña. Y no `localStorage`: la marca muere con la
+   pestaña, no queda esperando semanas en el dispositivo. */
+const CLAVE_DE_RECUPERACION = "epic-wallet-recuperacion";
+
+/** Avisa que se entró por un enlace de recuperación. */
+export function marcarRecuperacion() {
+  try {
+    globalThis.sessionStorage?.setItem(CLAVE_DE_RECUPERACION, "1");
+  } catch {
+    // Modo privado o almacenamiento bloqueado. Sin la marca la
+    // pantalla de contraseña nueva no se va a poder abrir de nuevo si
+    // se recarga, pero el flujo recién empezado sigue funcionando.
+  }
+}
+
+/** @returns {boolean} */
+export function recuperacionEnCurso() {
+  try {
+    return globalThis.sessionStorage?.getItem(CLAVE_DE_RECUPERACION) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/** Se llama en cuanto la contraseña quedó cambiada, o al abandonar. */
+export function olvidarRecuperacion() {
+  try {
+    globalThis.sessionStorage?.removeItem(CLAVE_DE_RECUPERACION);
+  } catch {
+    // Nada que limpiar si no hay almacenamiento.
+  }
+}
+
+/**
+ * Canjea el `token_hash` de un enlace del correo por una sesión.
+ *
+ * Es el camino de `{{ .TokenHash }}` en las plantillas (Técnico §8.5),
+ * y se eligió sobre el `{{ .ConfirmationURL }}` de fábrica por un
+ * motivo práctico: el cliente está en modo PKCE, y PKCE guarda su
+ * verificador en el navegador que **pidió** el enlace. Pedir la
+ * recuperación en el celular y abrir el mail en la PC es lo más normal
+ * del mundo, y por ese camino fallaría. Un `token_hash` no necesita
+ * verificador: vale desde cualquier navegador, una sola vez, y vence.
+ *
+ * @param {string} tokenHash
+ * @param {"recovery" | "signup" | "email" | "magiclink" | "invite" | "email_change"} tipo
+ * @returns {Promise<Exito | Falla>}
+ */
+export async function verificarEnlace(tokenHash, tipo) {
+  try {
+    const { data, error } = await clienteDeAuth().verifyOtp({
+      token_hash: tokenHash,
+      type: tipo,
+    });
+    if (error) return falla(error);
+    if (!data.user) return { ok: false, mensaje: MENSAJES.enlace };
+    return exito(data.user);
+  } catch (e) {
+    return falla(e);
+  }
+}
+
+/**
+ * Vuelve a mandar el correo de confirmación de una cuenta nueva
+ * (General §48.1.1: «ofrece reenviarlo»).
+ *
+ * Igual que la recuperación, devuelve `ok` incluso cuando el correo no
+ * tiene cuenta pendiente: contestar distinto sería el mismo
+ * verificador de cuentas por otra puerta. El 429 sí se informa, que es
+ * el caso en que al usuario le sirve saber que tiene que esperar.
+ *
+ * @param {string} email
+ * @returns {Promise<{ok: true} | Falla>}
+ */
+export async function reenviarConfirmacion(email) {
+  try {
+    const { error } = await clienteDeAuth().resend({
+      type: "signup",
+      email: email.trim(),
+    });
+    if (error && Number(/** @type {any} */ (error).status) === 429) return falla(error);
+    return { ok: true };
   } catch (e) {
     return falla(e);
   }
@@ -426,4 +548,9 @@ export function alCambiarLaSesion(alCambiar) {
   return () => data.subscription.unsubscribe();
 }
 
-export const _interno = { CLAVE_DE_SESION, MARGEN_DE_RENOVACION, MENSAJES };
+export const _interno = {
+  CLAVE_DE_SESION,
+  CLAVE_DE_RECUPERACION,
+  MARGEN_DE_RENOVACION,
+  MENSAJES,
+};

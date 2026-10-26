@@ -8,26 +8,35 @@
    contraseñas coincidan, el medidor de fortaleza, el estado de carga y
    qué pasa al enviar.
 
-   Reusa de `acceso.js` el patrón del ojito (`conectarOjito`): es el
-   mismo comportamiento sobre un campo distinto, y escribirlo dos veces
-   sólo daría dos lugares para que un arreglo futuro se aplique en uno y
-   se olvide en el otro.
+   Reusa de `acceso.js` el patrón del ojito (`conectarOjito`) y de
+   `clave-ui.js` el medidor de fortaleza y la comparación de las dos
+   contraseñas: es el mismo comportamiento sobre campos distintos, y
+   escribirlo dos veces sólo daría dos lugares para que un arreglo
+   futuro se aplique en uno y se olvide en el otro. Desde F11-T03 esos
+   dos ayudantes los comparte con la pantalla de contraseña nueva.
 
    Lo que este archivo NO hace, y es a propósito:
 
    * **No decide si hay que mostrar la pantalla.** Eso es del enrutador
      (`#/registro`) y, cuando exista, de la guardia de F02-T12.
    * **No sabe de Supabase.** Habla con `auth.js`, igual que `acceso.js`.
-   * **No construye la pantalla de «revisá tu correo».** Hoy la
-     confirmación por mail está apagada (F02-T02) y `registrarse()`
-     siempre entra directo. El bloque `#registro-confirmar` ya existe en
-     el HTML para cuando F11-T03 active el correo; este archivo sólo lo
-     muestra si algún día `auth.js` devuelve `falta_confirmar`. */
+   * **No construye la pantalla de «revisá tu correo».** El bloque
+     `#registro-confirmar` ya está en el HTML desde F02-T10; este
+     archivo sólo lo muestra cuando `auth.js` devuelve
+     `falta_confirmar`, que es lo que pasa con la confirmación por
+     correo activada (F11-T03). Con la confirmación apagada ese camino
+     no se usa nunca y el registro entra directo, como antes. */
 
-import { registrarse } from "./auth.js";
+import { registrarse, reenviarConfirmacion } from "./auth.js";
 import { navegar } from "./router.js";
 import { INICIO, LOGIN } from "./nav.js";
 import { conectarOjito } from "./acceso.js";
+import {
+  MINIMO_CLAVE,
+  mostrarFortaleza as pintarFortaleza,
+  actualizarCoincidencia as compararClaves,
+  puntuarFortaleza,
+} from "./clave-ui.js";
 
 /* Mismo piso que el login y con el mismo motivo: que «ya existe esa
    cuenta» y «cuenta creada» no se distingan por el tiempo de respuesta.
@@ -36,12 +45,6 @@ import { conectarOjito } from "./acceso.js";
    cuenta tanto como lo haría un mensaje distinto. */
 const PISO_DE_RESPUESTA = 350;
 
-/** Lo único que la interfaz exige antes de llamar a la API: el mínimo
- * de 8 caracteres que configura Supabase (Técnico §8.9). El servidor
- * valida igual, esto es sólo para no esperar una vuelta de red por un
- * error que ya se sabe de antemano. */
-const MINIMO_CLAVE = 8;
-
 /** @type {HTMLFormElement | null} */
 let form = null;
 
@@ -49,98 +52,29 @@ function $(id) {
   return document.getElementById(id);
 }
 
-// ===================================================================
-//  Medidor de fortaleza — orientativo, nunca bloqueante
-// ===================================================================
+/* El medidor y la comparación viven en `clave-ui.js`; acá quedan sólo
+   los envoltorios que saben qué ids tiene esta pantalla. */
 
-/**
- * Puntúa una contraseña del 0 al 4. No es criptografía, es una guía:
- * el único mínimo que de verdad se exige es el de 8 caracteres, y ese
- * se valida aparte.
- *
- * @param {string} clave
- * @returns {0 | 1 | 2 | 3 | 4}
- */
-export function puntuarFortaleza(clave) {
-  if (!clave) return 0;
-  let p = 0;
-  if (clave.length >= MINIMO_CLAVE) p++;
-  if (clave.length >= 12) p++;
-  if (/[a-z]/.test(clave) && /[A-Z]/.test(clave)) p++;
-  if (/[0-9]/.test(clave)) p++;
-  if (/[^a-zA-Z0-9]/.test(clave)) p++;
-  // Cinco criterios posibles, máximo 4: largo por sí solo no alcanza
-  // para "fuerte" si no hay ninguna variedad de caracteres.
-  return /** @type {0|1|2|3|4} */ (Math.min(p, 4));
-}
-
-const NIVELES = [
-  { etiqueta: "", color: "" },
-  { etiqueta: "Débil", color: "var(--color-crit)" },
-  { etiqueta: "Débil", color: "var(--color-crit)" },
-  { etiqueta: "Media", color: "var(--color-warn)" },
-  { etiqueta: "Fuerte", color: "var(--color-ok)" },
-];
-
-/** Pinta la barra y el texto del medidor. Se esconde entero con el
- * campo vacío: una barra en cero no dice nada y ocupa lugar.
- *
- * Por debajo del mínimo no muestra "Débil": dice cuánto falta. Es la
- * validación en vivo del mínimo de 8 caracteres que pide la tarea —
- * orientativa, igual que el resto del medidor, porque lo que de verdad
- * bloquea el envío es el chequeo de `alEnviar`, no esto. */
 function mostrarFortaleza(clave) {
-  const cont = $("registro-fuerza");
-  const barra = $("registro-fuerza-barra");
-  const texto = $("registro-fuerza-texto");
-  if (!cont || !barra || !texto) return;
-
-  if (!clave) {
-    cont.hidden = true;
-    return;
-  }
-  cont.hidden = false;
-
-  if (clave.length < MINIMO_CLAVE) {
-    const faltan = MINIMO_CLAVE - clave.length;
-    barra.style.width = `${(clave.length / MINIMO_CLAVE) * 25}%`;
-    barra.style.background = "var(--color-crit)";
-    texto.textContent = `Falta${faltan === 1 ? "" : "n"} ${faltan}`;
-    return;
-  }
-
-  const nivel = puntuarFortaleza(clave);
-  const { etiqueta, color } = NIVELES[nivel];
-  barra.style.width = `${(nivel / 4) * 100}%`;
-  barra.style.background = color;
-  texto.textContent = etiqueta;
+  pintarFortaleza(clave, {
+    contenedor: $("registro-fuerza"),
+    barra: $("registro-fuerza-barra"),
+    texto: $("registro-fuerza-texto"),
+  });
 }
 
-// ===================================================================
-//  Que las dos contraseñas coincidan — en vivo, antes de enviar
-// ===================================================================
-
-/**
- * @returns {boolean} si coinciden (o si una de las dos todavía está vacía,
- *   que no es un error, es sólo que no hay nada que comparar aún).
- */
 function actualizarCoincidencia() {
-  const clave = /** @type {HTMLInputElement | null} */ ($("registro-clave"));
-  const clave2 = /** @type {HTMLInputElement | null} */ ($("registro-clave2"));
-  const nota = $("registro-coincide");
-  if (!clave || !clave2 || !nota) return true;
-
-  if (!clave2.value) {
-    nota.textContent = "";
-    nota.className = "campo-nota";
-    return true;
-  }
-
-  const coincide = clave.value === clave2.value;
-  nota.textContent = coincide ? "Coinciden." : "Las contraseñas no coinciden.";
-  nota.className = coincide ? "campo-nota campo-nota--ok" : "campo-nota campo-nota--crit";
-  return coincide;
+  return compararClaves({
+    campo: /** @type {HTMLInputElement | null} */ ($("registro-clave")),
+    repetir: /** @type {HTMLInputElement | null} */ ($("registro-clave2")),
+    nota: $("registro-coincide"),
+  });
 }
+
+/* Se re-exporta porque `puntuarFortaleza` era parte de la interfaz de
+   este módulo desde F02-T10 y no hay motivo para que quien lo importe
+   se tenga que enterar de que se mudó de archivo. */
+export { puntuarFortaleza };
 
 // ===================================================================
 //  Error y carga — mismo patrón que acceso.js, con los ids de registro
@@ -174,15 +108,61 @@ async function esperarElPiso(desde) {
   if (falta > 0) await new Promise((listo) => setTimeout(listo, falta));
 }
 
+/* El correo con el que se creó la cuenta, para poder reenviarle la
+   confirmación. Se guarda acá y no se vuelve a leer del campo porque
+   el campo se puede editar después de enviado: reenviaríamos a una
+   dirección distinta de la que quedó registrada. */
+let correoPendiente = "";
+
 /** Pasa la tarjeta del formulario al mensaje de «revisá tu correo».
  * Sin tocar `form.hidden`: el formulario se queda en el DOM por si
  * algún día hay que volver a mostrarlo, y ocultarlo entero sería
  * repetir la lógica de visibilidad en dos lugares distintos de este
  * mismo archivo. */
-function mostrarConfirmarCorreo() {
+function mostrarConfirmarCorreo(email) {
+  correoPendiente = email;
   if (form) form.hidden = true;
   const bloque = $("registro-confirmar");
   if (bloque) bloque.hidden = false;
+}
+
+/** Vuelve a mandar el correo de confirmación (General §48.1.1).
+ *
+ * El botón queda apagado después del primer reenvío: el límite de
+ * Supabase es por minuto, y dos toques seguidos darían un 429 que se
+ * lee como si la aplicación estuviera fallando. Se reabre al minuto.
+ */
+let reenviando = false;
+
+async function alReenviar() {
+  const boton = /** @type {HTMLButtonElement | null} */ ($("registro-reenviar"));
+  const nota = $("registro-reenviado");
+  if (!boton || reenviando || !correoPendiente) return;
+
+  reenviando = true;
+  boton.disabled = true;
+  boton.classList.add("cargando");
+  boton.setAttribute("aria-busy", "true");
+  if (nota) {
+    nota.textContent = "";
+    nota.className = "campo-nota";
+  }
+
+  const r = await reenviarConfirmacion(correoPendiente);
+
+  boton.classList.remove("cargando");
+  boton.setAttribute("aria-busy", "false");
+  if (nota) {
+    nota.textContent = r.ok
+      ? "Listo, te lo mandamos de nuevo."
+      : /** @type {any} */ (r).mensaje;
+    nota.className = r.ok ? "campo-nota campo-nota--ok" : "campo-nota campo-nota--crit";
+  }
+
+  setTimeout(() => {
+    reenviando = false;
+    boton.disabled = false;
+  }, 60_000);
 }
 
 /** @param {SubmitEvent} evento */
@@ -243,7 +223,7 @@ export async function alEnviar(evento) {
     clave2.value = "";
 
     if ("falta_confirmar" in r && r.falta_confirmar) {
-      mostrarConfirmarCorreo();
+      mostrarConfirmarCorreo(email.value.trim());
       return;
     }
 
@@ -297,6 +277,8 @@ export function arrancar() {
   irALogin?.addEventListener("click", () => navegar(LOGIN));
   const volverLogin = $("registro-volver-login");
   volverLogin?.addEventListener("click", () => navegar(LOGIN));
+  const reenviar = $("registro-reenviar");
+  reenviar?.addEventListener("click", () => void alReenviar());
 }
 
 if (document.readyState === "loading") {
