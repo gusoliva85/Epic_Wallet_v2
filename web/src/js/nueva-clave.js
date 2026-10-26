@@ -65,9 +65,13 @@ function $(id) {
 function mostrarEstado(cual) {
   const verificando = $("nueva-verificando");
   const invalido = $("nueva-invalido");
+  const bajada = $("nueva-bajada");
   if (verificando) verificando.hidden = cual !== "verificando";
   if (invalido) invalido.hidden = cual !== "invalido";
   if (form) form.hidden = cual !== "formulario";
+  // La bajada dice «después de guardarla entrás directo»: con el
+  // enlace que no sirve, eso es una promesa que no se va a cumplir.
+  if (bajada) bajada.hidden = cual === "invalido";
 }
 
 /** @param {string | null} mensaje */

@@ -387,6 +387,16 @@ describe("pantalla de contraseña nueva", () => {
     );
   });
 
+  test("con el enlace rechazado, la bajada deja de prometer que se entra", async () => {
+    const { dom, pantalla } = await montar({
+      verificacion: { ok: false, mensaje: "no sirve" },
+    });
+    pantalla.arrancar();
+    await activarRuta(dom);
+
+    assert.equal($(dom, "nueva-bajada").hidden, true);
+  });
+
   test("sin token y sin sesión es un enlace que no sirve", async () => {
     // Es el caso de escribir `#/nueva-clave` a mano, o de volver a
     // abrir un enlace ya consumido.
