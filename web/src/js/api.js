@@ -81,6 +81,32 @@ export async function cerrarSesion() {
 async function request(path, options = {}, reintentar = true) {
   const cab = await cabeceras();
 
+  /* Sin sesión no se sale a la red, y esto no es una optimización.
+
+     `cabeceras()` devuelve `null` cuando no hay token, y una petición
+     sin token vuelve 401 siempre. El problema es lo que pasaba
+     después: el segundo 401 llama a `cerrarSesion()`, que **navega al
+     login**. Varias vistas piden sus datos al cargar sin mirar qué
+     ruta está activa, así que abrir `#/registro` —o el enlace de
+     recuperación en `#/nueva-clave`— disparaba seis 401 y la
+     aplicación se llevaba a la persona al login antes de que llegara
+     a escribir nada. Se vio con Playwright contra producción; en jsdom
+     no aparece porque ahí nadie pide datos de verdad.
+
+     Cerrar una sesión que no existe no arregla nada y roba la ruta.
+     Con sesión vencida —token presente y rechazado— el camino de
+     abajo sigue igual: reintento y, si insiste, cierre. */
+  // El código es el mismo que el del 401 —quien lo mire para decidir
+  // algo tiene que tratarlos igual—, pero el texto dice la verdad: no
+  // hay sesión que haya vencido, nunca hubo una.
+  if (!cab) {
+    throw new ApiError({
+      code: "UNAUTHENTICATED",
+      message: "Hace falta iniciar sesión.",
+      status: 401,
+    });
+  }
+
   let res;
   try {
     res = await fetch(`/api${path}`, {

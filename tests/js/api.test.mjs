@@ -128,11 +128,30 @@ describe("las cuatro formas de pedir", () => {
     assert.equal(init.method, "DELETE");
   });
 
-  test("sin sesión, no manda cabecera de autorización", async () => {
-    const { api, llamadas } = await montar({ cabecerasValor: null });
-    await api.get("/me");
+  /* F11-T03: antes esto comprobaba que la petición saliera SIN la
+     cabecera. Ahora no sale: una petición sin token vuelve 401 seguro,
+     y el segundo 401 llama a `cerrarSesion()`, que navega al login.
+     Varias vistas piden sus datos al cargar sin mirar la ruta activa,
+     así que abrir `#/registro` o el enlace de recuperación en
+     `#/nueva-clave` se llevaba a la persona al login antes de que
+     llegara a escribir nada. Cerrar una sesión que no existe no
+     arregla nada y roba la ruta.
 
-    assert.equal(llamadas.fetch[0][1].headers.Authorization, undefined);
+     La afirmación vieja —«nunca se manda una cabecera inventada»—
+     queda cubierta de una forma más fuerte: no se manda nada. */
+  test("sin sesión no sale ninguna petición, y no se navega", async () => {
+    const { api, llamadas } = await montar({ cabecerasValor: null });
+
+    await assert.rejects(() => api.get("/me"), (e) => {
+      assert.equal(e.name, "ApiError");
+      assert.equal(e.code, "UNAUTHENTICATED");
+      assert.equal(e.status, 401);
+      return true;
+    });
+
+    assert.equal(llamadas.fetch.length, 0, "salió a la red sin token");
+    assert.deepEqual(llamadas.navegar, [], "se robó la ruta de una pantalla pública");
+    assert.equal(llamadas.salir, 0);
   });
 });
 
