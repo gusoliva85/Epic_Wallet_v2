@@ -8,10 +8,13 @@ pero sabe que está. Si algo de acá contradice los tres documentos
 oficiales o el roadmap, **ganan ellos**, esto está desactualizado y hay
 que corregirlo o borrarlo.
 
-Última actualización: sesión del 2026-10-23. Fases 0 a 10 cerradas y
+Última actualización: sesión del 2026-10-26. Fases 0 a 10 cerradas y
 aprobadas (las tres excepciones de carga de datos de abajo no cuentan
-como código pendiente). Fase 11: F11-T01 y F11-T02 aprobadas; quedan
-F11-T03, F11-T04, F11-T05 sin arrancar. Fase 12 (nueva, "Apronte de
+como código pendiente). Fase 11: F11-T01 y F11-T02 aprobadas; **F11-T03
+implementada y en `[~]`, esperando que Gustavo configure el SMTP, las
+URLs y las plantillas en el panel de Supabase** (los cuatro pasos están
+escritos en el roadmap, bajo la tarea); quedan F11-T04 y F11-T05 sin
+arrancar. Fase 12 (nueva, "Apronte de
 escritorio"): F12-T01 y F12-T04 aprobadas; F12-T02 investigada sin
 reproducir, esperando más detalle de Gustavo; F12-T03 abierta,
 se llena con lo que él vaya encontrando. Si el repo ya avanzó más,
@@ -81,6 +84,29 @@ suyo, después de la 11.
 - **F12-T03: abierta a propósito, sin lista propia.** Se llena con
   entradas concretas a medida que Gustavo las encuentra revisando la
   interfaz de escritorio.
+
+## F11-T03 — dos cosas que conviene no volver a descubrir
+
+**El enlace del correo va con `{{ .TokenHash }}`, no con el
+`{{ .ConfirmationURL }}` de fábrica.** El cliente de auth está en modo
+PKCE, y PKCE guarda su verificador en el navegador que **pidió** el
+enlace: pedir la recuperación en el celular y abrir el mail en la PC
+falla con un error que no dice nada. Un `token_hash` no necesita
+verificador. Si alguna vez aparece un «invalid request: both auth code
+and code verifier should be non-empty», es esto.
+
+**Sin sesión, varias vistas igual piden sus datos al cargar.** No miran
+qué ruta está activa: `barra-mes`, `saldo-inicial`, `config-categorias`
+y `movimientos` disparan su `fetch` al importarse. Antes eso daba seis
+401 y el segundo 401 seguido llamaba a `cerrarSesion()` → `navegar(LOGIN)`,
+así que cualquier pantalla pública que no fuera el login se perdía sola
+a los dos segundos. Corregido en `api.js` (corta antes de salir a la red
+si no hay token), pero **las vistas siguen pidiendo de más** — si alguna
+vez hay que limpiarlo de verdad, el lugar es cada módulo escuchando
+`epic:ruta` antes de cargar, no `api.js`. Lo importante: **jsdom nunca
+lo iba a ver**, porque ahí nadie pide datos; apareció recién en un
+recorrido real por Playwright contra producción. Mismo patrón que los
+bugs de F12-T04.
 
 ## Gestos y transición de vista (F12-T04) — lecciones técnicas, no repetir los mismos errores
 
