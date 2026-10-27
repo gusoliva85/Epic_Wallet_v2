@@ -353,7 +353,7 @@ Si faltan, el build **avisa fuerte y sigue**. La primera versión cortaba el bui
 
 Lo que hay que evitar no es el silencio del build, es que algo quede a medias sin que nadie se entere. Así que cuando faltan: aviso en el log del despliegue, un `config.js` explícitamente vacío que nombra las variables que faltan, y un `console.error` que el navegador muestra. `auth.js` levanta un error con el mismo texto en cuanto algo intenta usarlo. El resto de la aplicación se publica y funciona.
 
-El generador además **rechaza la clave secreta** si alguien la pone en `SUPABASE_ANON_KEY` por error, reconociendo los dos formatos que usa Supabase (`sb_secret_…` y el JWT viejo con `role: service_role`). Es la única equivocación de esta lista que no se puede deshacer: una clave de servicio dentro de un paquete de navegador ya quedó publicada, y rotarla no borra a quién la vio. `tests/unit/test_config_web.py` revisa además todos los archivos de `web/` por si aparece por otro camino.
+El generador además **rechaza la clave secreta** si alguien la pone en `SUPABASE_ANON_KEY` por error, reconociendo los dos formatos que usa Supabase (`sb_secret_…` y el JWT viejo con `role: service_role`). Es la única equivocación de esta lista que no se puede deshacer: una clave de servicio dentro de un paquete de navegador ya quedó publicada, y rotarla no borra a quién la vio. `tests/unit/test_secretos_fuera_del_frontend.py` revisa además todos los archivos de `web/` —y todo lo versionado— por si aparece por otro camino.
 
 ---
 

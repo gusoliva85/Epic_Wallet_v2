@@ -86,7 +86,7 @@ Se testea **lo que da un número o protege un dato**:
 | **8** | Histórico y carga del Excel | **1**, de carga de datos, no bloquea | **Acá la aplicación ya te sirve todos los días** |
 | **9** | Ahorro acumulado y patrimonio | **1**, de verificación, no bloquea | Saldo acumulado y patrimonio neto |
 | **10** | Inversiones | **1**, de carga de datos, no bloquea | Cartera con compra, venta y rendimientos |
-| **11** | Cierre del MVP | **2** (T04, T05) | Configuración, respaldo y T03 aprobados — T03 con el correo saliente fuera de alcance: la recuperación muestra un mensaje en vez de mandar un enlace; faltan el repaso de seguridad y la verificación final |
+| **11** | Cierre del MVP | **1** (T05) | Configuración, respaldo y T03 aprobados — T03 con el correo saliente fuera de alcance: la recuperación muestra un mensaje en vez de mandar un enlace. T04 (repaso de seguridad) hecho y esperando tu aprobación; falta la verificación final del MVP |
 | **12** | Apronte de escritorio | **2** (T02, T03) | Layout de escritorio y gestos en el celular ya aprobados; falta el cambio de tema en escritorio (sin reproducir todavía) y lo que vaya apareciendo |
 
 **Revisado 2026-10-23** junto con Gustavo: todo lo de las fases 0 a 10 está aprobado (las tres pendientes de carga de datos no cuentan como tareas de código). De la Fase 11, F11-T01 y F11-T02 aprobadas; de la Fase 12, F12-T01 y F12-T04 aprobadas. Quedan **8 tareas** entre las dos fases abiertas.
@@ -520,11 +520,30 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 
   **Qué se probó hoy, 2026-10-27:** el enlace del login lleva a `#/recuperar` y ahí se lee el mensaje, con su botón de vuelta al login y sin formulario a la vista.
 
-- [ ] **F11-T04 · Repaso de seguridad**
+- [~] **F11-T04 · Repaso de seguridad**
   **Tipo:** QA · **Ref:** Técnico §17 · *reemplaza F16-T01 a F16-T09*
   **Hacer:** tres cosas y nada más. (1) Reverificar el aislamiento entre cuentas con todos los endpoints que ya existen, que son muchos más que en F02-T14. (2) Cargar un movimiento con etiquetas HTML y JavaScript en la descripción y en el nombre de una categoría, y confirmar que se muestran como texto. (3) Confirmar que el paquete del navegador sólo lleva la URL y la clave anónima de Supabase, y que la clave de servicio y el secreto de JWT no están ahí ni en el repositorio.
   **Aceptación:** · ningún recurso ajeno es accesible en ningún endpoint · el texto con etiquetas se muestra, no se ejecuta · no hay secretos en el frontend ni en el repositorio.
   **Nota de alcance:** no se hace límite de peticiones, ni política de contenido estricta, ni auditoría del historial de Git, ni prueba de carga, ni auditoría formal de accesibilidad. RLS en la base es la defensa que importa acá y ya está activa. Si alguna vez la aplicación se abre a desconocidos, esto se revisa.
+
+  *Hecho 2026-10-27. Los tres puntos verificados, ningún agujero. Falta tu aprobación.*
+
+  **(1) Aislamiento · `tests/api/test_aislamiento_f11.py`, 8 pruebas contra la base real.** Dos cuentas, A con datos y B vacía, y con el token de B se intenta todo lo de A en **los 27 endpoints privados**. Tres formas, porque son tres agujeros distintos: el id ajeno en la dirección (los nueve endpoints que llevan id → **404**, nunca 403, porque un 403 confirmaría que el recurso existe), la colección entera (las diez lecturas sin id, buscando el texto crudo de los datos de A en la respuesta, incluido `GET /api/export`), y el id ajeno **colado en el cuerpo** (un movimiento de B apuntando a una categoría de A → 400). Después de todos los intentos, incluidos los `DELETE`, se vuelve a mirar la cuenta A: intacta — un 404 que igual borra la fila sería peor que no tener aislamiento.
+
+  Dos detalles que valen más que la lista: el 404 del recurso ajeno y el del id inexistente tienen que ser **el mismo 404, cuerpo incluido**, o la diferencia vuelve a contar que el recurso existe; y una prueba compara la lista de endpoints con id contra el OpenAPI y falla si alguien agrega uno, así el barrido no se queda viejo en silencio (es exactamente el agujero que esta tarea vino a cerrar: F02-T14 cubría tres endpoints y la lista nunca creció).
+
+  **(2) Etiquetas en los datos.** Verificado de punta a punta contra producción, no sólo en pruebas: se cargó una categoría llamada `<img src=x onerror="window.__xss=1">Cat` y un movimiento descrito `<script>window.__xss=1</script><b onmouseover=…>Desc`, y se abrió la aplicación en el navegador con esa cuenta. En Inicio y en Movimientos **se leen como texto, tal cual**: no se ejecutó nada, no se inyectó ningún elemento, ningún `<script>` quedó en el documento, cero errores de página. El escapado por componente ya estaba cubierto en `tests/js/` (`rows`, `kpi`, `avisos`, `toast`, con jsdom en modo `runScripts` para que un `onerror` inyectado *pueda* correr); esto es la pasada por la pantalla real que pedía la tarea.
+
+  **(3) Secretos · `tests/unit/test_secretos_fuera_del_frontend.py`, 6 pruebas.** El paquete del navegador lleva sólo la URL y la clave publicable (`sb_publishable_…`, pública por diseño: del otro lado está RLS). Se revisa **todo** `web/`, no sólo el `config.js` generado, por el valor de la clave de servicio y además por su forma (`sb_secret_`, `service_role`) para atrapar una clave que esta máquina no conoce; y se revisa que ni la clave de servicio ni el secreto de JWT estén en **ningún archivo versionado**, comparando valores y no nombres —los nombres sí aparecen en `.env.example`, el README y el Técnico, y tienen que seguir apareciendo—. `.env` no está rastreado.
+
+  Esto existía como `tests/unit/test_config_web.py` y se dio de baja en `9d3f3cc` con los 23 archivos de pruebas de interfaz. La baja estuvo bien para lo que comprobaba del build (que el generador corte, que avise) y se llevó de arrastre lo que no correspondía: una clave de servicio en un `.js` publicado **no se ve mirando la pantalla**, y es el único error de esta lista que no se puede deshacer. Volvió sólo esa parte. *(Nota: `docs/FASE_00_PUESTA_EN_MARCHA.md` §356 seguía nombrando el archivo viejo; corregido.)*
+
+  **Dos cosas encontradas en el camino, ninguna de seguridad, ninguna tocada:**
+
+  - **Al entrar desde cero, las pantallas quedan vacías hasta recargar.** Varias vistas piden sus datos **al importarse**, y eso pasa mientras todavía estás en el login: sin sesión fallan, y nada las vuelve a disparar cuando entrás. El tablero recién se llena si recargás. No es consecuencia del arreglo de `api.js` de F11-T03 — se comparó con y sin ese cambio y el resultado es el mismo—, viene de antes y se nota sólo cuando se entra con la sesión perdida, que con la sesión guardada en el teléfono casi no pasa. El arreglo propio es que cada módulo pida sus datos al activarse su ruta (`epic:ruta`), no al importarse. **Queda para que decidas si entra como tarea.**
+  - **Quedaron 58 cuentas de prueba viejas** en Supabase (`…@example.com` y cinco `epicwallet.gemelo.…@example.net`), de corridas cuyo cierre se cortó, cada una con sus 21 categorías sembradas. Las 3 de esta tarea las borré. Las otras **no las toqué**: no son de esta tarea y borrar filas de la base real no se hace de pasada. Si querés, las barro en una pasada aparte — las dos cuentas reales (`goliva@live.com.ar` y `nellybici07@gmail.com`) no se tocan.
+
+  **Qué probar vos:** nada que se vea en pantalla; esta tarea es de pruebas. Si querés comprobarlo a mano, entrá con tu cuenta y cargá un movimiento con la descripción `<b>hola</b>`: tiene que mostrarse con las etiquetas a la vista, como texto.
 
 - [ ] **F11-T05 · Verificación del MVP y `docs/COMO_FUNCIONA.md`**
   **Tipo:** QA → Doc · *reemplaza F16-T10, F16-T11, F16-T15, F16-T16 y las 18 tareas de documentación de fase*
