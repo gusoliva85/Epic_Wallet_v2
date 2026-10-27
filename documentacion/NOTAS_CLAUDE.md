@@ -8,13 +8,21 @@ pero sabe que está. Si algo de acá contradice los tres documentos
 oficiales o el roadmap, **ganan ellos**, esto está desactualizado y hay
 que corregirlo o borrarlo.
 
-Última actualización: sesión del 2026-10-26. Fases 0 a 10 cerradas y
+Última actualización: sesión del 2026-10-27. Fases 0 a 10 cerradas y
 aprobadas (las tres excepciones de carga de datos de abajo no cuentan
-como código pendiente). Fase 11: F11-T01 y F11-T02 aprobadas; **F11-T03
-implementada y en `[~]`, esperando que Gustavo configure el SMTP, las
-URLs y las plantillas en el panel de Supabase** (los cuatro pasos están
-escritos en el roadmap, bajo la tarea); quedan F11-T04 y F11-T05 sin
-arrancar. Fase 12 (nueva, "Apronte de
+como código pendiente). Fase 11: F11-T01, F11-T02 y F11-T03 aprobadas.
+**F11-T03 se cerró con alcance reducido: el correo saliente quedó
+afuera.** Gustavo decidió no contratar un SMTP —necesita dominio propio
+o un proveedor con remitente verificado—, así que `#/recuperar` muestra
+un mensaje («contactate con quien te dio la cuenta») en lugar del
+formulario, y la confirmación por correo queda desactivada para
+siempre. No se borró nada del camino del correo: se enciende con
+`RECUPERACION_POR_CORREO` en `recuperar.js` más los cuatro pasos del
+panel, que siguen escritos en el roadmap como receta. Las pruebas de
+`recuperar.test.mjs` fuerzan esa constante a `true` para que la regla
+de no revelar si un correo tiene cuenta siga cubierta mientras el
+camino está apagado — si algún día alguien la enciende, está probada.
+Quedan F11-T04 y F11-T05 sin arrancar. Fase 12 (nueva, "Apronte de
 escritorio"): F12-T01 y F12-T04 aprobadas; F12-T02 investigada sin
 reproducir, esperando más detalle de Gustavo; F12-T03 abierta,
 se llena con lo que él vaya encontrando. Si el repo ya avanzó más,
