@@ -22,7 +22,18 @@ panel, que siguen escritos en el roadmap como receta. Las pruebas de
 `recuperar.test.mjs` fuerzan esa constante a `true` para que la regla
 de no revelar si un correo tiene cuenta siga cubierta mientras el
 camino está apagado — si algún día alguien la enciende, está probada.
-Quedan F11-T04 y F11-T05 sin arrancar. Fase 12 (nueva, "Apronte de
+**F11-T04 hecha el mismo día** (barrido de aislamiento sobre los 27
+endpoints privados, etiquetas HTML verificadas en producción, secretos
+fuera del frontend y del repositorio), esperando su aprobación. Queda
+F11-T05 sin arrancar.
+
+Dos cosas que encontré en F11-T04 y **no toqué**, las dos esperando que
+Gustavo decida: (a) al entrar desde cero las pantallas quedan vacías
+hasta recargar, porque varias vistas piden sus datos al importarse
+—mientras todavía se está en el login— y nada las vuelve a disparar;
+comprobé con un A/B que no lo causó el arreglo de `api.js` de F11-T03.
+(b) quedaron 58 cuentas de prueba viejas en Supabase de corridas cuyo
+cierre se cortó; borré sólo las 3 de esta tarea. Fase 12 (nueva, "Apronte de
 escritorio"): F12-T01 y F12-T04 aprobadas; F12-T02 investigada sin
 reproducir, esperando más detalle de Gustavo; F12-T03 abierta,
 se llena con lo que él vaya encontrando. Si el repo ya avanzó más,
