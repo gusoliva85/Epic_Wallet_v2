@@ -86,10 +86,12 @@ Se testea **lo que da un número o protege un dato**:
 | **8** | Histórico y carga del Excel | **1**, de carga de datos, no bloquea | **Acá la aplicación ya te sirve todos los días** |
 | **9** | Ahorro acumulado y patrimonio | **1**, de verificación, no bloquea | Saldo acumulado y patrimonio neto |
 | **10** | Inversiones | **1**, de carga de datos, no bloquea | Cartera con compra, venta y rendimientos |
-| **11** | Cierre del MVP | **3** (T03 a probar, T04, T05) | Configuración y respaldo aprobados; el correo y la recuperación están implementados y esperan la configuración del SMTP en Supabase; faltan el repaso de seguridad y la verificación final |
+| **11** | Cierre del MVP | **2** (T04, T05) | Configuración, respaldo y T03 aprobados — T03 con el correo saliente fuera de alcance: la recuperación muestra un mensaje en vez de mandar un enlace; faltan el repaso de seguridad y la verificación final |
 | **12** | Apronte de escritorio | **2** (T02, T03) | Layout de escritorio y gestos en el celular ya aprobados; falta el cambio de tema en escritorio (sin reproducir todavía) y lo que vaya apareciendo |
 
 **Revisado 2026-10-23** junto con Gustavo: todo lo de las fases 0 a 10 está aprobado (las tres pendientes de carga de datos no cuentan como tareas de código). De la Fase 11, F11-T01 y F11-T02 aprobadas; de la Fase 12, F12-T01 y F12-T04 aprobadas. Quedan **8 tareas** entre las dos fases abiertas.
+
+**Revisado 2026-10-27:** F11-T03 cerrada con el correo saliente fuera de alcance (ver la tarea). Quedan **7 tareas**: F11-T04, F11-T05 y las cinco de la Fase 12.
 
 ---
 
@@ -152,7 +154,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 **Dos cosas quedaron dichas y no hechas**, y las recoge el plan nuevo:
 
 - El enlace *Crear cuenta* está en la pantalla de login pero apagado, con «llega en la próxima tarea» a la vista. Lo habilita **F02-T10**.
-- El enlace *Olvidé mi contraseña* está apagado porque todavía no hay correo configurado. Lo habilita **F11-T03**.
+- El enlace *Olvidé mi contraseña* lo encendió **F11-T03**, pero lleva a un mensaje y no a un formulario: el correo saliente quedó fuera de alcance (decisión de Gustavo, 2026-10-27, ver esa tarea).
 
 ---
 
@@ -162,7 +164,7 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 
 **Al cerrar esta fase:** te registrás desde el celular, entrás, cambiás tu contraseña, y una segunda cuenta de prueba no ve ni un dato de la primera.
 
-> **La confirmación por correo sigue desactivada** en Supabase (Authentication → Providers → Email → *Confirm email* en off), así el registro funciona de inmediato. El correo se configura en **F11-T03**, junto con la recuperación de contraseña.
+> **La confirmación por correo sigue desactivada** en Supabase (Authentication → Providers → Email → *Confirm email* en off), así el registro funciona de inmediato. Y **queda así**: F11-T03 dejó el correo saliente fuera de alcance, porque mandar un mail necesita un SMTP contratado. El objetivo de esta fase —«cerrar el ciclo de una cuenta sin depender del correo»— terminó siendo el estado definitivo, no el provisorio.
 
 - [x] **F02-T10 · Pantalla de registro**
   **Tipo:** Frontend · **Ref:** Técnico §8.2, §8.3
@@ -468,12 +470,22 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Migraciones aplicadas el 2026-10-21 y las 7 pruebas de `tests/api/test_respaldo_endpoints.py` corren contra Supabase real, incluida la de punta a punta** (se carga una cuenta con un poco de todo, se exporta, se importa en una cuenta nueva y se compara). Una de las pruebas encontró un bug real de verdad —no del respaldo, de la prueba—: verificaba "la vista previa no escribió nada" pidiendo `GET /api/months` y esperando `[]`, pero ese endpoint abre solo el mes actual si no existe (F03-T10, a propósito); se corrigió la prueba para que verifique que lo único que hay es ese mes en cero, no algo importado.
   **Aprobada por Gustavo, 2026-10-23.**
 
-- [~] **F11-T03 · Correo, recuperación de contraseña y contraseña nueva**
+- [x] **F11-T03 · Correo, recuperación de contraseña y contraseña nueva**
   **Tipo:** Infra → Frontend · **Ref:** Técnico §8.5, §8.6 · General §48.1.2, §48.1.3 · *reemplaza F16-T12, F16-T13 y F16-T14*
   **Hacer:** SMTP propio en Supabase con las plantillas en español; activar la confirmación por correo; pantalla de *Olvidé mi contraseña* con enlace de un solo uso que vence, **sin revelar si el email tiene cuenta**; pantalla de contraseña nueva; habilitar el enlace apagado del login.
   **Aceptación:** · llega el mail y el enlace deja poner una contraseña nueva · el enlace usado o vencido no sirve otra vez · un email sin cuenta recibe la misma respuesta que uno con cuenta · una cuenta nueva recibe su mail de confirmación.
 
-  *Código hecho 2026-10-26. **Falta la parte de infraestructura, que es tuya:** los cuatro pasos del panel de Supabase están abajo. Hasta que estén, las pantallas funcionan pero el mail no llega.*
+  > **ALCANCE REDUCIDO POR DECISIÓN DE GUSTAVO, 2026-10-27 · el correo saliente queda afuera.**
+  >
+  > Mandar un mail necesita un SMTP propio, y eso necesita un dominio propio (unos 10–15 dólares al año) o un proveedor con remitente verificado. Se decidió no contratar nada. El servicio de fábrica de Supabase no sirve de reemplazo: son **2 mails por hora para todo el proyecto** y sólo a direcciones del equipo, así que al correo de otro usuario no sale nunca.
+  >
+  > **Qué hace hoy la pantalla:** `#/recuperar` muestra un mensaje —«por ahora no podemos mandarte un enlace por correo, contactate con quien te dio la cuenta»— y un botón de vuelta al login. No se nombra a nadie: la aplicación es multiusuario y ninguna plantilla escribe un nombre de persona (skill, regla 9). En la práctica ese «quien te dio la cuenta» es Gustavo, y la contraseña se cambia a mano desde el panel de Supabase.
+  >
+  > **La confirmación por correo queda desactivada**, que es como venía: el registro sigue entrando de inmediato.
+  >
+  > **Los tres criterios de aceptación que dependen del mail quedan diferidos**, no cumplidos. El que no depende —«un email sin cuenta recibe la misma respuesta que uno con cuenta»— está implementado y probado, listo para cuando se encienda.
+  >
+  > **Cómo se enciende el día que haya SMTP:** `RECUPERACION_POR_CORREO` en `web/src/js/recuperar.js` pasa a `true` —es una línea— y se hacen los cuatro pasos del panel que están al final de esta entrada. El formulario, `auth.js`, el enlace del correo, la pantalla de contraseña nueva y la guardia de `router.js` ya están escritos y probados; no se borró nada. Las pruebas de `recuperar.test.mjs` fuerzan esa constante a `true` justamente para que la regla de no revelar si un correo tiene cuenta siga cubierta mientras el camino está apagado.
 
   **Dos rutas públicas nuevas**, `#/recuperar` y `#/nueva-clave` (los nombres son los de la skill §8), con sus tarjetas en `index.html` y sus módulos `recuperar.js` y `nueva-clave.js`. El login ganó el enlace «Olvidé mi contraseña», que estaba sin poner a propósito desde F02-T09.
 
@@ -495,16 +507,18 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 
   **Verificado contra producción, 2026-10-26** (celular 390px, los dos temas, y escritorio a 1280 y 1920): el enlace del login lleva a `#/recuperar` · un correo inexistente recibe exactamente el mismo mensaje que uno válido, sin error a la vista · un enlace inventado deja la pantalla en «este enlace no sirve», con el token ya borrado de la URL · las cuatro pantallas públicas se quedan donde corresponde y no disparan ninguna llamada a la API · ninguna de las dos pantallas nuevas tiene scroll horizontal.
 
-  **Lo que falta y es tuyo (panel de Supabase).** En este orden:
+  **La receta del panel de Supabase, para cuando se encienda.** No hay que hacer nada de esto hoy. En este orden:
 
-  1. **SMTP propio** · Project Settings → Authentication → SMTP Settings. Técnico §8.5 recomienda Resend (3.000 mails/mes). El servicio de fábrica limita a unos pocos mails por hora y manda desde un dominio compartido que cae en spam: con eso la recuperación no funciona en la práctica.
+  1. **SMTP propio** · Project Settings → Authentication → SMTP Settings. Técnico §8.5 recomienda Resend (3.000 mails/mes, 100 por día), **pero su plan gratis sólo manda a tu propia dirección hasta que verifiques un dominio**: para los demás usuarios hace falta el dominio. Sin dominio, la alternativa es un proveedor con verificación de remitente individual (Brevo, 300 mails por día) usando una dirección de Gmail. El servicio de fábrica no entra en la comparación: 2 mails por hora para todo el proyecto y sólo a direcciones del equipo.
   2. **URL Configuration** · Site URL `https://epic-wallet-v2.vercel.app`; Redirect URLs: `https://epic-wallet-v2.vercel.app/**`, `https://*.vercel.app/**` (para las previews) y `http://localhost:3000/**`. Sin esto el enlace falla con *«requested path is invalid»*, que es el error más común de esta parte.
   3. **Email Templates**, en español y con estos enlaces exactos (es de donde sale el `token_hash`):
      - *Reset Password* → `{{ .SiteURL }}/?token_hash={{ .TokenHash }}&type=recovery#/nueva-clave`
      - *Confirm signup* → `{{ .SiteURL }}/?token_hash={{ .TokenHash }}&type=signup#/login`
   4. **Recién al final, activar «Confirm email»** · Authentication → Providers → Email. Es el paso que cambia el registro: una cuenta nueva pasa a ver «revisá tu correo» en vez de entrar directo. Si se activa antes del punto 1, una cuenta nueva queda sin poder entrar hasta que el mail funcione.
 
-  **Qué probar desde el celular, una vez hechos los cuatro pasos:** pedir el enlace desde «Olvidé mi contraseña» con tu correo y con uno inventado (tiene que decir lo mismo las dos veces) · abrir el enlace y poner una contraseña nueva · volver a abrir el **mismo** enlace y confirmar que ya no sirve · crear una cuenta de prueba y ver que llega su mail de confirmación y que el reenvío funciona.
+  **Qué probar desde el celular el día que se enciendan esos cuatro pasos:** pedir el enlace desde «Olvidé mi contraseña» con tu correo y con uno inventado (tiene que decir lo mismo las dos veces) · abrir el enlace y poner una contraseña nueva · volver a abrir el **mismo** enlace y confirmar que ya no sirve · crear una cuenta de prueba y ver que llega su mail de confirmación y que el reenvío funciona.
+
+  **Qué se probó hoy, 2026-10-27:** el enlace del login lleva a `#/recuperar` y ahí se lee el mensaje, con su botón de vuelta al login y sin formulario a la vista.
 
 - [ ] **F11-T04 · Repaso de seguridad**
   **Tipo:** QA · **Ref:** Técnico §17 · *reemplaza F16-T01 a F16-T09*

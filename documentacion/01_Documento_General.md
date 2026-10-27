@@ -1697,6 +1697,15 @@ Correo
 El mensaje de respuesta es el mismo exista o no la cuenta, para no
 revelar quién está registrado.
 
+> **Desde el 2026-10-27 esta pantalla no manda nada.** No hay SMTP
+> contratado (Técnico §8.5), así que en lugar del formulario se muestra
+> un mensaje: «por ahora no podemos mandarte un enlace por correo,
+> contactate con quien te dio la cuenta para que te asigne una
+> contraseña nueva», con un botón de vuelta al login. El cambio lo hace
+> a mano el administrador desde el panel de Supabase. Lo descrito arriba
+> está implementado y probado, y se enciende con una línea el día que
+> haya un proveedor de correo.
+
 ## 48.1.3 Contraseña nueva
 
 ``` text

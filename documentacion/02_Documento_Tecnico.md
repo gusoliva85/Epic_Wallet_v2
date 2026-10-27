@@ -646,14 +646,16 @@ Tres detalles que importan: `security definer` para que el trigger pueda escribi
 
 ### 8.5 Envío de mails: hace falta un SMTP propio
 
+> **Estado, 2026-10-27: no hay SMTP y la aplicación no manda mails.** Decisión de Gustavo al cerrar F11-T03: no se contrata nada. La consecuencia está asumida y resuelta en la interfaz —`#/recuperar` muestra «contactate con quien te dio la cuenta» en vez de un formulario, y la confirmación por correo queda desactivada—, así que el requisito de abajo pasa a ser *la receta para el día que se encienda*, no una deuda abierta. Se enciende con `RECUPERACION_POR_CORREO` en `web/src/js/recuperar.js` más los pasos de esta sección y de la 8.6.
+
 **Esto es un requisito, no una mejora.** El servicio de mail que Supabase trae de fábrica está pensado sólo para pruebas: limita a unos pocos mails por hora y los manda desde un dominio compartido que suele caer en spam. Con eso, la recuperación de contraseña **no funciona en la práctica**.
 
 Hay que configurar un **SMTP propio** en Supabase (Project Settings → Authentication → SMTP Settings). Opciones gratuitas suficientes para este proyecto:
 
 | Proveedor | Plan gratuito | Nota |
 |---|---|---|
-| **Resend** | 3.000 mails/mes, 100/día | El más simple de configurar; requiere verificar un dominio o usar su subdominio de pruebas |
-| Brevo | 300 mails/día | No pide dominio propio |
+| **Resend** | 3.000 mails/mes, 100/día | El más simple de configurar, **pero sin dominio verificado sólo manda a tu propia dirección** (devuelve 403 con cualquier otro destinatario): para los demás usuarios hace falta el dominio, unos 10–15 dólares al año |
+| Brevo | 300 mails/día | No pide dominio propio: alcanza con verificar una dirección como remitente individual. Es la opción sin costo si no se quiere comprar un dominio |
 | Mailgun | 100 mails/día | Pide tarjeta |
 
 Para un proyecto de un puñado de usuarios, cualquiera alcanza de sobra. **Mientras no esté configurado**, el registro y la recuperación funcionan pero los mails pueden no llegar: la interfaz tiene que decirlo con claridad en lugar de quedarse esperando.
