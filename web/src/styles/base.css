@@ -226,20 +226,40 @@ a {
    sobre `root`) lo usa también el deslizo entre vistas de acá abajo
    (F12-T04), con su propia animación — sin este freno, las dos
    correrían juntas y la barra superior haría un círculo de fondo
-   encima de cada deslizo, que no es lo que tiene que pasar. */
+   encima de cada deslizo, que no es lo que tiene que pasar.
+
+   NUNCA UN ESPACIO ANTES DE `::view-transition-*`, Y ACÁ YA PASÓ DOS VECES
+
+   Los pseudoelementos de una view transition cuelgan del **elemento
+   raíz**, no de un descendiente suyo. `:root:not(…)::view-transition-new(root)`
+   los alcanza; `:root:not(…) ::view-transition-new(root)`, con el
+   espacio, es un selector de descendiente que **no matchea nada** — y
+   el navegador no avisa: descarta la regla en silencio, corre sus
+   animaciones de fábrica (un fundido cruzado de 250 ms) y la pantalla
+   queda casi bien, así que mirándola no se nota.
+
+   Con el espacio estuvo desde el 2026-10-23 (`162b932`, F12-T04, que
+   agregó el prefijo `:not(…)` a reglas que antes eran
+   `::view-transition-old(root)` a secas) hasta el 2026-10-27. En ese
+   lapso el cambio de tema no hizo el círculo en ningún dispositivo:
+   hacía el fundido del navegador. La misma trampa está anotada en
+   `components.css`, y la forma de verla es la única que funcionó las
+   dos veces: leer `document.getAnimations()` durante la transición y
+   mirar si los nombres empiezan con `-ua-`. Si son todos `-ua-`, las
+   reglas de acá no están aplicando. */
 @supports (view-transition-name: root) or
   (-webkit-view-transition-name: root) {
-  :root:not([data-transicion-vista]) ::view-transition-old(root),
-  :root:not([data-transicion-vista]) ::view-transition-new(root) {
+  :root:not([data-transicion-vista])::view-transition-old(root),
+  :root:not([data-transicion-vista])::view-transition-new(root) {
     animation: none;
     mix-blend-mode: normal;
   }
 
-  :root:not([data-transicion-vista]) ::view-transition-old(root) {
+  :root:not([data-transicion-vista])::view-transition-old(root) {
     z-index: 1;
   }
 
-  :root:not([data-transicion-vista]) ::view-transition-new(root) {
+  :root:not([data-transicion-vista])::view-transition-new(root) {
     z-index: 2;
     clip-path: circle(
       0px at var(--origen-tema-x, 50%) var(--origen-tema-y, 50%)
