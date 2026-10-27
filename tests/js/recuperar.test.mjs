@@ -48,9 +48,16 @@ function htmlDelAcceso() {
 }
 
 /**
- * @param {{respuesta?: object}} opciones
+ * @param {object} opciones
+ * @param {object} [opciones.respuesta] lo que devuelve `recuperarClave`.
+ * @param {boolean} [opciones.correo] el valor que toma
+ *   `RECUPERACION_POR_CORREO`. Por omisión `true`, al revés de lo que
+ *   hoy trae el módulo: así el grupo de pruebas de abajo sigue
+ *   cubriendo la regla de no revelar si un correo tiene cuenta, que es
+ *   lo que no conviene volver a resolver de memoria el día que haya
+ *   SMTP. La prueba del interruptor apagado lo pasa en `false`.
  */
-async function montar({ respuesta = { ok: true } } = {}) {
+async function montar({ respuesta = { ok: true }, correo = true } = {}) {
   const dom = new JSDOM(
     `<!doctype html><html><body><div class="app"></div>${htmlDelAcceso()}</body></html>`,
     { url: "https://epic-wallet-v2.vercel.app/#/recuperar", pretendToBeVisual: true },
@@ -83,7 +90,17 @@ async function montar({ respuesta = { ok: true } } = {}) {
       'import { navegar } from "./router.js";',
       "const navegar = (id) => globalThis.__navegaciones.push(id);",
     )
-    .replace('import { LOGIN } from "./nav.js";', 'const LOGIN = "login";');
+    .replace('import { LOGIN } from "./nav.js";', 'const LOGIN = "login";')
+    .replace(
+      "export const RECUPERACION_POR_CORREO = false;",
+      `export const RECUPERACION_POR_CORREO = ${correo};`,
+    );
+
+  assert.match(
+    codigo,
+    new RegExp(`RECUPERACION_POR_CORREO = ${correo};`),
+    "el interruptor cambió de nombre o de forma: estas pruebas quedaron mintiendo",
+  );
 
   const unico = `\n// ${Math.random()}\n`;
   const url = `data:text/javascript;base64,${Buffer.from(codigo + unico, "utf8").toString("base64")}`;
@@ -104,6 +121,41 @@ async function enviar(dom, email = "gustavo@example.com") {
 }
 
 // ===================================================================
+
+/* El estado real de la pantalla desde el 2026-10-27: no hay SMTP
+   contratado, así que no se promete un correo que no va a salir. Esto
+   no prueba el texto —eso se mira en el celular— sino las dos cosas
+   que no se verían: que no sale ninguna petición, y que hay una salida
+   de la pantalla. */
+describe("sin correo saliente (el estado de hoy)", () => {
+  test("muestra el mensaje en lugar del formulario y no pide nada", async () => {
+    const { dom, recuperar, llamadas } = await montar({ correo: false });
+    recuperar.arrancar();
+
+    assert.equal($(dom, "recuperar-sin-correo").hidden, false, "no se ve el mensaje");
+    assert.equal($(dom, "form-recuperar").hidden, true, "el formulario quedó a la vista");
+    assert.equal($(dom, "recuperar-bajada").hidden, true, "la bajada promete un correo");
+
+    // El formulario está oculto, pero que esté oculto no alcanza: lo
+    // que importa es que no haya forma de que salga el pedido.
+    $(dom, "recuperar-email").value = "gustavo@example.com";
+    $(dom, "form-recuperar").dispatchEvent(
+      new dom.window.Event("submit", { bubbles: true, cancelable: true }),
+    );
+    await new Promise((listo) => setTimeout(listo, 500));
+    assert.deepEqual(llamadas, [], "pidió un enlace con el correo deshabilitado");
+  });
+
+  test("el mensaje tiene su salida al login", async () => {
+    // Sin esto la pantalla es un callejón: el pie con «¿Te acordaste?»
+    // está oculto junto con el formulario.
+    const { dom, recuperar, navegaciones } = await montar({ correo: false });
+    recuperar.arrancar();
+
+    $(dom, "recuperar-sin-correo-login").click();
+    assert.deepEqual(navegaciones, ["login"]);
+  });
+});
 
 describe("recuperación de contraseña", () => {
   test("pide el enlace y muestra el mensaje de enviado", async () => {

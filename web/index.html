@@ -1837,7 +1837,31 @@
         </div>
 
         <h1 id="recuperar-titulo">¿Olvidaste tu contraseña?</h1>
-        <p class="acceso-bajada">
+
+        <!-- ESTE ES EL ESTADO POR DEFECTO DE LA PANTALLA, Y ES A PROPÓSITO
+
+             El correo saliente está deshabilitado (ver la nota grande de
+             `recuperar.js`). Así que lo que trae la plantilla es el
+             mensaje, y el formulario viene `hidden`: si el JavaScript no
+             carga o falla, lo que se ve sigue siendo verdad. Al revés
+             —formulario visible y el JS escondiéndolo— un error de carga
+             dejaría a la vista un formulario que no manda nada.
+
+             No se nombra a nadie acá: la aplicación es multiusuario y
+             ninguna plantilla escribe un nombre de persona (skill, regla
+             9). «Quien te dio la cuenta» dice lo mismo sin clavarlo. -->
+        <div class="acceso-confirmar" id="recuperar-sin-correo">
+          <p>
+            Por ahora no podemos mandarte un enlace por correo.
+            Contactate con quien te dio la cuenta para que te asigne una
+            contraseña nueva.
+          </p>
+          <button class="btn" id="recuperar-sin-correo-login" type="button">
+            Ir a iniciar sesión
+          </button>
+        </div>
+
+        <p class="acceso-bajada" id="recuperar-bajada" hidden>
           Poné tu correo y te mandamos un enlace para elegir una nueva.
         </p>
 
@@ -1854,7 +1878,7 @@
           </button>
         </div>
 
-        <form id="form-recuperar" novalidate>
+        <form id="form-recuperar" novalidate hidden>
           <div class="campo">
             <label for="recuperar-email">Correo</label>
             <input
@@ -1885,7 +1909,7 @@
           </button>
         </form>
 
-        <p class="acceso-pie">
+        <p class="acceso-pie" id="recuperar-pie" hidden>
           ¿Te acordaste?
           <button class="acceso-enlace" id="recuperar-ir-login" type="button">
             Iniciá sesión
