@@ -86,12 +86,12 @@ Se testea **lo que da un número o protege un dato**:
 | **8** | Histórico y carga del Excel | **1**, de carga de datos, no bloquea | **Acá la aplicación ya te sirve todos los días** |
 | **9** | Ahorro acumulado y patrimonio | **1**, de verificación, no bloquea | Saldo acumulado y patrimonio neto |
 | **10** | Inversiones | **1**, de carga de datos, no bloquea | Cartera con compra, venta y rendimientos |
-| **11** | Cierre del MVP | **1** (T05) | Configuración, respaldo y T03 aprobados — T03 con el correo saliente fuera de alcance: la recuperación muestra un mensaje en vez de mandar un enlace. T04 (repaso de seguridad) hecho y esperando tu aprobación; falta la verificación final del MVP |
+| **11** | Cierre del MVP | **0** | Las cinco hechas. T03 con el correo saliente fuera de alcance; T04 y T05 esperando tu aprobación. Del MVP, 22 de los 24 criterios verificados y 2 con excepción decidida (cotizaciones y alertas, después del MVP) |
 | **12** | Apronte de escritorio | **2** (T02, T03) | Layout de escritorio y gestos en el celular ya aprobados; falta el cambio de tema en escritorio (sin reproducir todavía) y lo que vaya apareciendo |
 
 **Revisado 2026-10-23** junto con Gustavo: todo lo de las fases 0 a 10 está aprobado (las tres pendientes de carga de datos no cuentan como tareas de código). De la Fase 11, F11-T01 y F11-T02 aprobadas; de la Fase 12, F12-T01 y F12-T04 aprobadas. Quedan **8 tareas** entre las dos fases abiertas.
 
-**Revisado 2026-10-27:** F11-T03 cerrada con el correo saliente fuera de alcance (ver la tarea). Quedan **7 tareas**: F11-T04, F11-T05 y las cinco de la Fase 12.
+**Revisado 2026-10-27:** F11-T03 cerrada con el correo saliente fuera de alcance, y F11-T04 y F11-T05 hechas el mismo día. **La Fase 11 queda completa y con ella el MVP**, a falta de tu aprobación. Quedan **2 tareas** de código, las dos de la Fase 12 y las dos abiertas a propósito: F12-T02 (el cambio de tema en escritorio), que espera que puedas reproducirlo, y F12-T03, que se llena con lo que encuentres usando la aplicación en la PC. F12-T01 y F12-T04 ya estaban aprobadas. Las tres de carga manual de datos (F08-T11, F09-T08, F10-T12) son tuyas y no cuentan como código.
 
 ---
 
@@ -545,10 +545,50 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 
   **Qué probar vos:** nada que se vea en pantalla; esta tarea es de pruebas. Si querés comprobarlo a mano, entrá con tu cuenta y cargá un movimiento con la descripción `<b>hola</b>`: tiene que mostrarse con las etiquetas a la vista, como texto.
 
-- [ ] **F11-T05 · Verificación del MVP y `docs/COMO_FUNCIONA.md`**
+- [~] **F11-T05 · Verificación del MVP y `docs/COMO_FUNCIONA.md`**
   **Tipo:** QA → Doc · *reemplaza F16-T10, F16-T11, F16-T15, F16-T16 y las 18 tareas de documentación de fase*
   **Hacer:** recorrer los 24 criterios de la sección 65 del documento general uno por uno desde el celular y desde la PC, anotando el resultado; y escribir **un solo** `docs/COMO_FUNCIONA.md`: cómo está armada la aplicación, cómo levantarla, el modelo de datos, las decisiones que hay que conocer para tocar el código, y lo que quedó deliberadamente afuera. Sin capturas que haya que mantener, sin cuadros que repitan el código.
   **Aceptación:** · los 24 criterios quedan verificados o con su excepción anotada y aceptada por vos · alguien que nunca vio el proyecto lo levanta siguiendo el documento · el documento entra en una lectura.
+
+  *Hecho 2026-10-27. **22 de los 24 criterios verificados**; los 2 que faltan son excepciones ya decididas en la revisión v2.0, con su evidencia abajo. Falta tu aprobación.*
+
+  **Cómo se verificó.** Se creó **una** cuenta de prueba con datos realistas —saldo inicial 1.000.000, un sueldo de 2.000.000, tres egresos, dos meses históricos de 2025, dos posiciones de inversión— y se recorrió la aplicación en producción con un navegador real a 390 px y a 1280 px, cargando movimientos **desde la interfaz** (no por la API) donde el criterio lo pedía. La cuenta se borró al terminar; la base quedó con las dos cuentas reales y nada más. Cero errores de página en todo el recorrido.
+
+  | # | Criterio | Resultado |
+  |---|---|---|
+  | 1 | Iniciar sesión | OK · entra y cae en `#/inicio` |
+  | 2 | Abre el mes actual | OK · la barra dice «Octubre 2026 · Mes abierto» sola |
+  | 3 | Registrar un gasto rápido | OK · botón `+` → hoja → guardar; los totales cambian |
+  | 4 | Registrar un ingreso | OK · mismo camino, con el conmutador en Ingreso |
+  | 5 | Total por categoría se actualiza | OK · «Alquiler · 1 movimiento · 65,9% del gasto · $450.000» |
+  | 6 | Total de ingresos | OK · 2.000.000 → **2.077.000** tras cargar 77.000 |
+  | 7 | Total de gastos | OK · 650.000 → **683.000** tras cargar 33.000 |
+  | 8 | Ahorro mensual automático | OK · **1.394.000** = 2.077.000 − 683.000 |
+  | 9 | Ahorro acumulado correcto | OK · **3.644.000** = saldo inicial 1.000.000 + 600.000 del histórico + 650.000 + 1.394.000. Tasa de ahorro 67,1% |
+  | 10 | Consultar meses anteriores | OK · la barra retrocede a «Julio 2025» y «Hoy» vuelve |
+  | 11 | Cargar meses históricos | OK · los dos de 2025 quedan en el historial con sus totales |
+  | 12 | Comportamiento diario | OK · el gráfico dibuja barras (son `path`, no `rect`), con eje de días 1–27, eje de importes y la línea de ahorro acumulado en $1,39M |
+  | 13 | Últimos seis meses | OK · 11 elementos dibujados en los gráficos del historial |
+  | 14 | Movimientos de cada categoría | OK · tocar la fila abre la hoja «Alquiler» con su movimiento, total del mes y última carga |
+  | 15 | Gestionar la cartera | OK · las dos posiciones con nominales, invertido, actual y rendimiento |
+  | 16 | Rendimiento de cada inversión | OK · por fila (0,0% recién compradas) y en los tres indicadores de cartera |
+  | 17 | Calcular el patrimonio | OK · «Ahorro disponible 3.644.000 · Inversiones 800.000 · Pasivos 0 · **Patrimonio neto 4.444.000**» |
+  | 18 | Actualización manual de inversiones | OK · la hoja de la posición trae el campo de valor y los botones «Actualizar valor» y «Vender» |
+  | 19 | Preparado para proveedor de cotizaciones | **Excepción** · ver abajo |
+  | 20 | Alertas básicas | **Excepción** · ver abajo |
+  | 21 | Funciona desde Android | OK · 390 px, sin scroll horizontal en ninguna de las seis vistas |
+  | 22 | Funciona desde PC | OK · 1280 px: navegación de escritorio visible, barra inferior oculta, 5 KPIs, sin desborde |
+  | 23 | Datos protegidos por autenticación | OK · lo cubre F11-T04: una ruta nueva nace protegida, las 8 tablas con RLS y su política, y los 27 endpoints privados barridos con el token de otra cuenta |
+  | 24 | Existe backup | OK · «Exportar datos», «Exportar CSV» e «Importar» en Configuración (F11-T02) |
+
+  **Las dos excepciones, con lo que hay de verdad detrás:**
+
+  - **19 · Cotizaciones automáticas.** Movido a «Después del MVP» en la revisión v2.0, y el propio documento general ya lo condicionaba a «si se encuentra una fuente viable». Lo que hay que saber es que la preparación que el Técnico §9.5 y §6.2 describen **no existe**: no hay tabla de cache, no hay `POST /api/investments/refresh-prices`, y las columnas `valuation_mode`, `current_unit_price`, `price_source` y `price_updated_at` se **sacaron** en la migración `7a3f9c2e1d84` al decidir que `initial_value` y `current_value` son siempre el importe total de la posición. Lo que queda preparado es eso: `symbol` y un `current_value` que un proveedor podría escribir. Las variables `PRICE_PROVIDER_ORDER` y `PRICE_REFRESH_COOLDOWN_MINUTES` siguen en `.env.example` sin usarse.
+  - **20 · Alertas.** Movido a «Después del MVP» por el mismo criterio: son útiles y nada depende de ellas. El componente **sí existe y está probado** (`components/avisos.js`, cinco severidades, cada una con su icono para que el color no sea el único que diga la gravedad), y la hoja de alertas está en el HTML. Lo que no existe es lo que las genera: `ALERTAS` es una lista vacía. Las cinco reglas analíticas de General §29 esperan a que haya datos suficientes para elegir los umbrales.
+
+  **El documento · `docs/COMO_FUNCIONA.md`.** Escrito para alguien que nunca vio el proyecto: qué es y a qué escala, cómo levantarla con sus variables y comandos, las cuatro capas del backend y las tres reglas del frontend, el modelo de datos con las dos naturalezas de mes y el procedimiento de migración, las decisiones que sorprenden si nadie las cuenta (comprar una inversión no es un gasto, la tasa de ahorro en cero devuelve `null`, el signo lo decide el tipo y no el importe), lo que quedó afuera a propósito, y la política de pruebas con el criterio para decidir si un test se escribe. Sin capturas y sin cuadros que repitan el código. Cada dato se verificó contra el repositorio y contra la base, no se escribió de memoria.
+
+  **Qué probar vos:** abrí la aplicación en el celular y mirá que todo siga en su lugar — el recorrido de arriba ya lo hizo un navegador, pero el ojo es tuyo. Y si vas a tocar el código más adelante, leé `docs/COMO_FUNCIONA.md` y decime qué te quedó sin explicar: es el único criterio de aceptación que yo no puedo verificar.
 
 ---
 
