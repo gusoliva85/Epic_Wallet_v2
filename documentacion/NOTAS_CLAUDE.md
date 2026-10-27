@@ -22,18 +22,40 @@ panel, que siguen escritos en el roadmap como receta. Las pruebas de
 `recuperar.test.mjs` fuerzan esa constante a `true` para que la regla
 de no revelar si un correo tiene cuenta siga cubierta mientras el
 camino está apagado — si algún día alguien la enciende, está probada.
-**F11-T04 hecha el mismo día** (barrido de aislamiento sobre los 27
-endpoints privados, etiquetas HTML verificadas en producción, secretos
-fuera del frontend y del repositorio), esperando su aprobación. Queda
-F11-T05 sin arrancar.
+**F11-T04 y F11-T05 hechas el mismo día**, y con eso **la Fase 11 está
+completa y el MVP cerrado**, a falta de la aprobación de Gustavo. De los
+24 criterios de General §65, 22 verificados con un recorrido real por
+producción y 2 con excepción ya decidida (cotizaciones automáticas y
+alertas, movidas a «Después del MVP»). Está escrito
+`docs/COMO_FUNCIONA.md`.
 
-Dos cosas que encontré en F11-T04 y **no toqué**, las dos esperando que
-Gustavo decida: (a) al entrar desde cero las pantallas quedan vacías
-hasta recargar, porque varias vistas piden sus datos al importarse
-—mientras todavía se está en el login— y nada las vuelve a disparar;
-comprobé con un A/B que no lo causó el arreglo de `api.js` de F11-T03.
-(b) quedaron 58 cuentas de prueba viejas en Supabase de corridas cuyo
-cierre se cortó; borré sólo las 3 de esta tarea. Fase 12 (nueva, "Apronte de
+**F12-T02 también se cerró el 2026-10-27, y vale saber cómo**: el cambio
+de tema no estaba haciendo su círculo en ningún dispositivo —hacía el
+fundido de fábrica del navegador—, por un **espacio** antes de
+`::view-transition-*` en `base.css`. Los pseudoelementos de una view
+transition cuelgan del elemento raíz, no de un descendiente, así que con
+el espacio la regla no matchea y el navegador la descarta en silencio. Lo
+introdujo `162b932` (F12-T04) el 23 de octubre. La forma de verlo —la
+única que funcionó las dos veces que pasó— es leer
+`document.getAnimations()` durante la transición: si todos los nombres
+empiezan con `-ua-`, las reglas propias no están aplicando. Hay prueba
+(`tests/unit/test_view_transition_sin_espacio.py`).
+
+Dos decisiones de Gustavo del 2026-10-27 que conviene no re-litigar:
+
+* **Las pantallas vacías al entrar desde cero se dejan así.** Varias
+  vistas piden sus datos al importarse, mientras todavía se está en el
+  login, y nada las vuelve a disparar. Comprobado con un A/B que no lo
+  causó el arreglo de `api.js` de F11-T03. Él lo va a cargar a mano más
+  adelante; **no arreglarlo sin que lo pida.**
+* **Las 58 cuentas de prueba viejas se borraron** (quedan sólo
+  `goliva@live.com.ar` y `nellybici07@gmail.com`). Se fueron 58 filas de
+  `auth.users`, 2 de `profiles` y 42 de `categories`; los datos reales
+  —30 categorías, 44 movimientos, 4 meses, 13 inversiones— quedaron
+  intactos y verificados después del borrado.
+
+Queda **F12-T03**, abierta a propósito: se llena con lo que Gustavo
+encuentre usando la aplicación en la PC. Fase 12 (nueva, "Apronte de
 escritorio"): F12-T01 y F12-T04 aprobadas; F12-T02 investigada sin
 reproducir, esperando más detalle de Gustavo; F12-T03 abierta,
 se llena con lo que él vaya encontrando. Si el repo ya avanzó más,
