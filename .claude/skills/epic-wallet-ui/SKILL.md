@@ -235,6 +235,8 @@ Pasó en este proyecto: ocho tokens que se creían agregados nunca entraron a `t
 | Conteo de cifras | 900 ms | cúbica de salida |
 | Cambio de tema | View Transitions API si existe | — |
 
+**Toda view transition apaga el `backdrop-filter` mientras dura** (`[data-transicion-tema]` para el círculo del tema, `[data-transicion-vista]` para el deslizo entre vistas), con el mismo respaldo sólido del bloque `@supports not` de §3. Una view transition saca dos fotos de la pantalla entera: con una pantalla llena de vidrio, el GPU recalcula todos los desenfoques en el primer cuadro y la animación arranca trabada. Las dos barras quedan afuera: su vidrio ya es opaco (§3.1).
+
 ```css
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 ```
@@ -585,7 +587,7 @@ for(let i=0;i<n;i++){ acc+=inc[i]-exp[i]; sav.push(acc) }
 - Los `<linearGradient>` llevan **id único** por instancia: si dos gráficos coexisten en el DOM, uno toma el color del otro.
 - En móvil `min-width:520px` con scroll horizontal; desde 720 px se ajusta al ancho.
 - **`touch-action` en un contenedor con scroll propio lleva LOS DOS EJES** (`pan-x pan-y`), nunca `pan-x` solo. `.app` pide `pan-y` para los gestos (§7) y el navegador cruza los dos valores: con `pan-x` a secas, el dedo apoyado sobre un gráfico o una tabla los movía de costado pero ya no scrolleaba la página hacia abajo. Vale igual para `.tbl-wrap` y para `.view-switch`.
-- **El respiro del final del scroll es un `::after`, no relleno.** El relleno derecho de un contenedor con scroll entra en el área desplazable en unos navegadores y en otros no: puesto como relleno, el dibujo terminaba pegado al borde de la tarjeta.
+- **El respiro contra la tarjeta es MARGEN, no relleno.** El relleno es parte de lo que se desplaza: apenas el dedo mueve el gráfico, el dibujo pasa por debajo y toca el borde igual. Con `margin: 0 14px` el que queda adentro de la tarjeta es el contenedor, y el recorte sucede 14 px antes del borde en cualquier posición del scroll.
 - `role="img"` y `<title>` con el resumen en texto.
 
 ## 10 · Formato de importes

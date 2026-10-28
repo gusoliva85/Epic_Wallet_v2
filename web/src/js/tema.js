@@ -54,10 +54,34 @@
     var sinMovimiento =
       window.matchMedia &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (document.startViewTransition && !sinMovimiento) {
-      document.startViewTransition(fn);
-    } else {
+    if (!document.startViewTransition || sinMovimiento) {
       fn();
+      return;
+    }
+
+    /* `data-transicion-tema` mientras dura el círculo. Lo usa
+       `base.css` para apagarle el desenfoque a las tarjetas: una view
+       transition saca DOS fotos de la pantalla entera (la vieja y la
+       nueva), y con una pantalla llena de `.shell`/`.cg` el GPU tiene
+       que recalcular todos los `backdrop-filter` justo en el primer
+       cuadro — de ahí el tirón del arranque que reportó Gustavo
+       (2026-10-27: "la primera parte está como trabada"). Es el mismo
+       arreglo que ya lleva el deslizo entre vistas (F12-T04); le
+       faltaba al cambio de tema. */
+    var raiz = document.documentElement;
+    raiz.setAttribute("data-transicion-tema", "");
+    var soltar = function () {
+      raiz.removeAttribute("data-transicion-tema");
+    };
+
+    var transicion = document.startViewTransition(fn);
+    if (transicion && transicion.finished && transicion.finished.then) {
+      transicion.finished.then(soltar, soltar);
+    } else {
+      // Sin la promesa (un navegador que la implemente distinto), un
+      // tiempo fijo mayor que la animación: el atributo no puede
+      // quedarse puesto, o las tarjetas se quedan sin vidrio.
+      setTimeout(soltar, 1200);
     }
   }
 

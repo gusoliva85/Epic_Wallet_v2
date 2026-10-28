@@ -273,6 +273,30 @@ a {
     animation: circulo-de-tema 0.9s ease-in-out forwards;
   }
 
+  /* El mismo respaldo sólido que usa el deslizo entre vistas, por el
+     mismo motivo y con los mismos tokens (ver el comentario de
+     `[data-transicion-vista] main .shell`, más abajo): mientras se
+     sacan las dos fotos de la pantalla, las tarjetas no llevan
+     desenfoque. Sin esto, el círculo arrancaba trabado en el teléfono
+     — una pantalla entera de `backdrop-filter` recalculada de golpe
+     en el peor momento (Gustavo, 2026-10-27). Acá va en TODA la
+     página, no sólo en `main`: la foto del cambio de tema es de la
+     pantalla completa.
+
+     Las dos barras quedan afuera a propósito: su vidrio ya es opaco y
+     sin desenfoque (skill §3.1), así que no hay nada que ahorrar y
+     cambiarles el fondo sí se vería. */
+  :root[data-transicion-tema] .shell:not(.topbar):not(.botnav) {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--glass-shell-fallback);
+  }
+  :root[data-transicion-tema] .cg {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--glass-content-fallback);
+  }
+
   @keyframes circulo-de-tema {
     to {
       clip-path: circle(

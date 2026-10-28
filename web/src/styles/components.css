@@ -2169,17 +2169,20 @@
    pisarían entre sí, así que el contenedor hace scroll horizontal en
    vez de aplastar el dibujo. */
 .chart-wrap {
-  /* Flex y no bloque por una sola razón: el relleno derecho de un
-     contenedor con scroll NO entra en el área desplazable cuando el
-     hijo es un bloque, así que al llegar al final el dibujo tocaba el
-     borde de la tarjeta. Con flex, el `::after` de abajo es un hijo
-     real y ese respiro sí queda del otro lado. */
   display: flex;
-  /* El respiro de la derecha NO es relleno: es el `::after` de abajo.
-     Un navegador suma el relleno derecho al área desplazable y otro
-     no, así que puesto como relleno el hueco del final cambiaba de
-     tamaño según el navegador. */
-  padding: 14px 0 6px 14px;
+  /* EL RESPIRO CONTRA LA TARJETA ES MARGEN, NO RELLENO, y es la única
+     forma que funciona con scroll.
+
+     El relleno es parte del área que se desplaza: en cuanto el dedo
+     mueve el gráfico, el dibujo pasa por debajo de ese relleno y
+     termina tocando el borde de la tarjeta igual (Gustavo,
+     2026-10-27, con el gráfico ya corrido). Con margen, el que queda
+     adentro de la tarjeta es el contenedor entero: el recorte pasa 14
+     px antes del borde y el dibujo no puede llegar ahí en ninguna
+     posición del scroll. Mismo ritmo de 14 px que `.card-head`,
+     `.rows` y `.card-body`. */
+  margin: 0 14px;
+  padding: 14px 0 6px;
   overflow-x: auto;
   scrollbar-width: thin;
   /* Los DOS ejes: `.app` pide `pan-y` para la navegación por gestos
@@ -2194,21 +2197,13 @@
 
 .chart-wrap svg {
   display: block;
-  /* Puede encogerse hasta su `min-width`: así, en pantallas anchas el
-     dibujo le deja los 14 px del `::after` sin provocar un scroll de
-     14 px; en el teléfono el piso de 520 px gana y el contenedor
-     desplaza, que es lo que se busca. */
+  /* Puede encogerse hasta su `min-width`: en pantallas anchas se
+     ajusta al contenedor, y en el teléfono gana el piso de 520 px y
+     el contenedor desplaza, que es lo que se busca. */
   flex: 1 1 auto;
   width: 100%;
   min-width: 520px;
   height: auto;
-}
-
-/* El respiro del final del scroll (ver el comentario de `display:
-   flex`, arriba). */
-.chart-wrap::after {
-  content: "";
-  flex: 0 0 14px;
 }
 
 /* Lo que no es el dibujo —el esqueleto de carga, el estado de error,
