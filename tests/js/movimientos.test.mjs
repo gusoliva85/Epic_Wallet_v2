@@ -63,8 +63,8 @@ async function cargarConDobles() {
       `import { esc } from "file:///${resolve(RAIZ, "web", "src", "js", "format.js").replace(/\\/g, "/")}";`,
     )
     .replace(
-      'import { filaMovimiento, separadorDia, pintarFilas } from "./components/rows.js";',
-      `import { filaMovimiento, separadorDia, pintarFilas } from "file:///${resolve(RAIZ, "web", "src", "js", "components", "rows.js").replace(/\\/g, "/")}";`,
+      'import { filaMovimiento, separadorDia, pintarFilas, destacarFilaNueva } from "./components/rows.js";',
+      `import { filaMovimiento, separadorDia, pintarFilas, destacarFilaNueva } from "file:///${resolve(RAIZ, "web", "src", "js", "components", "rows.js").replace(/\\/g, "/")}";`,
     )
     .replace(
       'import { bloqueCargando, error as estadoError, vacio, consolidado } from "./components/estados.js";',
@@ -82,8 +82,9 @@ async function cargarConDobles() {
       'const categoriasCacheadas = () => globalThis.__espia.apiGet("/categories");',
     )
     .replace(
-      'import { abrirEdicion } from "./alta-movimiento.js";',
-      "const abrirEdicion = (...a) => globalThis.__espia.abrirEdicion(...a);",
+      'import { abrirEdicion, EVENTO_CREADO } from "./alta-movimiento.js";',
+      "const abrirEdicion = (...a) => globalThis.__espia.abrirEdicion(...a);\n" +
+        'const EVENTO_CREADO = "movimiento:creado";',
     );
 
   const unico = `\n// ${Math.random()}\n`;
@@ -217,6 +218,53 @@ describe("al cambiar de mes", () => {
     const pedidos = llamadas.apiGet.filter((a) => a[0].startsWith("/transactions?"));
     assert.equal(pedidos.length, 2);
     assert.match(pedidos[1][0], /month=11/);
+  });
+});
+
+describe("el movimiento recién cargado", () => {
+  // El alta avisa con `movimiento:creado` y la lista se vuelve a
+  // pedir por el camino de siempre. Lo que se prueba acá es ese
+  // cableado —que la fila correcta quede marcada para entrar
+  // animada—, no la animación: eso se mira en la pantalla.
+  function avisarCreado(dom, id) {
+    dom.window.document.dispatchEvent(
+      new dom.window.CustomEvent("movimiento:creado", { detail: { id } }),
+    );
+  }
+
+  test("la fila del movimiento nuevo queda marcada, y sólo ella", async () => {
+    const { dom } = await montar();
+    await esperar();
+    avisarCreado(dom, 102);
+    cambiarMes(dom, MES_ABIERTO);
+    await esperar();
+
+    const marcadas = [...$(dom, "movimientos-lista").querySelectorAll(".row--nueva")];
+    assert.equal(marcadas.length, 1);
+    assert.equal(marcadas[0].dataset.movimiento, "102");
+  });
+
+  test("se consume una sola vez: el siguiente pintado ya no marca nada", async () => {
+    const { dom } = await montar();
+    await esperar();
+    avisarCreado(dom, 102);
+    cambiarMes(dom, MES_ABIERTO);
+    await esperar();
+    cambiarMes(dom, MES_ABIERTO);
+    await esperar();
+
+    assert.equal($(dom, "movimientos-lista").querySelectorAll(".row--nueva").length, 0);
+  });
+
+  test("un id que no está en la lista no rompe nada", async () => {
+    const { dom } = await montar();
+    await esperar();
+    avisarCreado(dom, 999);
+    cambiarMes(dom, MES_ABIERTO);
+    await esperar();
+
+    assert.equal($(dom, "movimientos-lista").querySelectorAll(".row").length, 3);
+    assert.equal($(dom, "movimientos-lista").querySelectorAll(".row--nueva").length, 0);
   });
 });
 

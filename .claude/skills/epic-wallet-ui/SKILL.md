@@ -303,6 +303,7 @@ filaMovimiento({ id, tipo, categoria, importe, fecha, descripcion, origen })
 filaCategoria({ id, nombre, total, detalle, participacion, pie })
 separadorDia("04 de octubre 2026")
 pintarFilas(contenedor, [ ...filas ])   // escribe y arranca las barras
+destacarFilaNueva(contenedor, id)       // hace entrar la fila recién creada
 ```
 
 Rejilla de `34px 1fr auto`: marca, contenido, valor. **La fila es un `<button>`**, no un `div` con `onclick`: se abre para ver el detalle, así que tiene que alcanzarse con el tabulador y anunciarse.
@@ -314,6 +315,8 @@ Rejilla de `34px 1fr auto`: marca, contenido, valor. **La fila es un `<button>`*
 Los importes mezclan su color con la tinta (`color-mix` contra `--mix-ink`) y no lo usan puro: el verde y el rojo puros sobre vidrio quedan por debajo del contraste mínimo.
 
 La flecha y las iniciales van `aria-hidden`: la flecha repite el signo y las iniciales repiten el nombre de al lado — sin ocultarlas, el lector dice «AL Alquiler». La barra de participación también: el porcentaje ya está en el detalle.
+
+**La fila recién cargada entra, no aparece.** Cae desde arriba empujando al resto, con un halo de acento que se apaga: cargar un movimiento tiene que *verse* en la lista (Gustavo, 2026-10-27). **El alto se mide en JavaScript y viaja a la animación en `--alto-fila`**: `height: auto` no se anima, y dejar la fila con un alto fijo después rompería cualquier descripción larga, así que la clase se saca sola al terminar. El id de la fila nueva llega por el evento `movimiento:creado` que emite `alta-movimiento.js`, nunca por una llamada directa entre pantallas.
 
 **`.row-main` lleva `min-width: 0` y ellipsis.** Sin eso, el nombre largo de una categoría empuja el importe fuera de la fila.
 
@@ -541,7 +544,8 @@ Dos cosas la definen y las dos son fáciles de hacer mal:
 - **`.view-switch`** conmutador de pastillas dentro de un surco hundido. **Su comportamiento es de `components/switch.js` y de nadie más**: la pastilla marcada es UN elemento absoluto (`.vs-ind`) que se desliza hasta la opción elegida, y la clase `activa` la escribe sólo ese módulo (`activar(boton)`, o `sincronizar(grupo)` después de pintar el HTML del grupo). Dos módulos marcando la misma clase es de donde salían los estados raros que se corrigieron el 2026-10-27.
 - **`.sheet`** hoja inferior en móvil; desde 900 px pasa a cajón lateral (`.sheet`) o modal centrado (`.sheet.center`). Cierra con toque afuera, Escape y botón.
 - **`.toast`** con `aria-live="polite"`, cierre automático a 2,6 s.
-- **`.toggle`**, **`.cfg-row`**, **`.kv`**, **`.mini`**, **`.ghost-note`**.
+- **`.toggle`** interruptor de encendido. Tres cosas lo definen: el pulgar se desliza con una curva con rebote, **se estira mientras se mantiene apretado** (`:active`, como un control físico que cede antes de soltar) y **el color del surco es una capa `::after` con opacidad**, no el `background` del botón — un degradado no se puede interpolar, así que puesto como fondo el color saltaba de golpe mientras el pulgar se deslizaba con todo el cuidado del mundo.
+- **`.cfg-row`**, **`.kv`**, **`.mini`**, **`.ghost-note`**.
 
 ## 9 · Gráficos
 

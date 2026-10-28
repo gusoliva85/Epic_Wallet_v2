@@ -1384,6 +1384,61 @@
   padding: 6px 11px 14px;
 }
 
+/* ---- la fila recién cargada ----
+   Cae desde arriba y empuja al resto de la lista: cargar un
+   movimiento tiene que verse aparecer, no simplemente estar
+   (Gustavo, 2026-10-27). El alto no puede ser `auto` —no se anima—,
+   así que `components/rows.js` mide la fila ya pintada y lo pasa en
+   `--alto-fila`; la clase se saca sola al terminar y la fila vuelve a
+   su alto automático.
+
+   `margin-bottom` negativo al principio: `.rows` es una rejilla con
+   7 px de separación, y sin eso el hueco de la fila nueva ya estaría
+   abierto antes de que la fila empiece a crecer. El halo del final no
+   es adorno: es lo que deja ver CUÁL de todas es la nueva cuando la
+   lista ya tiene varias. */
+.row--nueva {
+  overflow: hidden;
+  /* Curva y duración medidas, no elegidas a ojo: con la curva rápida
+     de la interfaz la fila llegaba al 96% de su alto a los 110 ms y
+     el empujón no se alcanzaba a ver. Repartido así, el crecimiento
+     ocupa los primeros 385 ms y después queda sólo el halo
+     apagándose. */
+  animation: fila-entra 0.7s cubic-bezier(0.25, 0.9, 0.35, 1) both;
+}
+
+@keyframes fila-entra {
+  0% {
+    height: 0;
+    margin-bottom: -7px;
+    padding-top: 0;
+    padding-bottom: 0;
+    opacity: 0;
+    transform: translateY(-12px) scale(0.94);
+    box-shadow: 0 0 0 0 var(--accent-ring);
+  }
+
+  55% {
+    height: var(--alto-fila);
+    margin-bottom: 0;
+    padding-top: 11px;
+    padding-bottom: 11px;
+    opacity: 1;
+    transform: none;
+    box-shadow: 0 0 0 4px var(--accent-ring);
+  }
+
+  100% {
+    height: var(--alto-fila);
+    margin-bottom: 0;
+    padding-top: 11px;
+    padding-bottom: 11px;
+    opacity: 1;
+    transform: none;
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+  }
+}
+
 /* La fila es un botón: se abre para ver el detalle. */
 .row {
   display: grid;
@@ -2610,37 +2665,78 @@
   background: var(--groove-bg);
   box-shadow: var(--groove-in);
   cursor: pointer;
-  transition: background 0.22s var(--ease);
+  transition: border-color 0.28s var(--ease);
 }
 
+/* El pulgar. `z-index` porque el relleno de acá abajo es un `::after`
+   y los pseudoelementos se pintan en orden: sin esto, el relleno le
+   pasaría por encima. */
 .toggle::before {
   content: "";
   position: absolute;
+  z-index: 1;
   top: 2px;
   left: 2px;
   width: 20px;
   height: 20px;
-  border-radius: 50%;
+  border-radius: 99px;
   background: var(--mix-tint);
   box-shadow: var(--sh-sm);
   /* Curva con un poquito de rebote al final, no la pareja del resto
      de la interfaz: es lo que hace que el interruptor se sienta como
      un control físico y no un cuadrado que se desliza (pedido de
-     Gustavo, después de cerrar la Fase 4). */
-  transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+     Gustavo, después de cerrar la Fase 4). El ancho va aparte y más
+     rápido: es el estirón de abajo, que tiene que seguir al dedo. */
+  transition:
+    transform 0.42s cubic-bezier(0.34, 1.4, 0.54, 1),
+    width 0.18s var(--ease);
 }
 
-.toggle[aria-checked="true"] {
+/* EL RELLENO DE COLOR ES UN `::after`, NO EL FONDO DEL BOTÓN.
+   Un degradado no se puede interpolar: puesto como `background`, el
+   color del surco saltaba de golpe mientras el pulgar se deslizaba
+   con todo el cuidado del mundo. Como capa aparte, lo que se anima es
+   su opacidad, que sí interpola, y las dos cosas terminan juntas. */
+.toggle::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: 99px;
   background: linear-gradient(
     155deg,
     var(--color-accent),
     var(--color-accent-2)
   );
+  opacity: 0;
+  transition: opacity 0.28s var(--ease);
+}
+
+.toggle[aria-checked="true"] {
   border-color: transparent;
+}
+
+.toggle[aria-checked="true"]::after {
+  opacity: 1;
 }
 
 .toggle[aria-checked="true"]::before {
   transform: translateX(18px);
+}
+
+/* El estirón mientras se mantiene apretado: el pulgar se alarga hacia
+   el lado al que va a ir, como un control físico que cede antes de
+   soltar. Se anula con movimiento reducido por el bloque de
+   `base.css`, que apaga las transiciones. */
+.toggle:active::before {
+  width: 27px;
+}
+
+/* Apretado y ya encendido, el pulgar se estira hacia la IZQUIERDA:
+   como está anclado en `left`, sin correr el `translateX` el estirón
+   se saldría del surco por la derecha. */
+.toggle[aria-checked="true"]:active::before {
+  transform: translateX(11px);
 }
 
 /* ============================================================

@@ -670,6 +670,18 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   `npm test`: 630/630.
 
 
+- [ ] **F12-T06 · Dos animaciones pedidas: el interruptor y la fila que entra**
+  **Tipo:** Frontend · **Ref:** `.claude/skills/epic-wallet-ui/SKILL.md` §8
+  **Hacer:** dos pedidos de Gustavo (2026-10-27), los dos con una referencia concreta.
+
+  1. **El interruptor de encendido** (Ajustes → Categorías, y cualquier otro `.toggle`). El pulgar ya se deslizaba con rebote; le faltaban las dos cosas que hacen que se sienta físico: **se estira mientras se mantiene apretado** y **el color del surco se funde en vez de saltar**. Lo segundo no era un descuido de duración: el surco encendido es un degradado, y un degradado no se puede interpolar, así que la transición de `background` no hacía nada. Ahora el color vive en una capa `::after` y lo que se anima es su opacidad.
+  2. **La fila del movimiento recién cargado entra animada**: cae desde arriba, empuja al resto de la lista y deja un halo de acento que se apaga — así se ve *cuál* es, aunque la lista ya tenga veinte. `alta-movimiento.js` emite `movimiento:creado` con el id y `movimientos.js` lo marca al pintar; el alto se mide en JavaScript y viaja en `--alto-fila`, porque `height: auto` no se anima.
+
+  **Aceptación:** · apretar un interruptor sin soltar estira el pulgar, y al soltarlo el color del surco se funde junto con el movimiento · cargar un movimiento estando en Movimientos lo muestra entrando en la lista, no simplemente puesto · con un filtro que lo deja afuera, no pasa nada raro.
+
+  Probado en `tests/js/movimientos.test.mjs` (la fila correcta queda marcada, se consume una sola vez, un id que no está no rompe nada). La animación en sí se mira en la pantalla, como el resto de lo visual. `npm test`: 633/633.
+
+
 ---
 
 # Después del MVP

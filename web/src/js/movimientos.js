@@ -21,11 +21,11 @@
 
 import { api } from "./api.js";
 import { esc } from "./format.js";
-import { filaMovimiento, separadorDia, pintarFilas } from "./components/rows.js";
+import { filaMovimiento, separadorDia, pintarFilas, destacarFilaNueva } from "./components/rows.js";
 import { bloqueCargando, error as estadoError, vacio, consolidado } from "./components/estados.js";
 import { EVENTO_CAMBIO } from "./barra-mes.js";
 import { categorias as categoriasCacheadas } from "./cache-categorias.js";
-import { abrirEdicion } from "./alta-movimiento.js";
+import { abrirEdicion, EVENTO_CREADO } from "./alta-movimiento.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -102,6 +102,12 @@ let lista = [];
 let cargando = true;
 let fallo = false;
 
+/** El id del movimiento recién cargado, hasta que la lista lo pinte.
+ * Se guarda y no se usa en el momento porque entre el alta y la lista
+ * pintada hay un viaje: el alta avisa, se invalida el caché de meses,
+ * la barra de mes vuelve a emitir y recién ahí se pide la lista. */
+let idNuevo = null;
+
 let filtroTipo = "";
 let filtroCategoria = "";
 let filtroTexto = "";
@@ -161,6 +167,15 @@ function pintar() {
     return;
   }
   pintarFilas(caja, filasAgrupadas());
+
+  // Se consume siempre, aunque la fila no esté: con un filtro puesto
+  // o después de cambiar de mes, el movimiento nuevo puede no estar
+  // en esta lista, y guardado para "la próxima vez" haría entrar una
+  // fila vieja en una pantalla que no tiene nada que ver.
+  if (idNuevo != null) {
+    destacarFilaNueva(caja, idNuevo);
+    idNuevo = null;
+  }
 }
 
 async function cargar() {
@@ -271,6 +286,13 @@ export async function arrancar() {
   // el evento llegaba mientras `arrancar()` todavía esperaba el
   // primer pedido de categorías. `pedirCategorias()` reintenta sola
   // si el primer pedido falló, así que alcanza con llamarla acá.
+  // El alta avisa con el id del movimiento recién creado; la lista se
+  // vuelve a pedir por el camino de siempre (caché de meses → barra de
+  // mes → `cargar()`), y cuando se pinta, esa fila entra animada.
+  document.addEventListener(EVENTO_CREADO, (ev) => {
+    idNuevo = /** @type {CustomEvent} */ (ev).detail?.id ?? null;
+  });
+
   document.addEventListener(EVENTO_CAMBIO, async (ev) => {
     periodo = /** @type {CustomEvent} */ (ev).detail;
     await pedirCategorias();

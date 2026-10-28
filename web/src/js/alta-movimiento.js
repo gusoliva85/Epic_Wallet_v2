@@ -48,6 +48,14 @@ import { categorias as categoriasCacheadas, activas as activasCacheadas } from "
 
 const $ = (id) => document.getElementById(id);
 
+/** Se emite con el id del movimiento recién creado (nunca al editar
+ * uno que ya existía). Lo escucha `movimientos.js` para hacer entrar
+ * esa fila con su animación cuando vuelva a pintar la lista. Evento
+ * de `document` y no una llamada directa, por lo mismo que
+ * `cache-meses.js`: el alta no tiene por qué saber qué pantallas
+ * están mirando. */
+export const EVENTO_CREADO = "movimiento:creado";
+
 const ETIQUETA_TIPO = { income: "Ingreso", expense: "Egreso" };
 
 /* Fecha de hoy en América/Argentina/Buenos_Aires, no la del
@@ -292,13 +300,20 @@ async function alGuardar(evento) {
   marcarCargando(true);
 
   try {
+    let creado = null;
     if (editandoAhora) {
       await api.put(`/transactions/${editandoAhora.id}`, datos);
     } else {
-      await api.post("/transactions", datos);
+      creado = await api.post("/transactions", datos);
     }
 
     control.cerrar();
+    // Antes de `invalidarMeses()`, que es lo que termina provocando
+    // que la lista se vuelva a pintar: quien la pinta tiene que saber
+    // cuál es la fila nueva ANTES de pintarla, no después.
+    if (creado?.id != null) {
+      document.dispatchEvent(new CustomEvent(EVENTO_CREADO, { detail: { id: creado.id } }));
+    }
     invalidarMeses();
     const verbo = editandoAhora ? "actualizado" : "cargado";
     // `toast()` escapa el mensaje al pintarlo (components/toast.js):

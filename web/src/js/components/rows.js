@@ -157,3 +157,44 @@ export function pintarFilas(contenedor, filas) {
   contenedor.innerHTML = filas.join("");
   animarParticipacion(contenedor);
 }
+
+/**
+ * Hace entrar una fila recién creada: cae desde arriba y empuja al
+ * resto de la lista hacia abajo (pedido de Gustavo, 2026-10-27:
+ * cargar un movimiento tiene que *verse* aparecer en la lista).
+ *
+ * **El alto se mide acá y viaja a la animación como variable**: una
+ * fila mide lo que mide según su contenido, y `height: auto` no se
+ * puede animar. Se lee el alto real ya pintado, el `@keyframes` va de
+ * 0 a ese valor, y al terminar se saca la clase para que la fila
+ * vuelva a su alto automático — si se quedara con el alto fijo, una
+ * descripción larga en otra pantalla la cortaría.
+ *
+ * Devuelve `true` si encontró la fila. No es decoración de más: si
+ * la fila no está (un filtro la deja afuera, o el mes es otro), no
+ * pasa nada y quien llama no tiene que averiguarlo.
+ *
+ * @param {Element | null} contenedor la lista ya pintada
+ * @param {string | number} id el `data-movimiento` de la fila nueva
+ */
+export function destacarFilaNueva(contenedor, id) {
+  // Se busca comparando el dataset y no con un selector armado con el
+  // id adentro: así no hace falta escaparlo ni confiar en que sea un
+  // número.
+  const fila = [...(contenedor?.querySelectorAll("[data-movimiento]") ?? [])].find(
+    (f) => f.dataset.movimiento === String(id),
+  );
+  if (!fila) return false;
+
+  fila.style.setProperty("--alto-fila", `${fila.offsetHeight}px`);
+  fila.classList.add("row--nueva");
+  fila.addEventListener(
+    "animationend",
+    () => {
+      fila.classList.remove("row--nueva");
+      fila.style.removeProperty("--alto-fila");
+    },
+    { once: true },
+  );
+  return true;
+}
