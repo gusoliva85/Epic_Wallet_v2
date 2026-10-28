@@ -112,15 +112,18 @@ describe("conectar", () => {
     await assert.doesNotReject(() => cargarConDobles());
   });
 
-  test("conectarControles() sigue activo después de conectarAlertas(): el view-switch marca la tarjeta tocada", async () => {
+  test("los conmutadores YA NO son de este módulo: no marca ningún .view-switch", async () => {
     const dom = montar();
     await cargarConDobles();
 
+    // `components/switch.js` es el único dueño de la clase `activa` de
+    // un conmutador. Si este módulo volviera a marcarla, habría otra
+    // vez dos dueños — que es de donde salían los estados raros.
     const [a, b] = dom.window.document.querySelectorAll(".view-switch button");
+    const antes = [a.classList.contains("activa"), b.classList.contains("activa")];
     b.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
 
-    assert.equal(a.classList.contains("activa"), false);
-    assert.equal(b.classList.contains("activa"), true);
+    assert.deepEqual([a.classList.contains("activa"), b.classList.contains("activa")], antes);
   });
 
   test("conectarSinConexion() sigue activo: la banda reacciona a offline/online", async () => {

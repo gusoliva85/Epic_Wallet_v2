@@ -653,6 +653,21 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
   **Medido, no sólo sentido:** la misma métrica de cuadros por segundo de antes (`requestAnimationFrame` durante el gesto completo) pasó de 9 cuadros con salto (de 64, algunos de hasta 66,7ms — más de un cuadro perdido a 60fps) a 1 cuadro (de 74, de 33,3ms — un solo cuadro justo en el límite). El intervalo promedio bajó de 19,5ms a 16,9ms, prácticamente los 16,7ms ideales de 60fps.
   **Aprobada por Gustavo, 2026-10-23.**
 
+- [ ] **F12-T05 · Cuatro correcciones de uso: scroll, color, orden y conmutadores**
+  **Tipo:** Frontend · **Ref:** `.claude/skills/epic-wallet-ui/SKILL.md` §1, §8, §9
+  **Hacer:** cuatro cosas que Gustavo encontró usando la aplicación (2026-10-27).
+
+  1. **Scroll vertical sobre un gráfico o una tabla.** `.chart-wrap` y `.tbl-wrap` declaraban `touch-action: pan-x`. El navegador cruza ese valor con el `pan-y` que `.app` pide para los gestos (F12-T04) y el resultado era ningún eje: el dedo apoyado encima movía el gráfico de costado pero ya no scrolleaba la página. Pasan a `pan-x pan-y`, y `.view-switch` también, que tampoco se podía desplazar de costado en el teléfono.
+  2. **El gráfico tocaba el borde de la tarjeta** al llegar al final del scroll. El relleno derecho de un contenedor con scroll entra en el área desplazable en unos navegadores y en otros no; ahora el respiro es un `::after` de 14 px, que es un hijo real y queda siempre.
+  3. **Colores con más vida.** Misma paleta y mismos roles, más saturación: los tres semánticos, las cuatro severidades, el acento, los lavados del fondo y las cuatro tarjetas de color. El tope lo pone el contraste, no el gusto: las tarjetas sólidas quedan entre 5,3 y 6,0:1 con blanco. Todo en `tokens.css`, ningún componente tocado.
+  4. **«Variación» fuera** del orden de gastos por categoría, front y lógica (el campo `variation` de la API sigue: lo usan las tarjetas de ingresos y egresos).
+  5. **Los conmutadores tenían dos dueños.** Cada pantalla marcaba la pastilla elegida y, además, `views/vistas.js` marcaba cualquier `.view-switch` del documento: de ahí salían los estados raros (dos marcadas, o ninguna al volver a pintar). Ahora hay un solo módulo, `components/switch.js`, y la marca es **una pastilla que se desliza** hasta la opción elegida — con vista previa al pasar el puntero, en pantallas con mouse.
+
+  **Aceptación:** · deslizar de arriba abajo con el dedo sobre el gráfico diario y sobre la tabla de Cartera scrollea la página, y de lado a lado sigue moviendo el gráfico o la tabla · al final del scroll del gráfico queda un margen contra el borde de la tarjeta · los colores se ven más vivos en los dos temas · en «Gastos por categoría» quedan dos órdenes · cambiar de opción en cualquier conmutador desliza la pastilla y nunca deja dos marcadas ni ninguna.
+
+  `npm test`: 630/630.
+
+
 ---
 
 # Después del MVP

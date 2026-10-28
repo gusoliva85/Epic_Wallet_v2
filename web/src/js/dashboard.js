@@ -1,6 +1,5 @@
 /* El tablero de Inicio: indicadores (F05-T07), gráfico diario
-   (F06-T02), gastos por categoría (F06-T05) y el orden por variación
-   del desglose (F07-T03).
+   (F06-T02) y gastos por categoría (F06-T05), con su orden.
    Referencia: 01_Documento_General.md §12.2, §13, §15 ·
    02_Documento_Tecnico.md §9.2, §12.4-§12.6, §14.1
 
@@ -189,23 +188,16 @@ function fechaCorta(iso) {
   return `${d}/${m}`;
 }
 
+/* Dos órdenes y nada más: mayor gasto y A–Z. Hubo un tercero,
+   "Variación" (F07-T03), que ordenaba por la suba contra el mes
+   anterior; Gustavo pidió sacarlo —no le resultaba útil— y se fue
+   entero, también de acá. El campo `variation` de la API sigue
+   existiendo: lo usan las tarjetas de ingresos y egresos. */
 function categoriasOrdenadas(categorias, orden) {
   // `[...gastos].sort(...)` y no `.toSorted(...)`: ES2022 (CLAUDE.md),
   // `toSorted` es ES2023.
   const gastos = categorias.filter((c) => c.type === "expense");
   if (orden === "az") return [...gastos].sort((a, b) => a.name.localeCompare(b.name, "es"));
-  if (orden === "variacion") {
-    // Mayor suba primero. `variation` es `null` cuando la categoría no
-    // tuvo total el mes pasado (F07-T01) — sin nada que comparar, no
-    // hay "más" ni "menos" que las demás, así que quedan al final y no
-    // mezcladas en el medio por un 0 inventado.
-    return [...gastos].sort((a, b) => {
-      if (a.variation == null && b.variation == null) return 0;
-      if (a.variation == null) return 1;
-      if (b.variation == null) return -1;
-      return Number(b.variation) - Number(a.variation);
-    });
-  }
   return [...gastos].sort((a, b) => Number(b.total) - Number(a.total));
 }
 
@@ -214,10 +206,8 @@ function categoriasOrdenadas(categorias, orden) {
  * quedan en 0/`null` — "Total consolidado" lo explica, en vez de un
  * "0 movimientos" que sería verdad en el papel y mentira en espíritu.
  *
- * El pie de la fila acompaña al orden elegido (F07-T03): ordenando
- * por variación, lo que importa ver ahí es justo la variación —la
- * última carga ya no explica por qué quedó en ese lugar de la lista.
- * En los otros dos órdenes sigue siendo la última carga, como antes. */
+ * El pie de la fila es siempre la última carga: el pie alternativo
+ * que mostraba la variación se fue con el orden "Variación". */
 function filaDeCategoria(c, mesConsolidado) {
   return filaCategoria({
     id: c.category_id,
@@ -227,7 +217,7 @@ function filaDeCategoria(c, mesConsolidado) {
       ? "Total consolidado"
       : `${c.transaction_count} movimiento${c.transaction_count === 1 ? "" : "s"} · ${pctPlano(c.share)} del gasto`,
     participacion: c.share == null ? 0 : Number(c.share),
-    pie: ordenCategorias === "variacion" ? pct(c.variation) : c.last_date ? `últ. ${fechaCorta(c.last_date)}` : "—",
+    pie: c.last_date ? `últ. ${fechaCorta(c.last_date)}` : "—",
   });
 }
 
@@ -259,7 +249,7 @@ function conectarOrdenCategorias() {
     const boton = /** @type {HTMLElement} */ (ev.target).closest("button[data-orden]");
     if (!boton || !grupo.contains(boton)) return;
     const orden = boton.dataset.orden;
-    if (!["mayor", "az", "variacion"].includes(orden) || orden === ordenCategorias) return;
+    if (!["mayor", "az"].includes(orden) || orden === ordenCategorias) return;
     ordenCategorias = orden;
     pintarCategorias();
   });

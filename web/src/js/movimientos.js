@@ -217,7 +217,8 @@ function conectarFiltros() {
   tipoSwitch?.addEventListener("click", (ev) => {
     const boton = /** @type {HTMLElement} */ (ev.target).closest("button[data-tipo]");
     if (!boton || !tipoSwitch.contains(boton)) return;
-    for (const b of tipoSwitch.children) b.classList.toggle("activa", b === boton);
+    // La clase `activa` la pone `components/switch.js` con el mismo
+    // click; acá sólo queda el filtro.
     filtroTipo = boton.dataset.tipo ?? "";
     cargar();
   });

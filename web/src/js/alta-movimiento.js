@@ -41,6 +41,7 @@
 import { api, ApiError } from "./api.js";
 import { esc } from "./format.js";
 import { toast } from "./components/toast.js";
+import { activar } from "./components/switch.js";
 import { crearHoja } from "./components/sheet.js";
 import { invalidarMeses } from "./cache-meses.js";
 import { categorias as categoriasCacheadas, activas as activasCacheadas } from "./cache-categorias.js";
@@ -131,8 +132,10 @@ function pintarCategorias(tipo) {
 
 function marcarTipoActivo(tipo) {
   const hoja = $("hoja-movimiento");
-  const botones = hoja?.querySelectorAll(".view-switch button[data-tipo]") ?? [];
-  for (const b of botones) b.classList.toggle("activa", b.dataset.tipo === tipo);
+  const boton = hoja?.querySelector(`.view-switch button[data-tipo="${tipo}"]`);
+  // `activar` es el único que escribe la clase `activa` de un
+  // conmutador y el que mueve la pastilla (components/switch.js).
+  activar(boton);
 }
 
 function elegirTipo(tipo) {

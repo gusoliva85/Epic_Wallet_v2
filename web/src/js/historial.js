@@ -44,6 +44,7 @@ import { bloqueCargando, error as estadoError } from "./components/estados.js";
 import { pildora } from "./components/avisos.js";
 import { crearHoja } from "./components/sheet.js";
 import { toast } from "./components/toast.js";
+import { activar } from "./components/switch.js";
 import { EVENTO as EVENTO_RUTA } from "./router.js";
 import { dibujar as dibujarGraficoAhorro } from "./charts/ahorro.js";
 import { dibujar as dibujarGraficoSeis, etiquetaDeMes } from "./charts/seis.js";
@@ -518,9 +519,7 @@ function activarModoCrear(fila) {
   const nueva = fila.querySelector("[data-modo='crear']");
   nueva.hidden = false;
   /** @type {HTMLInputElement} */ (nueva.querySelector("[data-nueva-nombre]")).value = "";
-  for (const b of nueva.querySelectorAll("[data-nueva-tipo]")) {
-    b.classList.toggle("activa", b.dataset.nuevaTipo === "expense");
-  }
+  activar(nueva.querySelector("[data-nueva-tipo='expense']"));
   nueva.querySelector("[data-nueva-nombre]").focus();
   actualizarBotonAgregar();
 }

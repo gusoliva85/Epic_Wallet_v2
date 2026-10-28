@@ -108,6 +108,10 @@ async function cargarConDobles() {
       'import { toast } from "./components/toast.js";',
       "const toast = (...a) => globalThis.__espia.toast(...a);",
     )
+    .replace(
+      'import { activar } from "./components/switch.js";',
+      `import { activar } from "${rutaAbsoluta("components", "switch.js")}?t=${Math.random()}";`,
+    )
     .replace('import { EVENTO as EVENTO_RUTA } from "./router.js";', 'const EVENTO_RUTA = "epic:ruta";')
     .replace(
       'import { dibujar as dibujarGraficoAhorro } from "./charts/ahorro.js";',

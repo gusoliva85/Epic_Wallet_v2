@@ -26,6 +26,7 @@
 import { api, ApiError } from "./api.js";
 import { esc } from "./format.js";
 import { toast } from "./components/toast.js";
+import { activar } from "./components/switch.js";
 import { crearHoja } from "./components/sheet.js";
 import { bloqueCargando, error as estadoError, vacio } from "./components/estados.js";
 import { categorias as categoriasCacheadas, invalidarCategorias } from "./cache-categorias.js";
@@ -102,8 +103,7 @@ async function cargar() {
 // ===================================================================
 
 function elegirTipo(tipo) {
-  const botones = $("hoja-categoria")?.querySelectorAll(".view-switch button[data-tipo]") ?? [];
-  for (const b of botones) b.classList.toggle("activa", b.dataset.tipo === tipo);
+  activar($("hoja-categoria")?.querySelector(`.view-switch button[data-tipo="${tipo}"]`));
 }
 
 function tipoElegido() {

@@ -56,6 +56,12 @@ async function cargarConDobles() {
       'import { sincronizarTema, guardarTema } from "./preferencias.js";',
       "const sincronizarTema = (...a) => globalThis.__espia.sincronizarTema(...a);\n" +
         "const guardarTema = (...a) => globalThis.__espia.guardarTema(...a);",
+    )
+    .replace(
+      'import { activar } from "./components/switch.js";',
+      // `?t=` para que cada prueba tenga su propia instancia, atada a
+      // su propio `document`.
+      `import { activar } from "file:///${resolve(RAIZ, "web", "src", "js", "components", "switch.js").replace(/\\/g, "/")}?t=${Math.random()}";`,
     );
 
   const unico = `\n// ${Math.random()}\n`;

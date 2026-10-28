@@ -82,6 +82,12 @@ async function cargarConDobles() {
       "const toast = (...a) => globalThis.__espia.toast(...a);",
     )
     .replace(
+      'import { activar } from "./components/switch.js";',
+      // `?t=` para que cada prueba tenga su propia instancia, atada a
+      // su propio `document`.
+      `import { activar } from "file:///${resolve(RAIZ, "web", "src", "js", "components", "switch.js").replace(/\\/g, "/")}?t=${Math.random()}";`,
+    )
+    .replace(
       'import { crearHoja } from "./components/sheet.js";',
       `import { crearHoja } from "file:///${resolve(RAIZ, "web", "src", "js", "components", "sheet.js").replace(/\\/g, "/")}?t=${Math.random()}";`,
     )

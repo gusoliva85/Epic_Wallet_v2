@@ -1879,6 +1879,7 @@
    barra superior. */
 
 .view-switch {
+  position: relative;
   display: flex;
   gap: 3px;
   padding: 3px;
@@ -1890,6 +1891,10 @@
   max-width: 100%;
   overflow-x: auto;
   scrollbar-width: none;
+  /* Los dos ejes, por el mismo motivo que `.chart-wrap`: con el
+     `pan-y` que `.app` pide para los gestos, un conmutador de cuatro
+     modos no se podía desplazar de costado en el teléfono. */
+  touch-action: pan-x pan-y;
 }
 
 .view-switch::-webkit-scrollbar {
@@ -1931,10 +1936,56 @@
   color: var(--color-ink-2);
 }
 
+/* La pastilla que marca la opción elegida es UN solo elemento que se
+   desliza (`components/switch.js`), no el fondo de cada botón: así el
+   cambio de opción se ve como un movimiento y no como un parpadeo de
+   dos fondos. El botón activo sólo cambia de color. */
 .view-switch button.activa {
-  background: var(--glass-content-bg);
+  background: transparent;
   color: var(--color-accent-2);
+  box-shadow: none;
+}
+
+.vs-ind {
+  position: absolute;
+  top: 3px;
+  left: 0;
+  height: calc(100% - 6px);
+  border-radius: 99px;
+  background: var(--glass-content-bg);
   box-shadow: var(--glass-in), var(--sh-sm);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 0.42s var(--ease),
+    width 0.42s var(--ease),
+    opacity 0.2s linear;
+}
+
+/* Visible recién cuando el módulo pudo medir el botón activo: antes
+   de eso la pastilla mide 0 y estaría apoyada en el borde izquierdo. */
+.view-switch[data-listo="1"] .vs-ind {
+  opacity: 1;
+}
+
+/* El primer posicionamiento —y cualquier recálculo por cambio de
+   tamaño— no se anima: la pastilla aparece donde corresponde en vez
+   de viajar desde el borde. */
+.vs-ind--quieto {
+  transition: none;
+}
+
+/* Vista previa al pasar el puntero por otra opción, sólo donde hay
+   puntero de verdad. Más tenue que la elección real, para que no se
+   confunda con haber cambiado de modo. */
+.view-switch[data-listo="1"] .vs-ind--previo {
+  opacity: 0.55;
+}
+
+/* El texto va por encima de la pastilla. */
+.view-switch button {
+  position: relative;
+  z-index: 1;
 }
 
 /* ---- rejilla de dos columnas ----
@@ -1961,10 +2012,13 @@
   overflow-x: auto;
   padding: 4px 0 2px;
   -webkit-overflow-scrolling: touch;
-  /* Reafirma su propio eje: `.app` pide `pan-y` para la navegación
-     por gestos (F12-T04), y esto es lo que le devuelve el horizontal
-     a esta tabla en particular sin tocar esa regla general. */
-  touch-action: pan-x;
+  /* Los DOS ejes, no sólo el horizontal: `.app` pide `pan-y` para la
+     navegación por gestos (F12-T04) y acá hace falta devolverle el
+     horizontal a esta tabla. Con `pan-x` a secas, la intersección con
+     el `pan-y` del ancestro dejaba la tabla sin scroll vertical: el
+     dedo apoyado sobre la tabla movía la tabla de lado pero no la
+     página hacia abajo (corrección pedida por Gustavo). */
+  touch-action: pan-x pan-y;
 }
 
 .tbl-wrap table {
@@ -2115,22 +2169,55 @@
    pisarían entre sí, así que el contenedor hace scroll horizontal en
    vez de aplastar el dibujo. */
 .chart-wrap {
-  padding: 14px 10px 6px;
+  /* Flex y no bloque por una sola razón: el relleno derecho de un
+     contenedor con scroll NO entra en el área desplazable cuando el
+     hijo es un bloque, así que al llegar al final el dibujo tocaba el
+     borde de la tarjeta. Con flex, el `::after` de abajo es un hijo
+     real y ese respiro sí queda del otro lado. */
+  display: flex;
+  /* El respiro de la derecha NO es relleno: es el `::after` de abajo.
+     Un navegador suma el relleno derecho al área desplazable y otro
+     no, así que puesto como relleno el hueco del final cambiaba de
+     tamaño según el navegador. */
+  padding: 14px 0 6px 14px;
   overflow-x: auto;
   scrollbar-width: thin;
-  /* Mismo motivo que `.tbl-wrap`: `.app` pide `pan-y` para la
-     navegación por gestos (F12-T04), esto le devuelve el horizontal
-     a este gráfico en particular. Sin esto se repetiría el problema
-     que ya se revirtió una vez acá (F06-T09): el scroll lateral del
-     gráfico dejaría de andar en el celular. */
-  touch-action: pan-x;
+  /* Los DOS ejes: `.app` pide `pan-y` para la navegación por gestos
+     (F12-T04) y acá hace falta devolverle el horizontal al gráfico.
+     Con `pan-x` a secas, la intersección con el ancestro dejaba el
+     gráfico sin scroll vertical — el dedo apoyado encima movía el
+     gráfico de lado pero no la página hacia abajo, que es lo que
+     Gustavo pidió corregir. El scroll lateral sigue andando, que es
+     lo que se había revertido en F06-T09. */
+  touch-action: pan-x pan-y;
 }
 
 .chart-wrap svg {
   display: block;
+  /* Puede encogerse hasta su `min-width`: así, en pantallas anchas el
+     dibujo le deja los 14 px del `::after` sin provocar un scroll de
+     14 px; en el teléfono el piso de 520 px gana y el contenedor
+     desplaza, que es lo que se busca. */
+  flex: 1 1 auto;
   width: 100%;
   min-width: 520px;
   height: auto;
+}
+
+/* El respiro del final del scroll (ver el comentario de `display:
+   flex`, arriba). */
+.chart-wrap::after {
+  content: "";
+  flex: 0 0 14px;
+}
+
+/* Lo que no es el dibujo —el esqueleto de carga, el estado de error,
+   la barra apilada de Patrimonio, que es flexbox y no SVG— ocupa todo
+   el ancho, como cuando `.chart-wrap` era un bloque. Sin esto, un
+   hijo en flex se queda del ancho de su contenido. */
+.chart-wrap > :not(svg) {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 @media (min-width: 720px) {

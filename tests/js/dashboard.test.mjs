@@ -130,12 +130,10 @@ function respuestaBase() {
       { year: 2026, month: 10, label: "Octubre 2026", income: "500000.00", expense: "165000.00", saving: "335000.00", saving_rate: "67.0" },
     ],
     categories: [
-      // A propósito, los totales, los nombres y las variaciones dan
-      // los tres órdenes distintos entre sí (F07-T03): "mayor gasto"
-      // da Gas/Luz/Alquiler/Internet, "A–Z" da Alquiler/Gas/Internet/Luz,
-      // "Variación" da Luz/Alquiler/Gas/Internet (Internet, sin dato,
-      // siempre al final) — así una prueba de orden que no mueva nada
-      // de verdad no pasa por casualidad.
+      // A propósito, los totales y los nombres dan los dos órdenes
+      // distintos entre sí: "mayor gasto" da Gas/Luz/Alquiler/Internet
+      // y "A–Z" da Alquiler/Gas/Internet/Luz — así una prueba de orden
+      // que no mueva nada de verdad no pasa por casualidad.
       {
         category_id: 1,
         name: "Alquiler",
@@ -213,7 +211,6 @@ const HTML_INICIO = `<!doctype html><html><body>
   <div class="view-switch" id="categorias-orden">
     <button type="button" class="activa" data-orden="mayor">Mayor gasto</button>
     <button type="button" data-orden="az">A–Z</button>
-    <button type="button" data-orden="variacion">Variación</button>
   </div>
   <div class="rows" id="categorias-inicio"></div>
 </body></html>`;
@@ -705,36 +702,6 @@ describe("gastos por categoría (F06-T05)", () => {
 
     const nombres = [...categorias.querySelectorAll(".row-main b")].map((b) => b.textContent);
     assert.deepEqual(nombres, ["Alquiler", "Gas", "Internet", "Luz"]); // distinto del orden "mayor gasto" de arriba
-  });
-
-  test("tocar «Variación» ordena de mayor suba a mayor baja, y deja al final las que no tienen con qué comparar", async () => {
-    const { dom, categorias, ordenCategorias } = await montar();
-    await esperar();
-    cambiarMes(dom, MES_ACTUAL);
-    await esperar();
-
-    ordenCategorias.querySelector('[data-orden="variacion"]').click();
-
-    const nombres = [...categorias.querySelectorAll(".row-main b")].map((b) => b.textContent);
-    // Luz +25,0% · Alquiler +10,0% · Gas −5,0% · Internet sin dato
-    // (variation: null) — ninguno de los otros dos órdenes da esto.
-    assert.deepEqual(nombres, ["Luz", "Alquiler", "Gas", "Internet"]);
-  });
-
-  test("ordenando por variación, el pie de cada fila muestra la variación y no la última carga", async () => {
-    const { dom, categorias, ordenCategorias } = await montar();
-    await esperar();
-    cambiarMes(dom, MES_ACTUAL);
-    await esperar();
-
-    ordenCategorias.querySelector('[data-orden="variacion"]').click();
-
-    const filaLuz = [...categorias.querySelectorAll(".row")].find((f) => f.textContent.includes("Luz"));
-    assert.match(filaLuz.textContent, /\+25,0%/);
-    assert.doesNotMatch(filaLuz.textContent, /últ\./);
-
-    const filaInternet = [...categorias.querySelectorAll(".row")].find((f) => f.textContent.includes("Internet"));
-    assert.match(filaInternet.textContent, /N\/A/);
   });
 
   test("ordenando por mayor gasto o A–Z, el pie sigue mostrando la última carga, como antes", async () => {

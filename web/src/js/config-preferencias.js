@@ -11,6 +11,7 @@
 
 import { EVENTO as EVENTO_RUTA } from "./router.js";
 import { sincronizarTema, guardarTema } from "./preferencias.js";
+import { activar } from "./components/switch.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -28,9 +29,7 @@ function marcarActivo() {
   const grupo = $("pref-tema");
   if (!grupo) return;
   const actual = valorActual();
-  for (const b of grupo.querySelectorAll("button[data-tema]")) {
-    b.classList.toggle("activa", b.dataset.tema === actual);
-  }
+  activar(grupo.querySelector(`button[data-tema="${actual}"]`));
 }
 
 function pintar() {

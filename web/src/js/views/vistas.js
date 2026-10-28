@@ -78,8 +78,9 @@ export function pintarVistas() {
   // contenedores que hoy son de otros módulos.
 }
 
-/** Los interruptores de ajustes y los conmutadores, sin lógica real.
-    Cambian de estado para poder verlos; lo que hacen es de su fase. */
+/** Los interruptores de ajustes (`.toggle`), sin lógica real: cambian
+    de estado para poder verlos; lo que hacen es de su fase. Los
+    conmutadores de pastillas son de `components/switch.js`. */
 function conectarControles() {
   document.addEventListener("click", (ev) => {
     const sw = ev.target.closest(".toggle");
@@ -95,13 +96,10 @@ function conectarControles() {
       );
       return;
     }
-    if (sw) return;
-    const boton = ev.target.closest(".view-switch button");
-    if (boton) {
-      for (const otro of boton.parentElement.children)
-        otro.classList.remove("activa");
-      boton.classList.add("activa");
-    }
+    // Los conmutadores (`.view-switch`) NO se tocan acá: son de
+    // `components/switch.js`, el único dueño de su clase `activa` y
+    // de la pastilla que se desliza. Dos delegados marcando la misma
+    // clase era de donde salían los estados raros.
   });
 }
 

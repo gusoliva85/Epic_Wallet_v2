@@ -1360,7 +1360,7 @@ No usa `touch-action` restringido: un primer intento le sacaba al navegador el g
 | Gráfico | Tipo | Series | Modos |
 |---|---|---|---|
 | Últimos seis meses | Barras agrupadas | Ingresos, egresos, ahorro | Barras · Ahorro · Tasa de ahorro |
-| Gastos por categoría | Barras horizontales ordenadas de mayor a menor | Total por categoría | Mayor gasto · A–Z · Variación (F07-T03) |
+| Gastos por categoría | Barras horizontales ordenadas de mayor a menor | Total por categoría | Mayor gasto · A–Z |
 | Evolución del ahorro | Área con línea | Saldo acumulado por mes | — |
 | Composición patrimonial | Barra apilada horizontal | Ahorro líquido, inversiones | — |
 | Evolución salarial | Área con línea | Sueldo por fecha de vigencia | — |

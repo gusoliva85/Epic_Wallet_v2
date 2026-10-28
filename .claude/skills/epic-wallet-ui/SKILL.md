@@ -31,7 +31,7 @@ Van en `web/src/styles/tokens.css` y se registran en Tailwind con `@theme`.
 ```css
 :root{
   /* fondo y lavados */
-  --bg-1:#eff2f5; --bg-2:#e6ecef; --wash-a:#d1dfe8; --wash-b:#ebe4d3;
+  --bg-1:#eff2f5; --bg-2:#e6ecef; --wash-a:#c3dcec; --wash-b:#f3e4c9;
 
   /* tinta: 4 niveles de jerarquía */
   --ink:#1c2024;    /* títulos y cifras */
@@ -52,7 +52,7 @@ Van en `web/src/styles/tokens.css` y se registran en Tailwind con `@theme`.
 
   /* acento: azul grafito */
   --navy:#11181f;
-  --accent:#47799c; --accent-2:#335c78; --accent-soft:#dfeaf0; --accent-ring:rgba(71,121,156,.28);
+  --accent:#2f7cb4; --accent-2:#1d5f8e; --accent-soft:#d8ecf8; --accent-ring:rgba(47,124,180,.3);
 
   /* avatar de la cuenta: grafito neutro, lo único de la barra que no es acento */
   --avatar-1:#5c6469; --avatar-2:#33383c;
@@ -65,12 +65,12 @@ Van en `web/src/styles/tokens.css` y se registran en Tailwind con `@theme`.
   --scrim-0:rgba(10,12,14,0); --scrim:rgba(10,12,14,.34);
 
   /* semántica financiera */
-  --inc:#26886a;  /* ingresos */
-  --egr:#bc313e;  /* egresos  */
-  --sav:#47799c;  /* ahorro   */
+  --inc:#08916a;  /* ingresos */
+  --egr:#d4202f;  /* egresos  */
+  --sav:#2a73ad;  /* ahorro   */
 
   /* severidad de alertas */
-  --ok:#26886a; --warn:#c08e19; --pend:#c56b24; --crit:#bc313e;
+  --ok:#08916a; --warn:#c99100; --pend:#d4701a; --crit:#d4202f;
 
   /* mezclas y sombras */
   --mix-tint:#fff; --mix-ink:#1c2024;
@@ -86,7 +86,7 @@ Van en `web/src/styles/tokens.css` y se registran en Tailwind con `@theme`.
   --ease:cubic-bezier(.32,.72,0,1);
 }
 html[data-theme="dark"]{
-  --bg-1:#0a0d10; --bg-2:#0c1014; --wash-a:#17272e; --wash-b:#262114;
+  --bg-1:#0a0d10; --bg-2:#0c1014; --wash-a:#15323f; --wash-b:#322815;
   --ink:#eef0f1; --ink-2:#bcc0c4; --ink-3:#868b91; --ink-4:#5c6166;
   --line:rgba(238,240,241,.10); --line-2:rgba(238,240,241,.06); --line-strong:rgba(238,240,241,.16);
   --glass-shell-bg:rgba(22,25,28,.5); --glass-shell-fallback:rgba(13,15,17,.94);
@@ -94,12 +94,12 @@ html[data-theme="dark"]{
   --glass-in:inset 0 1px 0 rgba(255,255,255,.07),inset 0 0 0 1px rgba(255,255,255,.05);
   --glass-sheen:linear-gradient(120deg,rgba(255,255,255,.07),transparent 45%);
   --navy:#040608;
-  --accent:#72a6c6; --accent-2:#93c2dc; --accent-soft:#111f27; --accent-ring:rgba(114,166,198,.3);
+  --accent:#58b4ea; --accent-2:#8ed0f7; --accent-soft:#0e2531; --accent-ring:rgba(88,180,234,.34);
   --avatar-1:#474f54; --avatar-2:#2a2e32;
   --groove-bg:rgba(0,0,0,.26); --groove-in:inset 0 1px 3px rgba(0,0,0,.45);
   --scrim-0:rgba(0,0,0,0); --scrim:rgba(0,0,0,.52);
-  --inc:#3cb087; --egr:#d8596a; --sav:#72a6c6;
-  --ok:#3cb087; --warn:#daa932; --pend:#dc8642; --crit:#d8596a;
+  --inc:#2fd09a; --egr:#f4677a; --sav:#58b4ea;
+  --ok:#2fd09a; --warn:#edbb3e; --pend:#f0914f; --crit:#f4677a;
   --mix-tint:#181b1e; --mix-ink:#f2f4f5;
   --shadow-rgb:0,0,0;
   --sh-sm:0 1px 2px rgba(0,0,0,.4),0 4px 14px -4px rgba(0,0,0,.5);
@@ -473,16 +473,16 @@ tarjetaMetrica({ etiqueta, cifra, sub, tarjeta: "inc" | "egr" | "dia" | "pat" })
 ```
 
 ```text
-inc  verde apagado   #357662 · flecha arriba
-egr  ladrillo        #aa4c55 · flecha abajo
-dia  violeta         #7d5a94 · calendario
-pat  azul grafito    #416f90 · libro mayor
+inc  verde            #0f7a5c · flecha arriba
+egr  rojo ladrillo    #bd3444 · flecha abajo
+dia  violeta          #8549a8 · calendario
+pat  azul             #1c6ea3 · libro mayor
 ```
 
 **Los cuatro fondos NO son los colores semánticos**, y se apartan por dos medidas:
 
-- **Saturación al 38%, la de `--color-accent`.** Una tarjeta de color sólido es una superficie grande, no un acento chico: con la saturación de los colores semánticos (56% a 76%) se sale del tono grafito del resto de la aplicación y pesa más que la información que lleva encima.
-- **Contraste parejo de 5,4 a 5,6:1 con blanco en las cuatro.** Que den un número parecido es lo que hace que la fila se lea como un conjunto y no como cuatro oscuridades distintas.
+- **Contraste parejo de 5,3 a 6,0:1 con blanco en las cuatro.** Que den un número parecido es lo que hace que la fila se lea como un conjunto y no como cuatro oscuridades distintas. Es la medida que decide el tono: la saturación se subió hasta donde el contraste lo permitió (pedido de Gustavo, 2026-10-27: los colores estaban apagados), no más allá.
+- **Siguen sin ser los colores semánticos.** Son su propia superficie, los mismos en los dos temas.
 
 Son los mismos en los dos temas: una tarjeta de color es su propia superficie, no vidrio que se tiñe.
 
@@ -536,7 +536,7 @@ Dos cosas la definen y las dos son fáciles de hacer mal:
 
 - **`.pill`** en cinco variantes: `ok`, `warn`, `pend`, `crit`, `neutral`.
 - **`.alert`** con `--c` por severidad, borde y sombra teñidos.
-- **`.view-switch`** conmutador de pastillas dentro de un surco hundido.
+- **`.view-switch`** conmutador de pastillas dentro de un surco hundido. **Su comportamiento es de `components/switch.js` y de nadie más**: la pastilla marcada es UN elemento absoluto (`.vs-ind`) que se desliza hasta la opción elegida, y la clase `activa` la escribe sólo ese módulo (`activar(boton)`, o `sincronizar(grupo)` después de pintar el HTML del grupo). Dos módulos marcando la misma clase es de donde salían los estados raros que se corrigieron el 2026-10-27.
 - **`.sheet`** hoja inferior en móvil; desde 900 px pasa a cajón lateral (`.sheet`) o modal centrado (`.sheet.center`). Cierra con toque afuera, Escape y botón.
 - **`.toast`** con `aria-live="polite"`, cierre automático a 2,6 s.
 - **`.toggle`**, **`.cfg-row`**, **`.kv`**, **`.mini`**, **`.ghost-note`**.
@@ -584,6 +584,8 @@ for(let i=0;i<n;i++){ acc+=inc[i]-exp[i]; sav.push(acc) }
 - Mínimo **1,5 px** de alto en las barras, para que un gasto chico se vea.
 - Los `<linearGradient>` llevan **id único** por instancia: si dos gráficos coexisten en el DOM, uno toma el color del otro.
 - En móvil `min-width:520px` con scroll horizontal; desde 720 px se ajusta al ancho.
+- **`touch-action` en un contenedor con scroll propio lleva LOS DOS EJES** (`pan-x pan-y`), nunca `pan-x` solo. `.app` pide `pan-y` para los gestos (§7) y el navegador cruza los dos valores: con `pan-x` a secas, el dedo apoyado sobre un gráfico o una tabla los movía de costado pero ya no scrolleaba la página hacia abajo. Vale igual para `.tbl-wrap` y para `.view-switch`.
+- **El respiro del final del scroll es un `::after`, no relleno.** El relleno derecho de un contenedor con scroll entra en el área desplazable en unos navegadores y en otros no: puesto como relleno, el dibujo terminaba pegado al borde de la tarjeta.
 - `role="img"` y `<title>` con el resumen en texto.
 
 ## 10 · Formato de importes
