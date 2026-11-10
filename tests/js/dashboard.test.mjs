@@ -43,6 +43,13 @@ after(() => {
 
 async function cargarConDobles() {
   let codigo = readFileSync(resolve(RAIZ, "web", "src", "js", "dashboard.js"), "utf8");
+  // Los finales de línea se normalizan antes de reemplazar: el
+  // repositorio guarda LF y Windows deja CRLF en el disco, así que un
+  // patrón de varias líneas (el import de `charts/diario.js`) no
+  // coincide si no se normaliza — y lo que pasa entonces es que el
+  // import queda sin reemplazar y el módulo no resuelve, con un error
+  // que no dice nada de todo esto.
+  codigo = codigo.replace(new RegExp(String.fromCharCode(13, 10), "g"), String.fromCharCode(10));
   codigo = codigo
     .replace(
       'import { api } from "./api.js";',

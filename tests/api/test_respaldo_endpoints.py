@@ -238,7 +238,19 @@ def test_restaura_en_una_cuenta_limpia_y_los_datos_quedan_iguales(
     cliente, cuentas: tuple[Cuenta, Cuenta]
 ) -> None:
     """El criterio de aceptación de la tarea, de punta a punta."""
+    import datetime as dt
+    from zoneinfo import ZoneInfo
+
     a, b = cuentas
+
+    # El movimiento va con la fecha de HOY y el mes histórico es el
+    # anterior. Antes estaban escritos a mano (octubre y septiembre de
+    # 2026): `GET /api/dashboard` sin año ni mes responde por el mes en
+    # curso, así que el 1 de noviembre esta prueba empezó a comparar un
+    # mes vacío contra otro mes vacío y a fallar sin que hubiera cambiado
+    # nada del código.
+    hoy = dt.datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).date()
+    anterior = (hoy.replace(day=1) - dt.timedelta(days=1))
 
     # --- se carga "a" con un poco de todo ---
     cliente.patch("/api/me", json={"opening_balance": "500000.00"}, headers=a.cabeceras)
@@ -251,8 +263,8 @@ def test_restaura_en_una_cuenta_limpia_y_los_datos_quedan_iguales(
             "category_id": sueldo_id,
             "transaction_type": "income",
             "amount": "1000000.00",
-            "transaction_date": "2026-10-05",
-            "description": "sueldo de octubre",
+            "transaction_date": hoy.isoformat(),
+            "description": "sueldo del mes",
         },
         headers=a.cabeceras,
     )
@@ -261,8 +273,8 @@ def test_restaura_en_una_cuenta_limpia_y_los_datos_quedan_iguales(
     cliente.post(
         "/api/months/historical",
         json={
-            "year": 2026,
-            "month": 9,
+            "year": anterior.year,
+            "month": anterior.month,
             "income_total": "900000.00",
             "expense_total": "600000.00",
             "saving_total": "300000.00",

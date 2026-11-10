@@ -223,19 +223,44 @@ def test_una_cuenta_sin_perfil_tambien_recibe_el_mes_actual(
     assert r.json()[0]["status"] == "open"
 
 
+def _periodo_actual() -> tuple[int, int]:
+    """El mes de hoy en la zona de la aplicación.
+
+    `GET /api/months` abre el mes actual solo si no existe (F03-T10), así
+    que cualquier prueba que cuente meses tiene que contar con él. Antes
+    estaba escrito a mano («2026, 10»): las dos pruebas de abajo pasaban
+    en octubre de 2026 y empezaron a fallar el 1 de noviembre, sin que
+    nada del código hubiera cambiado.
+    """
+    import datetime as dt
+    from zoneinfo import ZoneInfo
+
+    hoy = dt.datetime.now(ZoneInfo("America/Argentina/Buenos_Aires"))
+    return hoy.year, hoy.month
+
+
+def _mes_anterior(periodo: tuple[int, int]) -> tuple[int, int]:
+    anio, mes = periodo
+    return (anio - 1, 12) if mes == 1 else (anio, mes - 1)
+
+
 @sin_entorno
 def test_devuelve_solo_los_meses_de_esa_cuenta(
     cliente, cuentas: tuple[Cuenta, Cuenta], limpiar_meses
 ) -> None:
     a, b = cuentas
-    _crear_mes(a.uid, year=2026, month=10, status="open")
-    _crear_mes(a.uid, year=2026, month=9, status="historical")
-    _crear_mes(b.uid, year=2026, month=10, status="open")
+    actual = _periodo_actual()
+    anterior = _mes_anterior(actual)
+    # El mes actual y el anterior, no dos meses fijos: con meses fijos,
+    # `GET /api/months` agrega además el actual y la cuenta no da.
+    _crear_mes(a.uid, year=actual[0], month=actual[1], status="open")
+    _crear_mes(a.uid, year=anterior[0], month=anterior[1], status="historical")
+    _crear_mes(b.uid, year=actual[0], month=actual[1], status="open")
 
     r = cliente.get("/api/months", headers=a.cabeceras)
     assert r.status_code == 200
     periodos = {(m["year"], m["month"]) for m in r.json()}
-    assert periodos == {(2026, 10), (2026, 9)}
+    assert periodos == {actual, anterior}
     assert len(r.json()) == 2, "vio un mes de la otra cuenta"
 
 
@@ -427,8 +452,11 @@ def test_savings_evolution_no_ve_los_meses_de_otra_cuenta(
     cliente, cuentas: tuple[Cuenta, Cuenta], limpiar_meses
 ) -> None:
     a, b = cuentas
-    _crear_mes(a.uid, year=2026, month=10, status="open")
-    _crear_mes(b.uid, year=2026, month=10, status="open")
+    # El mes de A es el actual a propósito: si fuera otro, la primera
+    # llamada abriría además el mes de hoy y la cuenta daría dos.
+    actual = _periodo_actual()
+    _crear_mes(a.uid, year=actual[0], month=actual[1], status="open")
+    _crear_mes(b.uid, year=actual[0], month=actual[1], status="open")
 
     r = cliente.get("/api/months/savings-evolution", headers=a.cabeceras)
     assert r.status_code == 200
