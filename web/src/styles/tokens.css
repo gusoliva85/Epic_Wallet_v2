@@ -143,8 +143,13 @@
   --text-peso: 104px; /* signo pesos de fondo, teléfono */
   --text-peso-sm: 92px; /* el mismo, con la rejilla de 4 y 6 columnas */
   --text-label: 10.5px; /* etiqueta de indicador, separador de día */
-  --text-axis: 10px; /* valores de los ejes */
-  --text-axis-sm: 9.5px; /* días de los ejes */
+  /* Texto de los gráficos. Es el tamaño REAL en pantalla en el
+     teléfono: `.axis-v`/`.axis-t` lo multiplican por la escala del
+     gráfico (`--escala-grafico`, de `charts/svg.js`), así los cuatro
+     gráficos muestran la misma letra aunque tengan distinto
+     `viewBox` (F13-T01). */
+  --text-axis: 10.5px; /* valores de los ejes */
+  --text-axis-sm: 9.75px; /* días y meses de los ejes */
 
   /* ---- interletrado de las etiquetas en mayúsculas ---- */
   --tracking-label: 0.05em;

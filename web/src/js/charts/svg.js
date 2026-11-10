@@ -134,6 +134,17 @@ export function trazoBarraRedondeada(x, yTope, ancho, alto, radio) {
   );
 }
 
+/* El ancho de referencia del sistema de gráficos: el piso que
+   `.chart-wrap svg` le pone al dibujo en el teléfono
+   (`min-width: 520px`). Todo gráfico se escala por `anchoViewBox / 520`
+   y es lo que hace que la letra de los ejes se vea DEL MISMO TAMAÑO en
+   los cuatro gráficos, aunque cada uno tenga su propio `viewBox`
+   (F13-T01). Sin esto, el de 760 de ancho mostraba la letra un 30 %
+   más chica que uno de 540, y los dos bastante más chicas de lo que
+   dicen los tokens: un valor de 10 px en un `viewBox` de 760
+   renderizado a 520 se ve a 6,8 px. */
+export const ANCHO_DE_REFERENCIA = 520;
+
 /**
  * La etiqueta de apertura del `<svg>`. El `viewBox` es lo que permite
  * dibujar a 390 px o a 1440 px sin deformarse: el dibujo interno usa
@@ -141,11 +152,20 @@ export function trazoBarraRedondeada(x, yTope, ancho, alto, radio) {
  * el que lo escala para que entre en el contenedor — `.chart-wrap`
  * (`components.css`) es ese contenedor, y decide el tamaño real.
  *
+ * Lleva además `--escala-grafico`, que es ese escalado hecho explícito
+ * para que el CSS pueda compensarlo en el tamaño del texto: las clases
+ * `.axis-v` y `.axis-t` multiplican su token por esta variable, así el
+ * número que dice el token es el que se ve en pantalla.
+ *
  * @param {number} ancho
  * @param {number} alto
  */
 export function etiquetaSvg(ancho, alto) {
-  return `<svg viewBox="0 0 ${ancho} ${alto}" preserveAspectRatio="none" role="img">`;
+  const escala = (ancho / ANCHO_DE_REFERENCIA).toFixed(4);
+  return (
+    `<svg viewBox="0 0 ${ancho} ${alto}" preserveAspectRatio="none" role="img" ` +
+    `style="--escala-grafico:${escala}">`
+  );
 }
 
 /**

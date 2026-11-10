@@ -154,6 +154,19 @@ describe("etiquetaSvg", () => {
   test("lleva role img, para que un lector lo anuncie como una imagen", () => {
     assert.match(etiquetaSvg(100, 100), /role="img"/);
   });
+
+  /* F13-T01. El tamaño del texto de los ejes está en unidades del
+     `viewBox`, así que un gráfico más ancho lo muestra más chico: el de
+     760 se achicaba un 30 % contra uno de 540. `--escala-grafico` es lo
+     que el CSS usa para compensarlo (`.axis-v`, `.axis-t`), y es un
+     número, no un gusto: si deja de salir, la letra de todos los
+     gráficos vuelve a depender del ancho de cada uno y en la pantalla
+     no se ve por qué. */
+  test("publica --escala-grafico: el ancho del viewBox sobre el de referencia", () => {
+    assert.match(etiquetaSvg(520, 240), /--escala-grafico:1\.0000/);
+    assert.match(etiquetaSvg(760, 262), /--escala-grafico:1\.4615/);
+    assert.match(etiquetaSvg(260, 120), /--escala-grafico:0\.5000/);
+  });
 });
 
 describe("grilla", () => {
