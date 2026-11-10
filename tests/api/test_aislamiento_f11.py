@@ -285,8 +285,18 @@ def _endpoints_con_id(d: DatosDeA) -> list[tuple[str, str, str, dict[str, Any] |
     """
     return [
         ("get", f"/api/categories/{d.categoria}/detail", "/api/categories/{category_id}/detail", None),
+        ("get", f"/api/categories/{d.categoria}/history", "/api/categories/{category_id}/history", None),
         ("patch", f"/api/categories/{d.categoria}", "/api/categories/{category_id}", {"name": "De B"}),
         ("delete", f"/api/categories/{d.categoria}", "/api/categories/{category_id}", None),
+        # El cuerpo va completo por lo mismo que los tres totales del
+        # mes de abajo: el esquema lo exige y Pydantic valida antes de
+        # que el handler mire de quién es la categoría.
+        (
+            "put",
+            f"/api/dues/{d.categoria}",
+            "/api/dues/{category_id}",
+            {"enabled": True, "due_day": 10, "notice_days": 3},
+        ),
         ("get", f"/api/months/{d.mes}", "/api/months/{month_id}", None),
         # Los tres totales van completos a propósito: el esquema los
         # exige y Pydantic valida ANTES de que el handler mire de quién

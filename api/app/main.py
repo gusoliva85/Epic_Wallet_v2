@@ -22,6 +22,7 @@ from .core.security import current_user_id
 from .routers import (
     categories,
     dashboard,
+    dues,
     health,
     investments,
     me,
@@ -104,6 +105,7 @@ def crear_app() -> FastAPI:
     privado.include_router(me.router)
     privado.include_router(months.router)
     privado.include_router(categories.router)
+    privado.include_router(dues.router)
     privado.include_router(transactions.router)
     privado.include_router(dashboard.router)
     privado.include_router(patrimony.router)

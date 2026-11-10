@@ -246,6 +246,25 @@
 
           <div class="kpi-grid stagger" id="kpis-inicio"></div>
 
+          <!-- Próximos vencimientos · F13-T03. La tarjeta entera vive
+               con `hidden` y la muestra `vencimientos.js` sólo cuando
+               hay algo por vencer: sin nada que avisar, una tarjeta que
+               dice "no hay nada" ocupa el lugar de la que sí importa.
+               Las alertas salen de `GET /api/dashboard` (`dues_alerts`),
+               no de una llamada aparte. -->
+          <article class="card shell" id="tarjeta-vencimientos" hidden>
+            <div class="card-head">
+              <div>
+                <h2>Próximos vencimientos</h2>
+                <p>Lo que está por vencer y todavía no figura pagado.</p>
+              </div>
+              <button class="link-btn" type="button" data-ir="vencimientos">
+                Ver todos
+              </button>
+            </div>
+            <div class="avisos" id="vencimientos-inicio"></div>
+          </article>
+
           <article class="card shell">
             <div class="card-head">
               <div>
@@ -343,6 +362,69 @@
             </div>
             <div class="rows" id="movimientos-lista"></div>
           </article>
+
+          <!-- ============ COMPARACIÓN POR ÍTEM · F13-T02 ============
+               Plegada, y es parte del pedido: es una consulta puntual,
+               no algo que tenga que estar abierto todo el tiempo
+               (Gustavo, 2026-11-10). El interruptor es de
+               `comparacion.js` —de ahí `data-interruptores-propios`,
+               que mantiene afuera al delegado genérico de
+               `views/vistas.js`— y nada de adentro se pide ni se
+               dibuja hasta que se lo prende. -->
+          <article class="card shell" data-interruptores-propios>
+            <div class="cfg-row comp-cabeza">
+              <div>
+                <b>Comparación por ítem</b>
+                <span>Cómo se mueve un ítem de mes a mes.</span>
+              </div>
+              <button
+                class="toggle"
+                type="button"
+                role="switch"
+                aria-checked="false"
+                aria-label="Mostrar la comparación por ítem"
+                aria-controls="comp-cuerpo"
+                id="comp-switch"
+              ></button>
+            </div>
+
+            <div class="comp-cuerpo" id="comp-cuerpo" hidden>
+              <div class="comp-controles">
+                <label class="solo-lector" for="comp-item">Ítem</label>
+                <select class="inp" id="comp-item"></select>
+                <div
+                  class="view-switch"
+                  role="group"
+                  aria-label="Rango de meses"
+                  id="comp-rango"
+                >
+                  <button type="button" data-rango="3">3 m</button>
+                  <button type="button" class="activa" data-rango="6">6 m</button>
+                  <button type="button" data-rango="12">12 m</button>
+                  <button type="button" data-rango="0">Todo</button>
+                </div>
+              </div>
+
+              <div class="legend" id="comp-leyenda">
+                <span
+                  ><i class="dot" id="comp-punto"></i
+                  ><span id="comp-leyenda-serie">Gasto del mes</span></span
+                >
+                <span>
+                  <i
+                    class="dot dot--linea"
+                    style="background: var(--color-accent)"
+                  ></i>
+                  Promedio del período
+                </span>
+              </div>
+
+              <div class="chart-wrap" id="comp-grafico"></div>
+              <div class="comp-sel cg" id="comp-seleccion" hidden></div>
+              <div class="chart-foot" id="comp-pie"></div>
+              <div class="rows" id="comp-filas"></div>
+            </div>
+          </article>
         </section>
 
         <!-- -------------------------------------------------- HISTORIAL -->
@@ -435,6 +517,58 @@
             alimenta de movimientos individuales. Los meses históricos pueden
             ser consolidados, y entonces se conservan como totales: no se
             inventan movimientos para ellos.
+          </p>
+        </section>
+
+        <!-- ---------------------------------------------- VENCIMIENTOS -->
+        <!-- F13-T03. Sección nueva, entre Historial y Cartera. La lista
+             son los ítems que ya existen (categorías de egreso activas):
+             no hay un "agregar", se prende el que se quiere seguir. Todo
+             lo pinta `vencimientos.js` desde `GET /api/dues`. -->
+        <section
+          class="view"
+          data-vista="vencimientos"
+          aria-labelledby="t-venc"
+          hidden
+        >
+          <div class="sec-head">
+            <div>
+              <h2 id="t-venc">Vencimientos</h2>
+              <p>Qué se paga, qué día y con cuánta anticipación te avisa.</p>
+            </div>
+          </div>
+
+          <!-- Las alertas de hoy, arriba de todo. Vacío cuando no hay
+               nada por vencer: el espacio no se reserva. -->
+          <div class="avisos" id="vencimientos-alertas"></div>
+
+          <article class="card shell" data-interruptores-propios>
+            <div class="card-head">
+              <div>
+                <h2>Tus ítems</h2>
+                <p>Prendé el que querés seguir y poné el día de vencimiento.</p>
+              </div>
+              <div
+                class="view-switch"
+                role="group"
+                aria-label="Filtro de ítems"
+                id="venc-filtro"
+              >
+                <button type="button" class="activa" data-filtro="todos">
+                  Todos
+                </button>
+                <button type="button" data-filtro="activos">
+                  Con vencimiento
+                </button>
+              </div>
+            </div>
+            <div class="venc-lista" id="venc-lista"></div>
+          </article>
+
+          <p class="ghost-note">
+            <b>La alerta se apaga sola.</b> Cuando en el mes aparece un
+            movimiento de ese ítem, se da por pagado y deja de avisar hasta el
+            mes que viene. No hay que marcar nada a mano.
           </p>
         </section>
 
@@ -2082,6 +2216,11 @@
     <script type="module" src="/src/js/historial.js"></script>
     <script type="module" src="/src/js/patrimonio.js"></script>
     <script type="module" src="/src/js/cartera.js"></script>
+    <!-- F13-T02 y F13-T03. `comparacion.js` no pide nada hasta que se
+         prende su interruptor; `vencimientos.js` pinta la sección, la
+         tarjeta del tablero y el globo de la campanita. -->
+    <script type="module" src="/src/js/comparacion.js"></script>
+    <script type="module" src="/src/js/vencimientos.js"></script>
     <script type="module" src="/src/js/app.js"></script>
     <script type="module" src="/src/js/registrar-sw.js"></script>
   </body>

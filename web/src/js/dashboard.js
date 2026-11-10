@@ -46,6 +46,15 @@ import { tarjetaHeroe, tarjetaMetrica, pintarTarjetas, animarCifras } from "./co
 import { filaCategoria, pintarFilas } from "./components/rows.js";
 import { bloqueCargando, error as estadoError, vacio, consolidado } from "./components/estados.js";
 import { EVENTO_CAMBIO } from "./barra-mes.js";
+
+/* Las alertas de vencimiento viajan DENTRO del dashboard (F13-T03): el
+   tablero es una sola llamada, así que no se piden aparte. Este módulo
+   no sabe qué hacer con ellas —eso es de `vencimientos.js`, que pinta
+   la tarjeta, el globo de la campanita y la hoja—, sólo las reemite
+   cada vez que llega una respuesta. Mismo patrón que
+   `movimiento:creado`: quien produce el dato avisa, quien lo muestra
+   escucha. */
+export const EVENTO_VENCIMIENTOS = "vencimientos:alertas";
 import {
   dibujar as dibujarGraficoDiario,
   MODOS as MODOS_DIARIO,
@@ -290,6 +299,9 @@ async function cargar(periodo) {
   try {
     dashboard = await api.get(`/dashboard?${params.toString()}`);
     cargando = false;
+    document.dispatchEvent(
+      new CustomEvent(EVENTO_VENCIMIENTOS, { detail: dashboard.dues_alerts ?? [] }),
+    );
   } catch (e) {
     dashboard = null;
     cargando = false;

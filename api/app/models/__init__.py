@@ -10,6 +10,7 @@ from . import supabase as _supabase  # noqa: F401
 from .app_setting import AppSetting
 from .base import Base, esquema_actual, metadata
 from .category import Category
+from .category_due import CategoryDue
 from .investment import Investment
 from .liability import Liability
 from .month import Month
@@ -21,6 +22,7 @@ __all__ = [
     "AppSetting",
     "Base",
     "Category",
+    "CategoryDue",
     "Investment",
     "Liability",
     "Month",

@@ -23,6 +23,8 @@ const SECCIONES = [
   "inicio",
   "movimientos",
   "historial",
+  // Vencimientos entró en F13-T03, entre Historial y Cartera.
+  "vencimientos",
   "inversiones",
   "patrimonio",
   "config",
@@ -367,7 +369,7 @@ describe("enrutador", () => {
     assert.equal(recargo, false);
   });
 
-  test("las rutas del enrutador son las seis de nav.js", async () => {
+  test("las rutas del enrutador son las siete de nav.js", async () => {
     // Si se agregara una sección a nav.js y no al enrutador, su
     // posición en la barra llevaría a inicio sin que nada avise.
     //

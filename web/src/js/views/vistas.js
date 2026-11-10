@@ -12,16 +12,14 @@
    es de las fases que les corresponden. */
 
 import { crearHoja } from "../components/sheet.js";
-import { aviso } from "../components/avisos.js";
 import { conectarSinConexion } from "../components/estados.js";
-import * as D from "../datos-muestra.js";
+
+/* Ya no se importan `aviso` ni los datos de muestra: desde F13-T03 el
+   contenido de la hoja de alertas lo escribe `vencimientos.js` con las
+   alertas reales que vienen en `GET /api/dashboard`. Lo que queda acá
+   es la hoja en sí y los dos cableados de pantalla de abajo. */
 
 const $ = (id) => document.getElementById(id);
-
-function escribir(id, html) {
-  const caja = $(id);
-  if (caja) caja.innerHTML = html;
-}
 
 // La vista Inicio (#kpis-inicio/#grafico-diario/#categorias-inicio) y
 // la lista de `#movimientos-lista` con su filtro `#mov-categoria`:
@@ -89,7 +87,18 @@ function conectarControles() {
     // nuevo; si este delegado genérico lo tocara también, el segundo
     // cambio de `aria-checked` dejaría el botón mintiendo sobre el
     // estado real.
-    if (sw && !sw.closest("#config-categorias")) {
+    // Lo mismo vale para cualquier contenedor que declare
+    // `data-interruptores-propios`: la comparación por ítem (F13-T02) y
+    // la lista de vencimientos (F13-T03) manejan sus propios
+    // interruptores y llaman a la API. Si este delegado los tocara
+    // también, el segundo cambio de `aria-checked` dejaría el botón
+    // mintiendo sobre el estado real — el mismo bug que ya tenían las
+    // categorías.
+    if (
+      sw &&
+      !sw.closest("#config-categorias") &&
+      !sw.closest("[data-interruptores-propios]")
+    ) {
       sw.setAttribute(
         "aria-checked",
         sw.getAttribute("aria-checked") !== "true",
@@ -116,21 +125,12 @@ function conectarAlertas() {
   const control = hoja && crearHoja(hoja, { disparador });
   if (!control) return;
 
-  escribir("alertas-lista", D.ALERTAS.map(aviso).join(""));
-
-  const contador = $("contador-alertas");
-  if (contador) {
-    contador.textContent = String(D.ALERTAS.length);
-    // Sin alertas no se muestra el globo: un cero rojo alarma sin
-    // motivo.
-    contador.hidden = D.ALERTAS.length === 0;
-  }
-  disparador?.setAttribute(
-    "aria-label",
-    D.ALERTAS.length === 1
-      ? "Alertas: 1 sin leer"
-      : `Alertas: ${D.ALERTAS.length} sin leer`,
-  );
+  // El CONTENIDO de la hoja, el globo de la campanita y su `aria-label`
+  // son de `vencimientos.js` desde F13-T03: las alertas ya son reales
+  // (los vencimientos que vienen en `GET /api/dashboard`) y las pinta
+  // quien las recibe. Acá sólo queda la hoja en sí, que es un
+  // componente de pantalla y no un dato.
+  void disparador;
 }
 
 function conectar() {

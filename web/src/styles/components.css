@@ -448,9 +448,12 @@
   bottom: calc(10px + env(safe-area-inset-bottom));
   z-index: 45;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 2px;
-  padding: 5px 6px;
+  /* Seis posiciones desde F13-T03 (entró Vencimientos): en 390 px dan
+     58 px cada una. El reparto lo decide `nav.js`, no esta regla; acá
+     sólo entran las que esa lista marca para la barra. */
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1px;
+  padding: 5px 4px;
   border-radius: var(--radius-bar);
 }
 
@@ -2306,14 +2309,29 @@
   font-weight: 600;
 }
 
+/* EL TAMAÑO DEL TEXTO DE UN GRÁFICO SE COMPENSA POR SU ESCALA.
+
+   Un `font-size` acá está en unidades del `viewBox`, no en píxeles de
+   pantalla: el mismo 10 se ve a 6,8 px en el gráfico de 760 de ancho y
+   a 9,6 px en uno de 540, porque cada uno se escala distinto para
+   entrar en la tarjeta. Por eso los dos tokens se multiplican por
+   `--escala-grafico`, que `charts/svg.js::etiquetaSvg` pone en cada
+   `<svg>` (su ancho dividido el ancho de referencia del sistema, 520):
+   el valor del token es entonces el tamaño REAL en el teléfono, y es
+   el mismo en los cuatro gráficos (F13-T01, pedido de Gustavo
+   2026-11-10: "que el tamaño de las letras se mantenga en todos los
+   gráficos").
+
+   El respaldo de `1` es para un `<svg>` armado sin `etiquetaSvg`: se
+   comporta como antes en vez de quedarse sin tamaño. */
 .axis-t {
   fill: var(--color-ink-4);
-  font-size: 9.5px;
+  font-size: calc(var(--text-axis-sm) * var(--escala-grafico, 1));
 }
 
 .axis-v {
   fill: var(--color-ink-3);
-  font-size: 10px;
+  font-size: calc(var(--text-axis) * var(--escala-grafico, 1));
 }
 
 .lineseries {
@@ -3688,4 +3706,153 @@
     justify-self: center;
     align-self: center;
   }
+}
+
+/* ============================================================
+   COMPARACIÓN POR ÍTEM · F13-T02
+   La tarjeta plegable de Movimientos. Mismo ritmo horizontal de 14 px
+   que `.card-head`, `.rows` y `.chart-wrap`.
+   ============================================================ */
+
+/* La cabecera: título, bajada y el interruptor que despliega. Es una
+   `.cfg-row` —la misma fila de "etiqueta a la izquierda, interruptor a
+   la derecha" de Ajustes— con el título a tamaño de panel, porque acá
+   ES el título de la tarjeta. */
+.comp-cabeza {
+  padding: 14px;
+}
+
+.comp-cabeza b {
+  font-family: var(--font-display);
+  font-size: var(--text-panel);
+}
+
+/* El cuerpo entra con un fundido corto al desplegarse. No es una
+   animación de alto: `height: auto` no se anima, y medir el alto para
+   animarlo (como hace `.row--nueva`) acá no vale la pena — adentro hay
+   un gráfico que se redibuja, y el fundido ya cuenta la historia. */
+.comp-cuerpo {
+  animation: compAbre 0.3s var(--ease-glass) both;
+}
+
+@keyframes compAbre {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.comp-controles {
+  display: grid;
+  gap: 10px;
+  padding: 2px 14px 0;
+}
+
+/* Desde 560 px el selector y el rango entran en una fila: más angosto,
+   las cuatro pastillas del rango al lado del selector quedan sin ancho
+   y el texto se recorta. */
+@media (min-width: 560px) {
+  .comp-controles {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+}
+
+/* El mes elegido al tocar una barra. Va debajo del gráfico y no como
+   globo flotante: un tooltip que sigue al dedo tapa justo la barra que
+   se está mirando. */
+.comp-sel {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 10px 14px 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+}
+
+.comp-sel b {
+  font-size: var(--text-kv);
+}
+
+.comp-sel span {
+  font-size: var(--text-sub);
+  color: var(--color-ink-3);
+}
+
+/* ============================================================
+   VENCIMIENTOS · F13-T03
+   ============================================================ */
+
+/* Las alertas de la sección y las del tablero comparten contenedor:
+   una pila de `.alert` con aire entre ellas. */
+.avisos {
+  display: grid;
+  gap: 10px;
+  padding: 0 14px 14px;
+}
+
+/* En la sección las alertas van fuera de una tarjeta, así que ahí el
+   relleno lateral lo pone la vista, no el contenedor. */
+#vencimientos-alertas.avisos {
+  padding: 0 0 14px;
+}
+
+#vencimientos-alertas.avisos:empty {
+  padding: 0;
+}
+
+/* La lista de ítems, con su margen contra la tarjeta que la contiene y
+   12 px de aire contra el conmutador de arriba (Gustavo, 2026-11-10:
+   los ítems ocupaban todo el ancho y quedaban pegados al borde). */
+.venc-lista {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px 14px;
+}
+
+.venc-item {
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+/* El detalle de un ítem prendido: día, aviso y el estado de hoy. Dos
+   columnas en el teléfono —los dos selectores son cortos y entran al
+   lado—, y la fila de estado ocupa el ancho completo. */
+.venc-detalle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 12px 12px;
+}
+
+.venc-campo {
+  min-width: 0;
+}
+
+.venc-campo > label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+
+.venc-estado {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.venc-estado span.venc-nota {
+  font-size: var(--text-sub);
+  color: var(--color-ink-3);
 }

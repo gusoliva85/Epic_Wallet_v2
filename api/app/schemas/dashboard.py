@@ -16,6 +16,7 @@ import decimal
 from pydantic import BaseModel
 
 from ..services import dashboard as servicio
+from .dues import AlertaDeVencimiento
 
 
 def _importe(valor: decimal.Decimal) -> str:
@@ -136,6 +137,10 @@ class RespuestaDashboard(BaseModel):
     last_six_months: list[MesComparativoDelDashboard]
     categories: list[CategoriaDelDashboard]
     alerts: list[AlertaDelDashboard]
+    # Los vencimientos que hay que avisar hoy, de lo más urgente a lo
+    # menos (F13-T03). Lista vacía cuando no hay nada por vencer: el
+    # tablero no muestra la tarjeta y la campanita se esconde.
+    dues_alerts: list[AlertaDeVencimiento]
 
 
 def _periodo(periodo: servicio.Periodo | None) -> PeriodoDelDashboard | None:
@@ -223,4 +228,16 @@ def respuesta_desde(d: servicio.Dashboard) -> RespuestaDashboard:
             for c in d.categorias
         ],
         alerts=[],
+        dues_alerts=[
+            AlertaDeVencimiento(
+                category_id=v.category_id,
+                name=v.name,
+                state=v.state or "",
+                severity=v.severity or "",
+                days_left=v.days_left if v.days_left is not None else 0,
+                due_day=v.due_day,
+                estimated=v.estimated,
+            )
+            for v in d.vencimientos
+        ],
     )

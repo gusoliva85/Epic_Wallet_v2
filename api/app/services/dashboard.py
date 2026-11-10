@@ -31,6 +31,7 @@ from ..repos import months as repos_meses
 from ..repos import profiles as repos_perfiles
 from ..repos import transactions as repos_movimientos
 from . import calc
+from . import dues as servicio_vencimientos
 from .months import HISTORICO, Periodo, abrir_mes, dias_transcurridos, mes_actual
 
 # Cuántos meses entran en el panel de "últimos seis" (Técnico §9.2).
@@ -108,6 +109,11 @@ class Dashboard(NamedTuple):
     diario: SerieDiaria | None
     ultimos_seis_meses: list[MesComparativo]
     categorias: list[CategoriaDelMes]
+    # Las alertas de vencimiento de HOY (F13-T03), no del mes que se
+    # está mirando: lo que vence vence hoy, aunque la pantalla esté en
+    # un mes de hace un año. Van acá y no en una llamada aparte porque
+    # el tablero es una sola llamada (CLAUDE.md).
+    vencimientos: list[servicio_vencimientos.ItemDeVencimiento]
 
 
 def _por_dia(
@@ -335,5 +341,12 @@ def armar(
         ultimos_seis_meses=_ultimos_seis(hasta_aqui),
         categorias=_desglose_por_categoria(
             totales_por_categoria, categorias_por_id, movimientos, mes, totales_anteriores_por_categoria
+        ),
+        # `meses` y `categorias` ya están leídos: se los pasa para que
+        # el armado de vencimientos no vuelva a pedirlos (tres
+        # consultas en vez de seis, Técnico §9.2 y el presupuesto de
+        # 400 ms del tablero).
+        vencimientos=servicio_vencimientos.alertas(
+            servicio_vencimientos.armar(sesion, ahora=ahora, meses=meses, categorias=categorias)
         ),
     )

@@ -1,11 +1,18 @@
-/* Las seis secciones de la aplicación, en un solo lugar.
+/* Las siete secciones de la aplicación, en un solo lugar.
    La barra superior (F01-T05), la inferior (F01-T06) y el enrutador
    (F01-T07) leen de acá: si una sección cambia de nombre o de icono,
    se cambia una vez y las tres quedan de acuerdo.
 
-   `corta` es la etiqueta de la barra inferior, donde hay cinco
-   posiciones en 390 px y "Movimientos" no entra. `en_barra_inferior`
-   marca las cinco que van ahí; las otras dos viven en la hoja "Más".
+   `corta` es la etiqueta de la barra inferior, donde "Movimientos" no
+   entra. `en_barra_inferior` marca las que van ahí; las otras viven en
+   la hoja "Más".
+
+   Desde F13-T03 son SEIS posiciones y no cinco: entró Vencimientos,
+   entre Historial y Cartera, y Gustavo la quiso en la barra (lo probó
+   en el mockup, 2026-11-10). Seis posiciones en 390 px dan 58 px cada
+   una —ajustado pero legible con la etiqueta corta—; siete ya no, así
+   que ésta es la última que entra. La que venga después va a la hoja
+   "Más", o alguna de éstas se muda ahí.
 
    Referencia: documentacion/mockups/01_Mockup_V1_Grafito_Clasico.html
    (constante NAV) · Roadmap F01-T05 y F01-T06. */
@@ -33,6 +40,19 @@ export const SECCIONES = [
     corta: "Historial",
     en_barra_inferior: true,
     icono: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+  },
+  {
+    id: "vencimientos",
+    label: "Vencimientos",
+    corta: "Vencim.",
+    en_barra_inferior: true,
+    // Calendario con un signo de atención adentro. A propósito NO es
+    // una campana: la campana de la barra superior es "lo que pasó", y
+    // esta sección es "lo que viene".
+    icono:
+      '<rect x="3.5" y="5" width="17" height="15" rx="3"/>' +
+      '<path d="M8 3.5v3M16 3.5v3M3.5 10h17"/>' +
+      '<path d="M12 13v3"/><circle cx="12" cy="17.6" r=".9"/>',
   },
   {
     id: "inversiones",
