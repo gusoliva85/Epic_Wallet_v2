@@ -88,10 +88,13 @@ Se testea **lo que da un número o protege un dato**:
 | **10** | Inversiones | **1**, de carga de datos, no bloquea | Cartera con compra, venta y rendimientos |
 | **11** | Cierre del MVP | **0** | Las cinco hechas. T03 con el correo saliente fuera de alcance; T04 y T05 esperando tu aprobación. Del MVP, 22 de los 24 criterios verificados y 2 con excepción decidida (cotizaciones y alertas, después del MVP) |
 | **12** | Apronte de escritorio | **1** (T03) | Layout de escritorio y gestos en el celular aprobados; T02 corregida (el círculo del cambio de tema no corría desde F12-T04) y esperando tu confirmación; T03 queda abierta a propósito, para lo que vaya apareciendo |
+| **13** | Comparación por ítem y vencimientos | **3**, esperando tu aprobación | Comparar un ítem mes a mes, y la sección de vencimientos avisando lo que está por vencer |
 
 **Revisado 2026-10-23** junto con Gustavo: todo lo de las fases 0 a 10 está aprobado (las tres pendientes de carga de datos no cuentan como tareas de código). De la Fase 11, F11-T01 y F11-T02 aprobadas; de la Fase 12, F12-T01 y F12-T04 aprobadas. Quedan **8 tareas** entre las dos fases abiertas.
 
 **Revisado 2026-10-27:** F11-T03 cerrada con el correo saliente fuera de alcance, y F11-T04 y F11-T05 hechas el mismo día. **La Fase 11 queda completa y con ella el MVP**, a falta de tu aprobación. **F12-T02 encontrada y corregida el mismo día** —el cambio de tema hacía el fundido de fábrica del navegador en vez de su círculo, por un espacio en un selector; estuvo roto cuatro días, desde F12-T04— y espera que lo confirmes desde tu navegador. Queda **1 tarea** abierta a propósito: F12-T03, que se llena con lo que encuentres usando la aplicación en la PC. F12-T01 y F12-T04 ya estaban aprobadas. Las tres de carga manual de datos (F08-T11, F09-T08, F10-T12) son tuyas y no cuentan como código.
+
+**Revisado 2026-11-10:** se agrega la **Fase 13** con lo que pediste después de probar el mockup: comparación por ítem y vencimientos. Las tres tareas están implementadas, con la migración ya aplicada en producción y toda la batería de pruebas en verde; esperan que las pruebes en el celular.
 
 ---
 
@@ -684,6 +687,45 @@ El detalle de estas dos fases está en `docs/FASE_00_PUESTA_EN_MARCHA.md` y `doc
 
 ---
 
+# FASE 13 — Comparación por ítem y vencimientos
+
+**Objetivo:** las dos cosas que Gustavo pidió el 2026-11-10, después de probar el mockup `documentacion/mockups/04_Mockup_Comparacion_y_Vencimientos.html`: ver cómo se mueve un ítem mes a mes, y que la aplicación avise lo que está por vencer.
+
+**Cómo se decidió:** mockup funcional primero (dos vueltas de correcciones sobre el mockup, sin tocar la aplicación), aprobación, y recién después la implementación. El mockup queda en `documentacion/mockups/` como referencia de lo aprobado.
+
+- [ ] **F13-T01 · El tamaño de la letra de los gráficos, parejo en todos**
+  **Tipo:** Frontend · **Ref:** `.claude/skills/epic-wallet-ui/SKILL.md` §9 · `web/src/js/charts/svg.js`
+  **Hacer:** un `font-size` dentro de un `<svg>` está en unidades del `viewBox`, no en píxeles de pantalla, así que el mismo valor se veía de distinto tamaño en cada gráfico (6,8 px en el de 760 de ancho) y en ninguno del tamaño que decía el token. `etiquetaSvg` ahora publica `--escala-grafico` (su ancho sobre el ancho de referencia del sistema, 520) y `.axis-v`/`.axis-t` multiplican su token por esa variable: el número del token pasa a ser el tamaño real en el teléfono, igual en los cuatro gráficos. Los tokens quedan en 10,5 px (valores) y 9,75 px (meses y días).
+  **Aceptación:** · la letra de los ejes se lee en el celular en los cuatro gráficos · es del mismo tamaño en todos · nada de esto cambia el tamaño del dibujo.
+  Probado en `tests/js/svg.test.mjs` (la escala que publica cada `<svg>`). El tamaño en sí se mira en la pantalla.
+
+- [ ] **F13-T02 · Comparación por ítem, dentro de Movimientos**
+  **Tipo:** Cálculo → Backend → Frontend · **Ref:** General §14 · Técnico §9.1
+  **Hacer:** tarjeta **plegada** en Movimientos —una línea con su interruptor, pedido expreso de Gustavo: no tiene que estar desplegada todo el tiempo— que al prenderla muestra un ítem mes a mes, con rango de 3, 6, 12 meses o todo el histórico.
+  · `services/calc.py::resumen_de_comparacion` (función pura): promedio, máximo, mínimo, último cerrado, diferencia en pesos y variación contra el mes anterior. Un mes **sin ese ítem** es `None` y no cero: no entra en el promedio ni puede ser el mínimo. El mes en curso queda afuera del promedio, es parcial.
+  · `GET /api/categories/{id}/history?months=N` (0 = todo). Los meses consolidados entran igual que los abiertos: sale de `monthly_category_totals`, no de `transactions`.
+  · Frontend: `comparacion.js` y `charts/comparacion.js`. Plegada no hace ni una llamada. El ancho de cada mes tiene tope y el grupo va centrado (con pocos meses las barras quedaban muy separadas); hasta siete meses el gráfico entra sin scroll lateral.
+  **Aceptación:** · plegada no pide nada y no se ve nada · prendida muestra gráfico, seis cifras y la lista mes a mes · el rango cambia la cantidad de meses · un mes sin el ítem dice «sin dato», no cero · la diferencia y la variación son contra el mes anterior, y la pantalla dice qué dos meses compara.
+  `tests/unit/test_comparacion.py`, `tests/js/comparacion.test.mjs`, `tests/api/test_dues_endpoints.py` (el recorrido completo del endpoint).
+
+- [ ] **F13-T03 · Vencimientos: sección nueva, entre Historial y Cartera**
+  **Tipo:** Cálculo → Base → Backend → Frontend · **Ref:** General §29 · Técnico §6.2, §9.1
+  **Hacer:** la lista de los ítems que ya existen (categorías de egreso activas) con un interruptor cada uno; prendido, se elige el día de vencimiento y cuántos días antes avisar.
+  · `services/vencimientos.py` (puro): el estado de hoy. Hasta el aviso, **atención**; a un día, el día mismo o pasado, **crítico**. El día 31 en un mes de 30 vence el 30 —«el 31» quiere decir «el último día»—.
+  · Tabla `category_dues` (migración `f1a2b3c4d5e6`, **sólo crea**, con RLS activo y forzado). Guarda el día y el aviso aunque el vencimiento esté apagado: apagarlo no pierde la configuración.
+  · `GET /api/dues` y `PUT /api/dues/{category_id}` (upsert: no hay alta ni baja, se prende y se apaga). El estado lo calcula el servidor con el día de hoy en la zona de presentación — con dos dispositivos de relojes distintos, calculado en el cliente, cada uno vería otra alerta.
+  · Las alertas de hoy viajan **dentro de `GET /api/dashboard`** (`dues_alerts`): el tablero sigue siendo una sola llamada. Alimentan la tarjeta «Próximos vencimientos», el globo de la campanita y la hoja que abre.
+  · **Lo pagado no avisa, y nadie lo marca a mano:** cuando hay un movimiento de ese ítem en el mes, se da por pagado y deja de avisar hasta el mes siguiente.
+  · La barra inferior pasa a **seis posiciones**; Vencimientos queda entre Historial y Cartera, como lo probó Gustavo en el mockup. Es la última que entra en 390 px.
+  **Aceptación:** · la lista trae todos los ítems de egreso, apagados · prender uno y elegir día y aviso queda guardado y sobrevive a recargar · a 3 y 2 días la alerta es amarilla, a 1 día roja · cargar el movimiento del mes apaga la alerta sola · la campanita cuenta lo mismo que muestra la hoja · ninguna cuenta ve los vencimientos de otra.
+  `tests/unit/test_vencimientos.py`, `tests/js/vencimientos.test.mjs`, `tests/api/test_dues_endpoints.py` y el barrido de aislamiento de `tests/api/test_aislamiento_f11.py`, que ahora incluye `PUT /api/dues/{category_id}`.
+
+  *Dos cosas pendientes de tu decisión, que no bloquean nada:* cómo se llama la sección (quedó «Vencimientos»; el mockup tiene el selector para comparar con «Pagos», «Compromisos» y «Agenda») y si la barra inferior de seis posiciones se ve bien en tu teléfono o preferís que Cartera se mude a «Más».
+
+  *De paso se arreglaron tres pruebas de API que venían fallando desde el 1 de noviembre, sin relación con esto: tenían octubre de 2026 escrito a mano y el mes en curso ya era otro.*
+
+---
+
 # Después del MVP
 
 Temas reales del documento general que **no** entran en el MVP. No tienen tareas detalladas a propósito: se detallan cuando les llegue el turno, con lo que se haya aprendido construyendo el resto. Si querés adelantar alguno, decímelo y lo subo.
@@ -691,7 +733,7 @@ Temas reales del documento general que **no** entran en el MVP. No tienen tareas
 | Tema | De qué se trata | Por qué puede esperar |
 |---|---|---|
 | **Cotizaciones automáticas** | Actualizar solo el valor de las inversiones (General §25, §26) | El propio documento general lo condiciona a «si se encuentra una fuente viable». La actualización manual de F10 ya cubre la necesidad |
-| **Alertas** | Las cinco reglas analíticas (General §29) | Son útiles pero nada depende de ellas. Con los datos cargados vas a saber mejor qué umbrales querés |
+| **Alertas analíticas** | Las reglas de comportamiento de General §29: gasto muy superior al promedio, categoría que se disparó, ahorro bajo. **Las alertas de vencimiento ya existen** (F13-T03); lo que queda son éstas | Son útiles pero nada depende de ellas. Con los datos cargados vas a saber mejor qué umbrales querés |
 | **Historial salarial y análisis** | Evolución salarial y métricas históricas (General §28, §53) | Dato interesante, no operativo — la pantalla "Análisis" que llegó a existir se sacó el 2026-10-21, sin uso real detrás |
 | **PWA offline** | Service worker con caché de lectura y atajos (General §45, Técnico §15.1) | Ya se instala y se abre en modo aplicación desde F00-T11. El offline es comodidad |
 | **Integraciones futuras** | Importación de Excel y Mercado Pago (General §60, §61) | Explícitamente fuera del MVP en el documento general. La anti-duplicación ya está en la base desde F04-T03 |

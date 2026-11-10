@@ -360,6 +360,29 @@ create table app_settings (
   constraint app_settings_unique unique (user_id, key)
 );
 
+-- ============ VENCIMIENTOS (F13-T03) ============
+-- Una fila por categoría CONFIGURADA, no por categoría: una categoría
+-- sin fila es una categoría sin vencimiento, que es el estado inicial
+-- de todas. `enabled` existe además de «tener fila o no» porque apagar
+-- un vencimiento no puede perder su configuración: se apaga en marzo,
+-- se prende en abril y el día y el aviso siguen ahí.
+--
+-- `due_day` admite el 31 aunque no exista en todos los meses: significa
+-- «el último día», y `services/vencimientos.py` lo recorta mes a mes.
+create table category_dues (
+  id          bigint generated always as identity primary key,
+  user_id     uuid not null references profiles(id) on delete cascade,
+  category_id bigint not null references categories(id) on delete cascade,
+  enabled     boolean not null default true,
+  due_day     integer not null,
+  notice_days integer not null default 3,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now(),
+  constraint category_dues_unique unique (user_id, category_id),
+  constraint category_dues_day    check (due_day between 1 and 31),
+  constraint category_dues_notice check (notice_days between 0 and 30)
+);
+
 -- ============ PASIVOS (preparado, no se usa en el MVP) ============
 create table liabilities (
   id          bigint generated always as identity primary key,
@@ -415,6 +438,7 @@ alter table investments               enable row level security;
 alter table alerts                    enable row level security;
 alter table app_settings              enable row level security;
 alter table liabilities               enable row level security;
+alter table category_dues            enable row level security;
 
 -- patrón aplicado a cada tabla (ejemplo con transactions)
 create policy own_rows_select on transactions for select using (user_id = auth.uid());
@@ -800,6 +824,9 @@ Base: `/api`. JSON en todo. Fechas en ISO 8601 (`2026-10-03`). Importes como **s
 | `PUT` | `/api/categories/{id}` | Edición, activar y desactivar. |
 | `PATCH` | `/api/categories/reorder` | Reordenamiento por lote. |
 | `GET` | `/api/categories/{id}/detail?year&month` | Total del mes, última carga y movimientos de esa categoría (General §16, F07-T01). `transactions: null` si el mes es histórico. |
+| `GET` | `/api/categories/{id}/history?months=N` | La serie mes a mes de esa categoría y las seis cifras del pie (F13-T02). `months=0` o ausente es todo el histórico; el recorte es por el final (los N más nuevos). Un mes sin esa categoría viene con `total: null`, **nunca cero**. Los meses consolidados entran igual que los abiertos: sale de `monthly_category_totals`. |
+| `GET` | `/api/dues` | Los ítems con su vencimiento y el estado de hoy (F13-T03). Una fila por categoría de **egreso activa**, tenga o no vencimiento configurado. Con `enabled: false`, `state` y `severity` vienen en `null`. |
+| `PUT` | `/api/dues/{category_id}` | Prende, apaga o reconfigura el vencimiento de un ítem. Upsert: no hay alta ni baja, porque los ítems ya existen. Reemplaza los tres campos juntos. Una categoría de ingreso da 404. |
 | `GET` | `/api/investments` | Cartera con totales y rendimientos. |
 | `POST` | `/api/investments` | Alta de posición. No toca el ahorro (§7.3). |
 | `PUT` | `/api/investments/{id}` | Edición y actualización manual de valor. |

@@ -243,12 +243,14 @@ Pasó en este proyecto: ocho tokens que se creían agregados nunca entraron a `t
 
 ## 7 · Navegación y vistas
 
-Una sola página con seis `<section class="view" data-vista="...">`. **`web/src/js/router.js` es el único que decide cuál está activa.**
+Una sola página con siete `<section class="view" data-vista="...">`. **`web/src/js/router.js` es el único que decide cuál está activa.**
 
 ```text
-#/inicio  #/movimientos  #/historial  #/inversiones
-#/patrimonio  #/config
+#/inicio  #/movimientos  #/historial  #/vencimientos
+#/inversiones  #/patrimonio  #/config
 ```
+
+*(`#/vencimientos` entró en F13-T03, entre Historial y Cartera. Con ella la barra inferior pasó a **seis** posiciones: en 390 px dan 58 px cada una, ajustado pero legible con la etiqueta `corta`. **Es la última que entra**: la próxima sección va a la hoja «Más», o alguna de las seis se muda ahí.)*
 
 *(`#/analisis` existió hasta el 2026-10-21: se sacó —a pedido de Gustavo, era sólo datos de muestra sin ningún endpoint detrás— junto con su posición en `nav.js`.)*
 
@@ -537,6 +539,38 @@ Dos cosas la definen y las dos son fáciles de hacer mal:
 
 2600 ms en pantalla. El toast va arriba de la barra inferior y del botón flotante, y baja desde 960 px cuando esos ya no están.
 
+### Tarjeta plegable con interruptor
+
+El patrón de la comparación por ítem (F13-T02), para lo que es una **consulta puntual** y no algo que tenga que estar abierto todo el tiempo:
+
+```text
+.card.shell[data-interruptores-propios]
+  .cfg-row.comp-cabeza     título a tamaño de panel + bajada + .toggle
+  .comp-cuerpo[hidden]     todo lo demás, con fundido corto al aparecer
+```
+
+Tres reglas:
+
+- **Plegada no pide nada.** El módulo no llama a la API hasta que se prende el interruptor: si pidiera igual, la vista costaría una llamada más en cada carga sin que se note en la pantalla.
+- **`data-interruptores-propios` en el contenedor.** El delegado genérico de `views/vistas.js` da vuelta cualquier `.toggle` que encuentre; un interruptor con dueño —que llama a la API y pinta la respuesta— tiene que quedar afuera, o el segundo cambio de `aria-checked` lo deja mintiendo sobre el estado real. Es el mismo bug que ya había tenido `#config-categorias`.
+- **Los conmutadores de adentro se miden al abrirse.** Un `.view-switch` oculto mide 0, así que la pastilla quedaría apoyada en el borde: hay que llamar a `sincronizar(grupo)` cuando el cuerpo ya es visible.
+
+### Fila de configuración con detalle
+
+La lista de Vencimientos (F13-T03): una `.cfg-row` con el interruptor y, cuando está prendida, un `.venc-detalle` debajo con los dos selectores y el estado de hoy.
+
+```text
+.venc-lista            padding 12px 14px 14px  ← 14 px contra la tarjeta y
+                                                 12 px contra el conmutador
+                                                 de arriba; sin eso los ítems
+                                                 quedan pegados a los bordes
+.venc-item.cg          radius de tarjeta, overflow hidden
+  .cfg-row             nombre + bajada + .toggle
+  .venc-detalle        rejilla de 2 columnas; el estado ocupa el ancho
+```
+
+El estado va en una `.pill` **con su texto** («Faltan 3 días», «Vencido hace 2 días»), no sólo con el color: ámbar y rojo tienen que distinguirse sin verlos (§8, avisos).
+
 ### Otros
 
 - **`.pill`** en cinco variantes: `ok`, `warn`, `pend`, `crit`, `neutral`.
@@ -592,6 +626,9 @@ for(let i=0;i<n;i++){ acc+=inc[i]-exp[i]; sav.push(acc) }
 - En móvil `min-width:520px` con scroll horizontal; desde 720 px se ajusta al ancho.
 - **`touch-action` en un contenedor con scroll propio lleva LOS DOS EJES** (`pan-x pan-y`), nunca `pan-x` solo. `.app` pide `pan-y` para los gestos (§7) y el navegador cruza los dos valores: con `pan-x` a secas, el dedo apoyado sobre un gráfico o una tabla los movía de costado pero ya no scrolleaba la página hacia abajo. Vale igual para `.tbl-wrap` y para `.view-switch`.
 - **El respiro contra la tarjeta es MARGEN, no relleno.** El relleno es parte de lo que se desplaza: apenas el dedo mueve el gráfico, el dibujo pasa por debajo y toca el borde igual. Con `margin: 0 14px` el que queda adentro de la tarjeta es el contenedor, y el recorte sucede 14 px antes del borde en cualquier posición del scroll.
+- **EL TAMAÑO DEL TEXTO SE COMPENSA POR LA ESCALA DEL GRÁFICO** (F13-T01). Un `font-size` dentro de un `<svg>` está en unidades del `viewBox`, no en píxeles de pantalla: el mismo 10 se ve a 6,8 px en el gráfico de 760 de ancho y a 9,6 px en uno de 540, porque cada uno se escala distinto para entrar en la tarjeta. `etiquetaSvg()` publica `--escala-grafico` (su ancho sobre el ancho de referencia del sistema, **520**) y `.axis-v`/`.axis-t` multiplican su token por esa variable. Consecuencia práctica: **el valor de `--text-axis` y `--text-axis-sm` es el tamaño real en el teléfono**, y es el mismo en los cuatro gráficos. Un `<svg>` armado sin `etiquetaSvg` se queda con la escala 1 y vuelve a depender de su ancho.
+- Un gráfico que **entra** en la tarjeta sin scroll (hasta siete barras, como la comparación por ítem) usa un `viewBox` angosto —400— y pide `min-width: 0`; uno que no entra crece y desplaza, pero **a escala 1**, para que las cifras no se achiquen. Las dos formas conviven porque las dos pasan por la misma compensación.
+- **El ancho de cada categoría tiene tope, y el grupo va centrado.** Con pocas barras y el ancho repartido a secas, quedan separadas a media pantalla (Gustavo, 2026-11-10). Lo que sobra tiene que ser margen a los costados, nunca distancia entre barras.
 - `role="img"` y `<title>` con el resumen en texto.
 
 ## 10 · Formato de importes

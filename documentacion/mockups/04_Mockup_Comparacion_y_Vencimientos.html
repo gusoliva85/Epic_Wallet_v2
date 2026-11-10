@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Mockup · Comparación y Vencimientos</title>
+    <meta name="color-scheme" content="light dark" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+    />
+    <!-- El CSS compilado de la aplicación: el mockup se ve exactamente
+         como se vería la pantalla de verdad. -->
+    <link rel="stylesheet" href="../../web/public/app.css" />
+    <style>
+      /* Lo único que vive sólo acá: los controles del ensayo, que NO
+         son parte del diseño propuesto. Igual salen de los tokens. */
+      .ensayo {
+        margin: 0 0 14px;
+        border: 1px dashed var(--line-strong);
+        border-radius: var(--radius-card);
+        padding: 12px;
+      }
+      .ensayo h3 {
+        margin: 0 0 4px;
+        font-family: var(--font-display);
+        font-size: var(--text-section);
+      }
+      .ensayo p {
+        margin: 0 0 10px;
+        font-size: var(--text-sub);
+        color: var(--color-ink-3);
+      }
+      .ensayo-fila {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .ensayo-fila label {
+        font-size: var(--text-sub);
+        color: var(--color-ink-3);
+      }
+      .ensayo input[type="range"] {
+        flex: 1;
+        min-width: 150px;
+        accent-color: var(--color-accent);
+      }
+      .venc-item {
+        margin-bottom: 10px;
+        border-radius: var(--radius-card);
+        overflow: hidden;
+      }
+      .venc-item:last-child {
+        margin-bottom: 0;
+      }
+      .venc-detalle {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        padding: 0 12px 12px;
+      }
+      .venc-detalle .campo {
+        min-width: 0;
+      }
+      .venc-detalle .campo > label {
+        display: block;
+        margin-bottom: 4px;
+        font-size: var(--text-label);
+        letter-spacing: var(--tracking-label);
+        text-transform: uppercase;
+        color: var(--color-ink-3);
+      }
+      .venc-detalle .ancho {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .venc-estado {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .comp-sel {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: var(--radius-sm);
+        margin: 10px 14px 0;
+      }
+      .comp-sel b {
+        font-size: var(--text-kv);
+      }
+      .comp-sel span {
+        font-size: var(--text-sub);
+        color: var(--color-ink-3);
+      }
+
+      /* La cabecera de la tarjeta plegable: mismo ritmo de 14 px que
+         `.card-head`, con el interruptor a la derecha. */
+      .comp-cabeza {
+        padding: 14px;
+      }
+      .comp-cabeza b {
+        font-family: var(--font-display);
+        font-size: var(--text-panel);
+      }
+
+      /* El cuerpo entra con un fundido corto cuando se despliega. Lo
+         anula `prefers-reduced-motion` más abajo. */
+      .comp-cuerpo {
+        animation: compAbre 0.3s var(--ease-glass) both;
+      }
+      @keyframes compAbre {
+        from {
+          opacity: 0;
+          transform: translateY(-6px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .comp-cuerpo {
+          animation: none;
+        }
+      }
+
+      .comp-controles {
+        display: grid;
+        gap: 10px;
+        padding: 2px 14px 0;
+      }
+      @media (min-width: 560px) {
+        .comp-controles {
+          grid-template-columns: 1fr auto;
+          align-items: center;
+        }
+      }
+
+      /* Las cifras del gráfico, un punto más grandes que las de los
+         gráficos del tablero: acá el `viewBox` es más angosto y el
+         dibujo se escala menos, pero igual quedaban chicas en el
+         teléfono (Gustavo, 2026-11-10). El color sigue saliendo de los
+         tokens de tinta, como `.axis-v` y `.axis-t`. */
+      .comp-valor {
+        font-family: Inter, sans-serif;
+        font-weight: 700;
+        font-size: 13px;
+        fill: var(--color-ink-2);
+      }
+      .comp-eje {
+        font-family: Inter, sans-serif;
+        font-weight: 600;
+        font-size: 12px;
+        fill: var(--color-ink-3);
+      }
+      .comp-mes {
+        font-family: Inter, sans-serif;
+        font-weight: 600;
+        font-size: 12px;
+        fill: var(--color-ink-4);
+      }
+
+      /* Los ítems de Vencimientos, con su margen contra la tarjeta que
+         los contiene: el mismo ritmo de 14 px de `.rows` y
+         `.card-head`, y 12 px de aire contra el conmutador de arriba
+         (Gustavo, 2026-11-10). */
+      #venc-lista {
+        padding: 12px 14px 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar shell">
+        <div class="marca-app">
+          <span class="marca-sello" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 8.5A2.5 2.5 0 015.5 6H19a2 2 0 012 2v9a2 2 0 01-2 2H5.5A2.5 2.5 0 013 16.5v-8z" />
+              <path d="M3 9.5h13.5a1.5 1.5 0 011.5 1.5v3a1.5 1.5 0 01-1.5 1.5H3" />
+              <circle cx="7" cy="12.5" r="1.1" />
+            </svg>
+          </span>
+          <div class="marca-texto"><b>Epic Wallet</b></div>
+        </div>
+        <nav class="nav-escritorio" id="nav-escritorio" aria-label="Secciones"></nav>
+        <div class="acciones">
+          <button class="boton-icono" type="button" id="btn-campana" aria-label="Alertas">
+            <svg viewBox="0 0 24 24">
+              <path d="M6 8a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6" />
+              <path d="M10 20a2 2 0 004 0" />
+            </svg>
+            <span class="contador" id="contador-alertas" aria-hidden="true" hidden>0</span>
+          </button>
+          <button class="boton-icono" type="button" id="btn-tema" aria-label="Cambiar de tema">
+            <svg viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z" /></svg>
+          </button>
+          <button class="avatar" type="button" aria-label="Cuenta">GO</button>
+        </div>
+      </header>
+
+      <section class="monthbar shell" aria-label="Mes en pantalla">
+        <div class="mb-nav">
+          <button class="chip" type="button" aria-label="Mes anterior">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+          </button>
+        </div>
+        <div class="mb-title">
+          <b>Noviembre 2026</b>
+          <span>MES ABIERTO · TRANSACCIONAL</span>
+        </div>
+        <div class="mb-nav">
+          <button class="chip" type="button" disabled>Hoy</button>
+          <button class="chip" type="button" aria-label="Mes siguiente" disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+          </button>
+        </div>
+      </section>
+
+      <main>
+        <!-- ===================================== INICIO -->
+        <section class="view activa" data-vista="inicio" aria-label="Inicio">
+          <div class="ensayo cg">
+            <h3>Esto es un mockup, no la aplicación</h3>
+            <p>
+              Dos propuestas para mirar y corregir: <b>Comparación por ítem</b>, dentro de
+              Movimientos, y <b>Vencimientos</b>, sección nueva. Los números son inventados. El
+              control de abajo es del ensayo: no va en la app, está para que puedas mover el día
+              y ver cómo cambian las alertas.
+            </p>
+            <div class="ensayo-fila">
+              <label for="dia-hoy">Hoy simulado</label>
+              <input type="range" id="dia-hoy" min="1" max="30" value="7" />
+              <b class="num" id="dia-hoy-txt">7 de noviembre</b>
+            </div>
+          </div>
+
+          <article class="card shell">
+            <div class="card-head">
+              <div>
+                <h2>Próximos vencimientos</h2>
+                <p>Lo que está por vencer y todavía no figura pagado.</p>
+              </div>
+              <button class="link-btn" type="button" data-ir="vencimientos">Ver todos</button>
+            </div>
+            <div id="inicio-alertas"></div>
+          </article>
+
+          <p class="ghost-note">
+            <b>Dónde vive cada cosa.</b> La campanita de arriba lleva la cuenta de alertas
+            activas; el tablero muestra esta tarjeta sólo cuando hay algo por vencer. El detalle y
+            la configuración viven en la sección nueva.
+          </p>
+        </section>
+
+        <!-- ===================================== MOVIMIENTOS · COMPARACIÓN -->
+        <section class="view" data-vista="movimientos" aria-label="Movimientos" hidden>
+          <article class="card shell">
+            <!-- Plegada por pedido de Gustavo (2026-11-10): la tarjeta
+                 es una línea fina con su interruptor, y recién
+                 prendida despliega el gráfico, las cifras y la lista
+                 mes a mes. -->
+            <div class="cfg-row comp-cabeza">
+              <div>
+                <b>Comparación por ítem</b>
+                <span>Cómo se mueve un ítem de mes a mes.</span>
+              </div>
+              <button
+                class="toggle"
+                type="button"
+                role="switch"
+                aria-checked="false"
+                aria-label="Mostrar la comparación por ítem"
+                aria-controls="comp-cuerpo"
+                id="comp-switch"
+              ></button>
+            </div>
+
+            <div class="comp-cuerpo" id="comp-cuerpo" hidden>
+              <div class="comp-controles">
+                <label class="solo-lector" for="comp-item">Ítem</label>
+                <select class="inp" id="comp-item"></select>
+                <div class="view-switch" role="group" aria-label="Rango" id="comp-rango">
+                  <button type="button" data-rango="3">3 m</button>
+                  <button type="button" class="activa" data-rango="6">6 m</button>
+                  <button type="button" data-rango="12">12 m</button>
+                  <button type="button" data-rango="0">Todo</button>
+                </div>
+              </div>
+
+              <div class="legend">
+                <span><i class="dot" style="background: var(--color-egr)"></i>Gasto del mes</span>
+                <span><i class="dot dot--linea" style="background: var(--color-accent)"></i>Promedio del período</span>
+              </div>
+
+              <div class="chart-wrap" id="comp-grafico"></div>
+              <div class="comp-sel cg" id="comp-seleccion" hidden></div>
+              <div class="chart-foot" id="comp-pie"></div>
+            </div>
+          </article>
+
+          <article class="card shell comp-cuerpo" id="comp-card-filas" hidden>
+            <div class="card-head">
+              <div>
+                <h2>Mes a mes</h2>
+                <p>Cada mes con su variación contra el anterior.</p>
+              </div>
+            </div>
+            <div class="rows" id="comp-filas"></div>
+          </article>
+
+          <p class="ghost-note" id="comp-nota" hidden>
+            <b>Los meses consolidados también entran.</b> Un mes histórico no tiene movimientos
+            individuales, pero sí su total por categoría: es lo que se compara acá. Un mes sin ese
+            ítem no se dibuja como cero — se saltea, y la lista lo aclara.
+          </p>
+        </section>
+
+        <!-- ===================================== VENCIMIENTOS -->
+        <section class="view" data-vista="vencimientos" aria-label="Vencimientos" hidden>
+          <div class="sec-head">
+            <div>
+              <h2 id="venc-titulo">Vencimientos</h2>
+              <p>Qué se paga, qué día y con cuánta anticipación querés que te avise.</p>
+            </div>
+          </div>
+
+          <div id="venc-alertas"></div>
+
+          <article class="card shell">
+            <div class="card-head">
+              <div>
+                <h2>Tus ítems</h2>
+                <p>Prendé el que querés seguir y poné el día de vencimiento.</p>
+              </div>
+              <div class="view-switch" role="group" aria-label="Filtro de ítems" id="venc-filtro">
+                <button type="button" class="activa" data-filtro="todos">Todos</button>
+                <button type="button" data-filtro="activos">Con vencimiento</button>
+              </div>
+            </div>
+            <div id="venc-lista"></div>
+          </article>
+
+          <div class="ensayo cg">
+            <h3>Cómo se llama la sección</h3>
+            <p>Tocá una opción y mirá cómo queda el nombre en las dos barras.</p>
+            <div class="view-switch" role="group" aria-label="Nombre de la sección" id="venc-nombre">
+              <button type="button" class="activa" data-nombre="Vencimientos" data-corta="Vencim.">Vencimientos</button>
+              <button type="button" data-nombre="Pagos" data-corta="Pagos">Pagos</button>
+              <button type="button" data-nombre="Compromisos" data-corta="Comprom.">Compromisos</button>
+              <button type="button" data-nombre="Agenda" data-corta="Agenda">Agenda</button>
+            </div>
+          </div>
+
+          <div class="ensayo cg">
+            <h3>La barra de abajo con una sección más</h3>
+            <p>
+              Hoy la barra tiene cinco posiciones y es lo que entra en un teléfono de 390 px. Con
+              la sección nueva hay que elegir.
+            </p>
+            <div class="view-switch" role="group" aria-label="Barra inferior" id="venc-barra">
+              <button type="button" class="activa" data-barra="seis">6 posiciones</button>
+              <button type="button" data-barra="cinco">5 · Cartera a «Más»</button>
+            </div>
+          </div>
+
+          <p class="ghost-note">
+            <b>La alerta se apaga sola.</b> Cuando en el mes aparece un movimiento de ese ítem, se
+            da por pagado y deja de avisar hasta el mes que viene. No hay que marcar nada a mano:
+            en la lista de abajo podés simular la carga del pago con el botón de cada ítem.
+          </p>
+        </section>
+
+        <section class="view" data-vista="historial" aria-label="Historial" hidden>
+          <p class="ghost-note">Historial: esta propuesta no lo toca.</p>
+        </section>
+        <section class="view" data-vista="inversiones" aria-label="Cartera" hidden>
+          <p class="ghost-note">Cartera: esta propuesta no la toca.</p>
+        </section>
+      </main>
+    </div>
+
+    <nav class="botnav shell" id="barra-inferior" aria-label="Navegación principal"></nav>
+    <button class="fab" type="button" aria-label="Nuevo movimiento">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+    </button>
+
+    <script src="04_mockup.js"></script>
+  </body>
+</html>
