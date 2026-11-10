@@ -112,3 +112,50 @@ class DetalleDeCategoria(BaseModel):
     @field_serializer("total")
     def _total_como_texto(self, valor: decimal.Decimal) -> str:
         return f"{valor:.2f}"
+
+
+class MesDeComparacion(BaseModel):
+    """Un mes dentro de la comparación de un ítem · F13-T02.
+
+    `total` es `None` cuando ese ítem no tuvo nada ese mes, y eso NO es
+    cero: la interfaz lo dibuja como "sin dato" en vez de una barra en
+    el piso (un cero se lee como "no gasté nada", y acá lo que pasó es
+    que no había nada que pagar).
+    """
+
+    year: int
+    month: int
+    status: str
+    total: decimal.Decimal | None
+
+    @field_serializer("total")
+    def _total_como_texto(self, valor: decimal.Decimal | None) -> str | None:
+        return None if valor is None else f"{valor:.2f}"
+
+
+class ComparacionDeCategoria(BaseModel):
+    """`GET /api/categories/{id}/history?months=N` · F13-T02.
+
+    La serie mes a mes de un ítem más las seis cifras del pie, todas
+    calculadas en `services.calc.resumen_de_comparacion`: el cliente
+    sólo formatea, nunca hace la cuenta (regla del proyecto).
+
+    Las seis pueden venir en `None` —un solo mes cargado no tiene
+    promedio ni variación—, y nunca en cero por falta de datos.
+    """
+
+    category_id: int
+    name: str
+    type: str
+    months: list[MesDeComparacion]
+
+    average: decimal.Decimal | None
+    maximum: decimal.Decimal | None
+    minimum: decimal.Decimal | None
+    last_closed: decimal.Decimal | None
+    difference: decimal.Decimal | None
+    variation: decimal.Decimal | None
+
+    @field_serializer("average", "maximum", "minimum", "last_closed", "difference", "variation")
+    def _cifra_como_texto(self, valor: decimal.Decimal | None) -> str | None:
+        return None if valor is None else f"{valor:.2f}"

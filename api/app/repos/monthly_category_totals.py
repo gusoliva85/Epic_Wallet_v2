@@ -12,10 +12,10 @@ from __future__ import annotations
 
 import decimal
 
-from sqlalchemy import delete, select
+from sqlalchemy import and_, delete, select
 from sqlalchemy.orm import Session
 
-from ..models import MonthlyCategoryTotal
+from ..models import Month, MonthlyCategoryTotal
 
 
 def listar_por_mes(sesion: Session, month_id: int) -> list[MonthlyCategoryTotal]:
@@ -94,3 +94,37 @@ def reemplazar_manuales(
             )
         )
     sesion.flush()
+
+
+def historial_de_categoria(
+    sesion: Session, category_id: int
+) -> list[tuple[int, int, str, decimal.Decimal | None]]:
+    """El total de una categoría en CADA mes del usuario, del más viejo
+    al más nuevo: `(year, month, status, total)` · F13-T02.
+
+    `outerjoin` y no `join`: los meses en los que esa categoría no tuvo
+    nada tienen que venir igual, con `total` en `None`. Con un join
+    interno desaparecerían de la serie y el gráfico mostraría doce
+    meses seguidos de facultad donde en realidad hubo dos de vacaciones
+    — un `None` acá es lo que deja decir "sin dato" en vez de "cero"
+    (`services.calc.resumen_de_comparacion` depende de esa distinción).
+
+    Una sola consulta para todo el histórico: la alternativa —un pedido
+    por mes— son veinte viajes a São Paulo para dibujar un gráfico.
+
+    Sin filtro por `user_id`, igual que el resto de los repositorios:
+    la sesión es una `SesionDeUsuario` y RLS filtra sola.
+    """
+    filas = sesion.execute(
+        select(Month.year, Month.month, Month.status, MonthlyCategoryTotal.total_amount)
+        .select_from(Month)
+        .outerjoin(
+            MonthlyCategoryTotal,
+            and_(
+                MonthlyCategoryTotal.month_id == Month.id,
+                MonthlyCategoryTotal.category_id == category_id,
+            ),
+        )
+        .order_by(Month.year, Month.month)
+    ).all()
+    return [(f.year, f.month, f.status, f.total_amount) for f in filas]

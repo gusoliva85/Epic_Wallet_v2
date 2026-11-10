@@ -7,6 +7,7 @@ Referencia: 02_Documento_Tecnico.md §9.1 · General §7, §15, §16, §34, §51
     PATCH  /api/categories/{id}        nombre, activar/desactivar, orden
     DELETE /api/categories/{id}        baja — restringida si tiene histórico
     GET    /api/categories/{id}/detail el detalle de un mes (General §16)
+    GET    /api/categories/{id}/history la serie mes a mes (F13-T02)
 
 Dos traducciones de `IntegrityError` a un 409 con mensaje, no dos
 validaciones hechas a mano por este router: la restricción que
@@ -23,7 +24,7 @@ from __future__ import annotations
 
 import decimal
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 from psycopg.errors import ForeignKeyViolation, UniqueViolation
 from sqlalchemy.exc import IntegrityError
 
@@ -35,8 +36,16 @@ from ..repos import categories as repos
 from ..repos import monthly_category_totals as repos_totales
 from ..repos import months as repos_meses
 from ..repos import transactions as repos_movimientos
-from ..schemas.categories import AltaDeCategoria, CambioDeCategoria, Categoria, DetalleDeCategoria
+from ..schemas.categories import (
+    AltaDeCategoria,
+    CambioDeCategoria,
+    Categoria,
+    ComparacionDeCategoria,
+    DetalleDeCategoria,
+    MesDeComparacion,
+)
 from ..schemas.transactions import Movimiento
+from ..services.calc import resumen_de_comparacion
 from ..services.months import HISTORICO, transacciones_del_mes
 from .me import asegurar_perfil_y_categorias
 
@@ -195,4 +204,62 @@ def ver_detalle_de_categoria(
         total=total,
         last_date=max((m.transaction_date for m in movimientos), default=None),
         transactions=transactions,
+    )
+
+
+# Tope del rango de la comparación. No es una restricción de negocio:
+# es lo que evita que un `?months=100000` arme una respuesta de miles
+# de meses vacíos. Diez años de histórico es más de lo que el Excel
+# que esta aplicación reemplaza tiene cargado.
+MESES_MAXIMOS_DE_COMPARACION = 120
+
+
+@router.get(
+    "/{category_id}/history",
+    response_model=ComparacionDeCategoria,
+    summary="La serie mes a mes de una categoría",
+)
+def ver_historial_de_categoria(
+    category_id: int,
+    sesion: SesionDeUsuario,
+    months: int = Query(
+        default=0,
+        ge=0,
+        le=MESES_MAXIMOS_DE_COMPARACION,
+        description="Cuántos meses hacia atrás; 0 es todo el histórico.",
+    ),
+) -> ComparacionDeCategoria:
+    """F13-T02 · pedido de Gustavo (2026-11-10): elegir un ítem y ver
+    cómo se movió mes a mes, con el rango que se quiera.
+
+    Los meses **consolidados entran igual que los abiertos**: un mes
+    histórico no tiene movimientos individuales (Regla 4), pero sí su
+    total por categoría, que es exactamente lo que se compara acá. Por
+    eso la serie sale de `monthly_category_totals` y no de
+    `transactions` — con los movimientos no habría nada que comparar
+    antes del primer mes abierto.
+
+    Un mes sin esa categoría viene con `total: null`, nunca cero.
+    """
+    categoria = repos.buscar_por_id(sesion, category_id)
+    if categoria is None:
+        raise _sin_categoria()
+
+    serie = repos_totales.historial_de_categoria(sesion, category_id)
+    # El recorte es por el final: los N meses MÁS NUEVOS, que es lo que
+    # pide la pantalla ("de acá 3 meses atrás, 6, o todo").
+    if months:
+        serie = serie[-months:]
+
+    resumen = resumen_de_comparacion([total for _, _, _, total in serie])
+
+    return ComparacionDeCategoria(
+        category_id=categoria.id,
+        name=categoria.name,
+        type=categoria.type,
+        months=[
+            MesDeComparacion(year=anio, month=mes, status=estado, total=total)
+            for anio, mes, estado, total in serie
+        ],
+        **resumen,
     )

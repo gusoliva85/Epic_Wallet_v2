@@ -254,3 +254,56 @@ def serie_de_ahorro_diaria(
         acumulado += ingreso - egreso
         serie.append(money(acumulado))
     return serie
+
+
+# ===================================================================
+# Comparación de un ítem mes a mes · F13-T02
+# General §14 (comportamiento entre meses) · pedido de Gustavo,
+# 2026-11-10: "elegir un ítem y ver cómo fue mes a mes".
+# ===================================================================
+
+
+def resumen_de_comparacion(
+    totales: list[decimal.Decimal | None],
+) -> dict[str, decimal.Decimal | None]:
+    """Las seis cifras del pie del gráfico de comparación, a partir de
+    los totales de un ítem ordenados del mes más viejo al más nuevo.
+
+    `None` en la lista es un mes **sin ese ítem**, y no es lo mismo que
+    un cero: no se gastó nada ahí porque no hubo nada que gastar (la
+    facultad en enero), así que no entra en el promedio ni puede ser el
+    mínimo. Confundirlos hundiría el promedio de cualquier gasto que no
+    sea de los doce meses.
+
+    El último mes de la lista es el que está en curso y va aparte
+    (`ultimo`, `diferencia`, `variacion`): es parcial, así que
+    promediarlo con meses completos daría de menos. Promedio, máximo y
+    mínimo miran sólo los meses cerrados.
+
+    Devuelve siempre las seis claves. `None` en cualquiera de ellas
+    significa "no hay con qué calcularla todavía" —un solo mes cargado,
+    o ninguno—, nunca cero: un cero acá se leería como "no gastó nada".
+    """
+    cerrados = [t for t in totales[:-1] if t is not None]
+    ultimo = totales[-1] if totales else None
+    previo = cerrados[-1] if cerrados else None
+
+    promedio = (
+        money(sum(cerrados, decimal.Decimal("0")) / len(cerrados)) if cerrados else None
+    )
+
+    diferencia = money(ultimo - previo) if ultimo is not None and previo is not None else None
+    variacion = (
+        variacion_porcentual(ultimo, previo)
+        if ultimo is not None and previo is not None
+        else None
+    )
+
+    return {
+        "average": promedio,
+        "maximum": max(cerrados) if cerrados else None,
+        "minimum": min(cerrados) if cerrados else None,
+        "last_closed": previo,
+        "difference": diferencia,
+        "variation": variacion,
+    }
